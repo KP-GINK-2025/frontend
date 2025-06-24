@@ -30,7 +30,7 @@ const DashboardPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f7f7]">
+    <div className="select-none min-h-screen bg-[#f7f7f7]">
       {/* Header */}
       <div className="bg-[#b00020] text-white flex items-center justify-between px-6 py-3 shadow">
         <div className="flex items-center gap-3">
@@ -38,6 +38,7 @@ const DashboardPage = () => {
             src="/assets/logo-tanggamus.png"
             alt="Logo"
             className="w-12 h-auto"
+            draggable="false"
           />
           <h1 className="text-lg font-semibold">Kabupaten Tanggamus</h1>
         </div>
