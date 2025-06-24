@@ -31,7 +31,7 @@ const LoginPage = () => {
     };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="select-none min-h-screen flex">
       {/* Left Panel */}
       <div className="w-1/2 bg-red-600 flex flex-col items-center justify-center text-white">
         <div className="mb-8">
@@ -40,6 +40,7 @@ const LoginPage = () => {
               src="/assets/logo-tanggamus.png" 
               alt="Logo Kabupaten Tanggamus" 
               className="w-48 h-auto"
+              draggable="false"
             />
           </div>
         </div>
