@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { User, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -8,6 +8,9 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [usernameError, setUsernameError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+
+  // Buat ref untuk input password
+  const passwordInputRef = useRef(null);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -28,6 +31,16 @@ const LoginPage = () => {
     // Handle login logic here
     console.log("Login attempt:", { username, password });
     navigate("/dashboard");
+  };
+
+  // Handler untuk input username
+  const handleUsernameKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault(); // Mencegah submit form default saat Enter di username
+      if (passwordInputRef.current) {
+        passwordInputRef.current.focus(); // Pindahkan fokus ke input password
+      }
+    }
   };
 
   return (
@@ -84,6 +97,7 @@ const LoginPage = () => {
                 placeholder="Username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+                onKeyDown={handleUsernameKeyDown} // Tambahkan handler ini
                 className={`w-full pl-12 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent ${
                   usernameError ? "border-red-500" : "border-gray-300"
                 }`}
@@ -103,6 +117,7 @@ const LoginPage = () => {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                ref={passwordInputRef} // Kaitkan ref ke input password
                 className={`w-full pl-12 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent ${
                   passwordError ? "border-red-500" : "border-gray-300"
                 }`}
@@ -115,7 +130,7 @@ const LoginPage = () => {
             {/* Login Button */}
             <button
               type="submit"
-              className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition duration-200 shadow-lg"
+              className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition duration-200 shadow-lg cursor-pointer"
             >
               Login
             </button>
