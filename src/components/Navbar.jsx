@@ -36,7 +36,7 @@ const Navbar = () => {
         <UserCircle size={35} />
         <button
           onClick={handleLogout}
-          className="flex items-center gap-1 text-sm hover:text-gray-400 transition"
+          className="flex items-center gap-1 text-sm hover:text-gray-400 transition cursor-pointer"
         >
           <LogOut size={18} />
           Logout
