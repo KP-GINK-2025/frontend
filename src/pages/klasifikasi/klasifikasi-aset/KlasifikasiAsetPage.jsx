@@ -1,38 +1,34 @@
 import React from "react";
-import {
-  FileText,
-  FileStack,
-  Wallet,
-  ListOrdered,
-  ChartNoAxesCombined,
-  Layers,
-  Settings,
-} from "lucide-react";
-import Breadcrumbs from "../components/Breadcrumbs";
-import MenuItem from "../components/MenuItem";
-import Navbar from "../components/Navbar";
-import useMenuNavigation from "../hooks/useMenuNavigation";
+import Navbar from "../../../components/Navbar";
+import MenuItem from "../../../components/MenuItem";
+import useMenuNavigation from "../../../hooks/useMenuNavigation";
+import Breadcrumbs from "../../../components/Breadcrumbs";
+import { PieChart } from "lucide-react";
 
 const menuItems = [
-  { name: "Klasifikasi", icon: FileText },
-  { name: "Data Ruang", icon: FileStack },
-  { name: "Saldo Awal", icon: Wallet },
-  { name: "LRA", icon: ListOrdered },
-  { name: "Keuangan", icon: ChartNoAxesCombined },
-  { name: "Laporan", icon: Layers },
-  { name: "Pengaturan", icon: Settings },
+  { name: "Akun", icon: PieChart },
+  { name: "Kelompok", icon: PieChart },
+  { name: "Jenis", icon: PieChart },
+  { name: "Objek", icon: PieChart },
+  { name: "Rincian Objek", icon: PieChart },
+  { name: "Sub Rincian", icon: PieChart },
+  { name: "Sub Sub Rincian", icon: PieChart },
 ];
 
-const DashboardPage = () => {
+const KlasifikasiAsetPage = () => {
   const { handleMenuItemClick } = useMenuNavigation();
+
   return (
-    <div className="select-none min-h-screen bg-[#f7f7f7]">
+    <div className="min-h-screen bg-[#f7f7f7]">
       {/* Header */}
       <Navbar />
 
-      {/* Content */}
+      {/* Content Area */}
       <div className="px-8 py-8">
         <Breadcrumbs />
+        {/* Tambahkan h1 atau h2 di sini jika Anda mau judul halaman */}
+        <h1 className="text-2xl font-bold mb-4 mt-4">Klasifikasi Aset</h1>
+        {/* Pembungkus Utama untuk Semua Baris Item Menu */}
         <div className="flex flex-col items-center gap-y-6 mt-8">
           {" "}
           {/* Tambahkan margin top untuk pemisah dari judul */}
@@ -78,9 +74,10 @@ const DashboardPage = () => {
             )}
           </div>
         </div>{" "}
+        {/* Akhir dari pembungkus utama item menu */}
       </div>
     </div>
   );
 };
 
-export default DashboardPage;
+export default KlasifikasiAsetPage;
