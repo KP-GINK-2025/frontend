@@ -5,6 +5,8 @@
 - **React**: A declarative and efficient JavaScript library for building user interfaces.
 - **Vite**: A next-generation frontend build tool that provides an incredibly fast development experience.
 - **Tailwind CSS**: A utility-first CSS framework that lets you build custom designs rapidly directly in your markup.
+- **React Router DOM**: A collection of navigational components that compose declaratively with your application.
+- **Lucide Icons**: A beautiful & consistent icon toolkit based on Feather Icons.
 
 ## Getting Started
 
@@ -22,8 +24,8 @@ Make sure you have the following installed:
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/your-username/e-rekon-frontend.git
-   cd e-rekon-frontend
+   git clone https://github.com/KP-GINK-2025/frontend.git
+   cd frontend
    ```
 
 2. Install dependencies:
@@ -32,6 +34,28 @@ Make sure you have the following installed:
    npm install
    # or
    yarn install
+   ```
+
+3. Install Tailwind CSS:
+
+   ```bash
+   npm install tailwindcss @tailwindcss/vite
+   ```
+
+4. Install React Router DOM:
+
+   ```bash
+   npm install react-router-dom
+   # or
+   yarn add react-router-dom
+   ```
+
+5. Install Lucide Icons:
+
+   ```bash
+   npm install lucide-react
+   # or
+   yarn add lucide-react
    ```
 
 ### Running the Application
