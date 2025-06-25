@@ -16,6 +16,12 @@ import ObjekPage from "./pages/klasifikasi/klasifikasi-aset/ObjekPage";
 import RincianObjekPage from "./pages/klasifikasi/klasifikasi-aset/RincianObjekPage";
 import SubRincianPage from "./pages/klasifikasi/klasifikasi-aset/SubRincianPage";
 import SubSubRincianPage from "./pages/klasifikasi/klasifikasi-aset/SubSubRincianPage";
+import DataRuangPage from "./pages/data-ruang/DataRuangPage";
+import SaldoAwalPage from "./pages/saldo-awal/SaldoAwalPage";
+import LraPage from "./pages/lra/LraPage";
+import KeuanganPage from "./pages/keuangan/KeuanganPage";
+import LaporanPage from "./pages/laporan/LaporanPage";
+import PengaturanPage from "./pages/pengaturan/PengaturanPage";
 
 function App() {
   return (
@@ -23,8 +29,10 @@ function App() {
       <Routes>
         <Route path="/" element={<LoginPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/klasifikasi" element={<KlasifikasiPage />} />
 
+        {/* Klasifikasi Start */}
+        <Route path="/klasifikasi" element={<KlasifikasiPage />} />
+        {/* Klasifikasi Instansi */}
         <Route
           path="/klasifikasi/instansi"
           element={<KlasifikasiInstansiPage />}
@@ -36,7 +44,7 @@ function App() {
           element={<SubUnitPage />}
         />
         <Route path="/klasifikasi/instansi/upb" element={<UpbPage />} />
-
+        {/* Klasifikasi Aset */}
         <Route path="/klasifikasi/aset" element={<KlasifikasiAsetPage />} />
         <Route path="/klasifikasi/aset/akun" element={<AkunPage />} />
         <Route path="/klasifikasi/aset/kelompok" element={<KelompokPage />} />
@@ -54,6 +62,26 @@ function App() {
           path="/klasifikasi/aset/sub-sub-rincian"
           element={<SubSubRincianPage />}
         />
+        {/* Klasifikasi End */}
+
+        {/* Data Ruang */}
+        <Route path="/data-ruang" element={<DataRuangPage />} />
+        {/* Saldo Awal */}
+        <Route path="/saldo-awal" element={<SaldoAwalPage />} />
+        {/* LRA */}
+        <Route path="/lra" element={<LraPage />} />
+
+        {/* Keuangan Start */}
+        <Route path="/keuangan" element={<KeuanganPage />} />
+        {/* Keuangan End */}
+
+        {/* Laporan Start */}
+        <Route path="/laporan" element={<LaporanPage />} />
+        {/* Laporan End */}
+
+        {/* Pengaturan Start */}
+        <Route path="/pengaturan" element={<PengaturanPage />} />
+        {/* Pengaturan End */}
       </Routes>
     </Router>
   );

@@ -33,6 +33,7 @@ const DashboardPage = () => {
       {/* Content */}
       <div className="px-8 py-8">
         <Breadcrumbs />
+        <h1 className="text-2xl font-bold mb-4 mt-4">Dashboard</h1>
         <div className="flex flex-col items-center gap-y-6 mt-8">
           {" "}
           {/* Tambahkan margin top untuk pemisah dari judul */}
