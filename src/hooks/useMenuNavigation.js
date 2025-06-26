@@ -5,26 +5,9 @@ const useMenuNavigation = () => {
 
   const handleMenuItemClick = (itemName) => {
     switch (itemName) {
+      // Klasifikasi Start
       case "Klasifikasi":
         navigate("/klasifikasi");
-        break;
-      case "Data Ruang":
-        navigate("/data-ruang");
-        break;
-      case "Saldo Awal":
-        navigate("/saldo-awal");
-        break;
-      case "LRA":
-        navigate("/lra");
-        break;
-      case "Keuangan":
-        navigate("/keuangan");
-        break;
-      case "Laporan":
-        navigate("/laporan");
-        break;
-      case "Pengaturan":
-        navigate("/pengaturan");
         break;
       case "Klasifikasi Instansi":
         navigate("/klasifikasi/instansi");
@@ -65,6 +48,44 @@ const useMenuNavigation = () => {
       case "Sub Sub Rincian":
         navigate("/klasifikasi/aset/sub-sub-rincian");
         break;
+      // Klasifikasi End
+
+      // Data Ruang Start
+      case "Data Ruang":
+        navigate("/data-ruang");
+        break;
+      // Data Ruang End
+
+      // Saldo Awal Start
+      case "Saldo Awal":
+        navigate("/saldo-awal");
+        break;
+      // Saldo Awal End
+
+      // LRA Start
+      case "LRA":
+        navigate("/lra");
+        break;
+      // LRA End
+
+      // Keuangan Start
+      case "Keuangan":
+        navigate("/keuangan");
+        break;
+      // Keuangan End
+
+      // Laporan Start
+      case "Laporan":
+        navigate("/laporan");
+        break;
+      // Laporan End
+
+      // Pengaturan Start
+      case "Pengaturan":
+        navigate("/pengaturan");
+        break;
+      // Pengaturan End
+
       default:
         console.log("Menu clicked: ", { itemName });
         break;

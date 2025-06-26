@@ -13,9 +13,11 @@ const BidangPage = () => {
   useEffect(() => {
     setTimeout(() => {
       setBidangData([
+
         // Example data (can be replaced)
         // { id: 1, kodeBidang: "BD001", namaBidang: "Bidang Keuangan", kode: "BK" },
         // { id: 2, kodeBidang: "BD002", namaBidang: "Bidang SDM", kode: "BSDM" },
+
       ]);
       setLoading(false);
     }, 1000);
@@ -42,9 +44,11 @@ const BidangPage = () => {
     setSearchTerm("");
     setCurrentPage(1);
     setTimeout(() => {
+
       setBidangData([
         // Example refresh data
       ]);
+
       setLoading(false);
     }, 1000);
   };
@@ -70,6 +74,7 @@ const BidangPage = () => {
 
         {/* Export Button */}
         <div className="flex justify-end mt-4 mb-4">
+
           <button
             onClick={handleExport}
             className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
@@ -124,6 +129,7 @@ const BidangPage = () => {
 
             <div className="relative w-full md:w-64">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+
               <input
                 type="text"
                 placeholder="Search"
@@ -139,10 +145,18 @@ const BidangPage = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Action</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Kode Bidang</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Nama Bidang</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Kode</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                    Action
+                  </th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                    Kode Bidang
+                  </th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                    Nama Bidang
+                  </th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                    Kode
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -160,15 +174,24 @@ const BidangPage = () => {
                   </tr>
                 ) : (
                   currentData.map((item, index) => (
-                    <tr key={item.id || index} className="border-b border-gray-100 hover:bg-gray-50">
+                    <tr
+                      key={item.id || index}
+                      className="border-b border-gray-100 hover:bg-gray-50"
+                    >
                       <td className="py-3 px-4">
                         <div className="flex gap-2">
+
                           <button className="text-blue-600 hover:text-blue-800 text-sm">Edit</button>
                           <button className="text-red-600 hover:text-red-800 text-sm">Delete</button>
+
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-gray-700">{item.kodeBidang}</td>
-                      <td className="py-3 px-4 text-gray-700">{item.namaBidang}</td>
+                      <td className="py-3 px-4 text-gray-700">
+                        {item.kodeBidang}
+                      </td>
+                      <td className="py-3 px-4 text-gray-700">
+                        {item.namaBidang}
+                      </td>
                       <td className="py-3 px-4 text-gray-700">{item.kode}</td>
                     </tr>
                   ))
@@ -180,7 +203,8 @@ const BidangPage = () => {
           {/* Pagination */}
           <div className="flex justify-between items-center mt-6">
             <div className="text-sm text-gray-600">
-              Show {Math.min(startIndex + 1, totalEntries)} to {Math.min(endIndex, totalEntries)} of {totalEntries} entries
+              Show {Math.min(startIndex + 1, totalEntries)} to{" "}
+              {Math.min(endIndex, totalEntries)} of {totalEntries} entries
             </div>
 
             <div className="flex gap-2">
