@@ -5,9 +5,9 @@ import { Link, useLocation } from "react-router-dom";
 const Breadcrumbs = () => {
   const location = useLocation(); // Hook untuk mendapatkan informasi lokasi URL saat ini
   const pathnames = location.pathname
-  .split("/")
-  .filter((x) => x && x.toLowerCase() !== "dashboard");
- // Memecah pathname menjadi bagian-bagian
+    .split("/")
+    .filter((x) => x && x.toLowerCase() !== "dashboard");
+  // Memecah pathname menjadi bagian-bagian
 
   // Fungsi untuk mengonversi slug path menjadi teks yang rapi (contoh: "data-ruang" menjadi "Data Ruang")
   const formatBreadcrumbText = (slug) => {
@@ -49,7 +49,7 @@ const Breadcrumbs = () => {
         <li className="inline-flex items-center">
           <Link
             to="/dashboard"
-            className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white"
+            className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-600"
           >
             <svg
               className="w-3 h-3 me-2.5"
@@ -95,7 +95,7 @@ const Breadcrumbs = () => {
                   ) : (
                     <Link
                       to={routeTo}
-                      className="ms-1 text-sm font-medium text-gray-700 hover:text-blue-600 md:ms-2 dark:text-gray-400 dark:hover:text-white"
+                      className="ms-1 text-sm font-medium text-gray-700 hover:text-red-600 md:ms-2 dark:text-gray-400 dark:hover:text-red-600"
                     >
                       {formatBreadcrumbText(name)}
                     </Link>

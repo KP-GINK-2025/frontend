@@ -26,23 +26,13 @@ const PengaturanPage = () => {
         <h1 className="text-2xl font-bold mb-4 mt-4">Pengaturan</h1>
       </div>
       <div className="flex flex-col items-center gap-y-6">
-        <div className="grid grid-cols-2 gap-6">
-          {menuItems.slice(0, 2).map((item, index) => (
+        <div className="grid grid-cols-4 gap-8">
+          {menuItems.slice(0, 4).map((item, index) => (
             <MenuItem
               key={index}
               name={item.name}
               icon={item.icon}
-              onClick={() => handleMenuItemClick(item.name.toString())}
-            />
-          ))}
-        </div>
-        <div className="grid grid-cols-2 gap-6">
-          {menuItems.slice(2, 4).map((item, index) => (
-            <MenuItem
-              key={index}
-              name={item.name}
-              icon={item.icon}
-              onClick={() => handleMenuItemClick(item.name.toString())}
+              onClick={() => handleMenuItemClick(item.name)}
             />
           ))}
         </div>

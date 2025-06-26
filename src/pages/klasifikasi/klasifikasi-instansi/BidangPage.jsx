@@ -17,8 +17,13 @@ const BidangPage = () => {
       setBidangData([
         // Add your bidang data here when available
         // Example:
-        // { id: 1, kodeBidang: "BD001", namaBidang: "Bidang Keuangan", kode: "BK" },
-        // { id: 2, kodeBidang: "BD002", namaBidang: "Bidang SDM", kode: "BSDM" },
+        {
+          id: 1,
+          kodeBidang: "1",
+          namaBidang: "Keuangan",
+          kode: "BK",
+        },
+        { id: 2, kodeBidang: "2", namaBidang: "SDM", kode: "BSDM" },
       ]);
       setLoading(false);
     }, 1000);
@@ -50,12 +55,12 @@ const BidangPage = () => {
     setCurrentPage(1);
     // Simulate API call for refresh
     setTimeout(() => {
-      setBidangData([
-        // Refresh data - replace with actual API call
-        // Example:
-        // { id: 1, kodeBidang: "BD001", namaBidang: "Bidang Keuangan", kode: "BK" },
-        // { id: 2, kodeBidang: "BD002", namaBidang: "Bidang SDM", kode: "BSDM" },
-      ]);
+      // setBidangData([
+      //   Refresh data - replace with actual API call
+      //   Example:
+      //   { id: 1, kodeBidang: "BD001", namaBidang: "Bidang Keuangan", kode: "BK" },
+      //   { id: 2, kodeBidang: "BD002", namaBidang: "Bidang SDM", kode: "BSDM" },
+      // ]);
       setLoading(false);
     }, 1000);
   };
@@ -86,10 +91,10 @@ const BidangPage = () => {
       {/* Content */}
       <div className="px-8 py-8">
         <Breadcrumbs />
-        
+
         {/* Page Header */}
         <div className="flex justify-between items-center mt-4 mb-6">
-          <h1 className="text-2xl font-bold">Data Bidang</h1>
+          <h1 className="text-2xl font-bold">Bidang</h1>
           <button
             onClick={handleExport}
             className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
@@ -140,7 +145,10 @@ const BidangPage = () => {
             </div>
 
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+              <Search
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={16}
+              />
               <input
                 type="text"
                 placeholder="Search"
@@ -156,10 +164,18 @@ const BidangPage = () => {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Action</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Kode Bidang</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Nama Bidang</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Kode</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                    Action
+                  </th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                    Kode Bidang
+                  </th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                    Nama Bidang
+                  </th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                    Kode
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -177,19 +193,26 @@ const BidangPage = () => {
                   </tr>
                 ) : (
                   currentData.map((item, index) => (
-                    <tr key={item.id || index} className="border-b border-gray-100 hover:bg-gray-50">
+                    <tr
+                      key={item.id || index}
+                      className="border-b border-gray-100 hover:bg-gray-50"
+                    >
                       <td className="py-3 px-4">
                         <div className="flex gap-2">
-                          <button className="text-blue-600 hover:text-blue-800 text-sm">
+                          <button className="text-blue-600 hover:text-blue-900 text-sm cursor-pointer">
                             Edit
                           </button>
-                          <button className="text-red-600 hover:text-red-800 text-sm">
+                          <button className="text-red-600 hover:text-red-900 text-sm cursor-pointer">
                             Delete
                           </button>
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-gray-700">{item.kodeBidang}</td>
-                      <td className="py-3 px-4 text-gray-700">{item.namaBidang}</td>
+                      <td className="py-3 px-4 text-gray-700">
+                        {item.kodeBidang}
+                      </td>
+                      <td className="py-3 px-4 text-gray-700">
+                        {item.namaBidang}
+                      </td>
                       <td className="py-3 px-4 text-gray-700">{item.kode}</td>
                     </tr>
                   ))
@@ -201,9 +224,10 @@ const BidangPage = () => {
           {/* Pagination */}
           <div className="flex justify-between items-center mt-6">
             <div className="text-sm text-gray-600">
-              Show {Math.min(startIndex + 1, totalEntries)} to {Math.min(endIndex, totalEntries)} of {totalEntries} entries
+              Show {Math.min(startIndex + 1, totalEntries)} to{" "}
+              {Math.min(endIndex, totalEntries)} of {totalEntries} entries
             </div>
-            
+
             <div className="flex gap-2">
               <button
                 onClick={handlePreviousPage}

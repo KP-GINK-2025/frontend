@@ -36,10 +36,8 @@ const DashboardPage = () => {
         <h1 className="text-2xl font-bold mb-4 mt-4">Dashboard</h1>
         <div className="flex flex-col items-center gap-y-6 mt-8">
           {" "}
-          {/* Tambahkan margin top untuk pemisah dari judul */}
-          {/* Baris Pertama: 3 item */}
-          <div className="grid grid-cols-3 gap-6">
-            {menuItems.slice(0, 3).map((item, index) => (
+          <div className="grid grid-cols-7 gap-8">
+            {menuItems.slice(0, 9).map((item, index) => (
               <MenuItem
                 key={index}
                 name={item.name}
@@ -47,36 +45,6 @@ const DashboardPage = () => {
                 onClick={() => handleMenuItemClick(item.name)}
               />
             ))}
-          </div>
-          {/* Baris Kedua: 3 item */}
-          <div className="grid grid-cols-3 gap-6 mt-2">
-            {menuItems.slice(3, 6).map((item, index) => (
-              <MenuItem
-                key={index}
-                name={item.name}
-                icon={item.icon}
-                onClick={() => handleMenuItemClick(item.name)}
-              />
-            ))}
-          </div>
-          {/* Baris Ketiga: 1 item di tengah */}
-          <div className="grid grid-cols-3 gap-6 mt-2">
-            {menuItems.slice(6, 7).map(
-              (
-                item,
-                index // Hanya ambil 1 item terakhir
-              ) => (
-                <div key={index} className="col-start-2">
-                  {" "}
-                  {/* Gunakan col-start-2 untuk menempatkan di tengah */}
-                  <MenuItem
-                    name={item.name}
-                    icon={item.icon}
-                    onClick={() => handleMenuItemClick(item.name)}
-                  />
-                </div>
-              )
-            )}
           </div>
         </div>{" "}
       </div>

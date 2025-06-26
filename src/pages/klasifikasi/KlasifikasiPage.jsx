@@ -24,7 +24,7 @@ const KlasifikasiPage = () => {
         <h1 className="text-2xl font-bold mb-4 mt-4">Klasifikasi</h1>
       </div>
       <div className="flex flex-col items-center gap-y-6">
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 gap-8">
           {menuItems.slice(0, 2).map((item, index) => (
             <MenuItem
               key={index}
