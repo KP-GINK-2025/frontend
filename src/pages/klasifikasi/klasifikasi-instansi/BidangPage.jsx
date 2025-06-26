@@ -211,14 +211,14 @@ const BidangPage = () => {
               <button
                 onClick={handlePreviousPage}
                 disabled={currentPage === 1}
-                className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-100 cursor-pointer"
               >
                 Previous
               </button>
               <button
                 onClick={handleNextPage}
                 disabled={currentPage === totalPages || totalPages === 0}
-                className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-100 cursor-pointer"
               >
                 Next
               </button>

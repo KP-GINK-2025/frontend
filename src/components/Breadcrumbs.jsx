@@ -19,6 +19,8 @@ const Breadcrumbs = () => {
         return "Klasifikasi";
       case "instansi":
         return "Instansi";
+      case "upb":
+        return "UPB";
       case "aset":
         return "Aset";
       case "data-ruang":
