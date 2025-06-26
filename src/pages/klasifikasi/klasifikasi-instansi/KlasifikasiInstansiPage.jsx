@@ -23,7 +23,7 @@ const KlasifikasiInstansiPage = () => {
       {/* Content */}
       <div className="px-8 py-8">
         <Breadcrumbs />
-        <h1 className="text-2xl font-bold mb-4 mt-4">Klasifikasi Instansi</h1>
+        <h1 className="text-2xl font-bold mb-6 mt-4">Klasifikasi Instansi</h1>
       </div>
       <div className="flex flex-col items-center gap-y-6">
         <div className="grid grid-cols-2 gap-6">
