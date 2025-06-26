@@ -1,16 +1,18 @@
 import React from "react";
-import { Landmark, ChartPie } from "lucide-react";
+import { Settings } from "lucide-react";
 import Navbar from "../../components/Navbar";
 import MenuItem from "../../components/MenuItem";
 import useMenuNavigation from "../../hooks/useMenuNavigation";
 import Breadcrumbs from "../../components/Breadcrumbs";
 
 const menuItems = [
-  { name: "Klasifikasi Instansi", icon: Landmark },
-  { name: "Klasifikasi Aset", icon: ChartPie },
+  { name: "Group", icon: Settings },
+  { name: "Pengguna", icon: Settings },
+  { name: "Sistem", icon: Settings },
+  { name: "Updating Data", icon: Settings },
 ];
 
-const KlasifikasiPage = () => {
+const PengaturanPage = () => {
   const { handleMenuItemClick } = useMenuNavigation();
 
   return (
@@ -21,16 +23,16 @@ const KlasifikasiPage = () => {
       {/* Content */}
       <div className="px-8 py-8">
         <Breadcrumbs />
-        <h1 className="text-2xl font-bold mb-4 mt-4">Klasifikasi</h1>
+        <h1 className="text-2xl font-bold mb-4 mt-4">Pengaturan</h1>
       </div>
       <div className="flex flex-col items-center gap-y-6">
-        <div className="grid grid-cols-2 gap-8">
-          {menuItems.slice(0, 2).map((item, index) => (
+        <div className="grid grid-cols-4 gap-8">
+          {menuItems.slice(0, 4).map((item, index) => (
             <MenuItem
               key={index}
               name={item.name}
               icon={item.icon}
-              onClick={() => handleMenuItemClick(item.name.toString())}
+              onClick={() => handleMenuItemClick(item.name)}
             />
           ))}
         </div>
@@ -39,4 +41,4 @@ const KlasifikasiPage = () => {
   );
 };
 
-export default KlasifikasiPage;
+export default PengaturanPage;
