@@ -116,7 +116,7 @@ const AkunPage = () => {
                   setEntriesPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="border border-gray-300 rounded px-3 py-1 text-sm"
+                className="border border-gray-300 rounded px-3 py-1 text-sm cursor-pointer"
               >
                 <option value={10}>10</option>
                 <option value={25}>25</option>
@@ -181,10 +181,10 @@ const AkunPage = () => {
                     >
                       <td className="py-3 px-4">
                         <div className="flex gap-2">
-                          <button className="text-blue-600 hover:text-blue-800 text-sm">
+                          <button className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer">
                             Edit
                           </button>
-                          <button className="text-red-600 hover:text-red-800 text-sm">
+                          <button className="text-red-600 hover:text-red-800 text-sm cursor-pointer">
                             Delete
                           </button>
                         </div>
