@@ -1,7 +1,10 @@
+// pages/klasifikasi/klasifikasi-instansi/bidang/UnitPage.jsx (asumsi ini adalah path yang benar)
+
 import React, { useState, useEffect } from "react";
 import Navbar from "../../../../components/Navbar";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
+import AddUnitModal from "./AddUnitModal";
 
 const UnitPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -12,26 +15,18 @@ const UnitPage = () => {
   const [selectedBidang, setSelectedBidang] = useState("");
   const [loading, setLoading] = useState(true);
 
+  // State untuk mengontrol visibilitas modal
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
   // Mock data - replace with actual API call
   useEffect(() => {
     // Simulate API call for bidang dropdown data
     setTimeout(() => {
       setBidangData([
-        { id: 1, kodeBidang: "BD001", namaBidang: "Bidang Keuangan" },
-        { id: 2, kodeBidang: "BD002", namaBidang: "Bidang SDM" },
-        { id: 3, kodeBidang: "BD003", namaBidang: "Bidang Perencanaan" },
         // Add more bidang data as needed
       ]);
       setUnitData([
-        // Add your unit data here when available
-        // Example:
-        // {
-        //   id: 1,
-        //   bidang: "Bidang Keuangan",
-        //   kodeUnit: "UN001",
-        //   namaUnit: "Unit Anggaran",
-        //   kode: "UA"
-        // },
+        // Contoh data awal (bisa Anda ganti dengan data dari API)
       ]);
       setLoading(false);
     }, 1000);
@@ -43,7 +38,9 @@ const UnitPage = () => {
       item.namaUnit?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.kodeUnit?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.kode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.bidang?.toLowerCase().includes(searchTerm.toLowerCase());
+      item.bidang?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.provinsi?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.kabKot?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesBidang =
       selectedBidang === "" || item.bidang === selectedBidang;
@@ -68,19 +65,33 @@ const UnitPage = () => {
     setSearchTerm("");
     setSelectedBidang("");
     setCurrentPage(1);
-    // Simulate API call for refresh
+
     setTimeout(() => {
-      setUnitData([
-        // Refresh data - replace with actual API call
-      ]);
+      // Isi ulang data yang hilang, jangan dikosongkan
       setLoading(false);
     }, 1000);
   };
 
-  const handleAddUnit = () => {
-    // Implement add unit functionality
-    console.log("Adding new unit...");
-    // You can navigate to add form or open modal here
+  const handleOpenAddModal = () => {
+    setIsAddModalOpen(true);
+  };
+
+  const handleCloseAddModal = () => {
+    setIsAddModalOpen(false);
+  };
+
+  // Fungsi untuk menangani data yang disimpan dari modal
+  const handleSaveNewUnit = (newUnit) => {
+    console.log("Menyimpan data unit baru:", newUnit);
+    // Di sini Anda akan:
+    // 1. Mengirim data `newUnit` ke backend API Anda (menggunakan fetch, axios, dll.)
+    // 2. Jika berhasil, perbarui state `unitData` agar tabel menampilkan data baru
+    //    Pastikan `newUnit` memiliki ID yang unik jika API Anda tidak memberikannya
+    setUnitData((prevData) => [
+      ...prevData,
+      { id: Date.now(), ...newUnit }, // Gunakan Date.now() sebagai ID sementara
+    ]);
+    handleCloseAddModal(); // Tutup modal setelah data disimpan
   };
 
   const handlePreviousPage = () => {
@@ -151,7 +162,7 @@ const UnitPage = () => {
                 Refresh
               </button>
               <button
-                onClick={handleAddUnit}
+                onClick={handleOpenAddModal}
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
                 <Plus size={16} />
@@ -204,6 +215,14 @@ const UnitPage = () => {
                     Action
                   </th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                    Provinsi
+                  </th>{" "}
+                  {/* <-- Tambah header ini */}
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                    Kabupaten/Kota
+                  </th>{" "}
+                  {/* <-- Tambah header ini */}
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">
                     Bidang
                   </th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-700">
@@ -220,13 +239,17 @@ const UnitPage = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="5" className="text-center py-8 text-gray-500">
+                    <td colSpan="7" className="text-center py-8 text-gray-500">
+                      {" "}
+                      {/* colspan disesuaikan */}
                       Loading...
                     </td>
                   </tr>
                 ) : currentData.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="text-center py-8 text-gray-500">
+                    <td colSpan="7" className="text-center py-8 text-gray-500">
+                      {" "}
+                      {/* colspan disesuaikan */}
                       No data available in table
                     </td>
                   </tr>
@@ -246,6 +269,14 @@ const UnitPage = () => {
                           </button>
                         </div>
                       </td>
+                      <td className="py-3 px-4 text-gray-700">
+                        {item.provinsi}
+                      </td>{" "}
+                      {/* <-- Tambah render data ini */}
+                      <td className="py-3 px-4 text-gray-700">
+                        {item.kabKot}
+                      </td>{" "}
+                      {/* <-- Tambah render data ini */}
                       <td className="py-3 px-4 text-gray-700">{item.bidang}</td>
                       <td className="py-3 px-4 text-gray-700">
                         {item.kodeUnit}
@@ -287,6 +318,13 @@ const UnitPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Komponen AddUnitModal */}
+      <AddUnitModal
+        isOpen={isAddModalOpen}
+        onClose={handleCloseAddModal}
+        onSave={handleSaveNewUnit} // Memastikan onSave menerima data yang lengkap
+      />
     </div>
   );
 };
