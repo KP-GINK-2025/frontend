@@ -1,6 +1,6 @@
 import React from "react";
-import Navbar from "../../../components/Navbar";
-import Breadcrumbs from "../../../components/Breadcrumbs";
+import Navbar from "../../../../components/Navbar";
+import Breadcrumbs from "../../../../components/Breadcrumbs";
 
 const RincianObjekPage = () => {
   return (
