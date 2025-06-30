@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import Navbar from "../../../components/Navbar";
-import Breadcrumbs from "../../../components/Breadcrumbs";
+import Navbar from "../../../../components/Navbar";
+import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
 
 const SubUnitPage = () => {
@@ -35,7 +35,8 @@ const SubUnitPage = () => {
       item.kodeSubUnit?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.kode?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesBidang = selectedBidang === "" || item.bidang === selectedBidang;
+    const matchesBidang =
+      selectedBidang === "" || item.bidang === selectedBidang;
     const matchesUnit = selectedUnit === "" || item.unit === selectedUnit;
 
     return matchesSearch && matchesBidang && matchesUnit;
@@ -49,25 +50,27 @@ const SubUnitPage = () => {
 
   const handleExport = () => console.log("Exporting unit data...");
   const handleRefresh = () => {
-  setLoading(true);
-  setSearchTerm("");
-  setSelectedBidang("");
-  setSelectedUnit("");
-  setCurrentPage(1);
+    setLoading(true);
+    setSearchTerm("");
+    setSelectedBidang("");
+    setSelectedUnit("");
+    setCurrentPage(1);
 
-  setTimeout(() => {
-    // Isi ulang data yang hilang, jangan dikosongkan
-    setUnitData([
-      { id: 1, namaUnit: "Unit Anggaran" },
-      { id: 2, namaUnit: "Unit Gaji" },
-    ]);
-    setLoading(false);
-  }, 1000);
-};
+    setTimeout(() => {
+      // Isi ulang data yang hilang, jangan dikosongkan
+      setUnitData([
+        { id: 1, namaUnit: "Unit Anggaran" },
+        { id: 2, namaUnit: "Unit Gaji" },
+      ]);
+      setLoading(false);
+    }, 1000);
+  };
 
   const handleAddUnit = () => console.log("Adding new unit...");
-  const handlePreviousPage = () => currentPage > 1 && setCurrentPage(currentPage - 1);
-  const handleNextPage = () => currentPage < totalPages && setCurrentPage(currentPage + 1);
+  const handlePreviousPage = () =>
+    currentPage > 1 && setCurrentPage(currentPage - 1);
+  const handleNextPage = () =>
+    currentPage < totalPages && setCurrentPage(currentPage + 1);
 
   return (
     <div className="min-h-screen bg-[#f7f7f7]">
@@ -101,7 +104,9 @@ const SubUnitPage = () => {
                 >
                   <option value="">-- Pilih Bidang --</option>
                   {bidangData.map((b) => (
-                    <option key={b.id} value={b.namaBidang}>{b.namaBidang}</option>
+                    <option key={b.id} value={b.namaBidang}>
+                      {b.namaBidang}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -116,7 +121,9 @@ const SubUnitPage = () => {
                 >
                   <option value="">-- Pilih Unit --</option>
                   {unitData.map((u) => (
-                    <option key={u.id} value={u.namaUnit}>{u.namaUnit}</option>
+                    <option key={u.id} value={u.namaUnit}>
+                      {u.namaUnit}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -138,7 +145,7 @@ const SubUnitPage = () => {
               </button>
             </div>
           </div>
-          
+
           <div className="flex justify-between items-center mb-6 text-sm text-gray-600">
             <div className="flex items-center gap-2">
               Show
@@ -151,19 +158,24 @@ const SubUnitPage = () => {
                 className="border border-gray-300 rounded px-2 py-1"
               >
                 {[10, 25, 50, 100].map((n) => (
-                  <option key={n} value={n}>{n}</option>
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
                 ))}
               </select>
               entries
             </div>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+              <Search
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={16}
+              />
               <input
                 type="text"
                 placeholder="Search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:outline-none"
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -172,33 +184,60 @@ const SubUnitPage = () => {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200">
-                  {["Action", "Bidang", "Unit", "Kode Sub Unit", "Nama Sub Unit", "Kode"].map((h) => (
-                    <th key={h} className="text-left py-3 px-4 font-semibold text-gray-700">{h}</th>
+                  {[
+                    "Action",
+                    "Bidang",
+                    "Unit",
+                    "Kode Sub Unit",
+                    "Nama Sub Unit",
+                    "Kode",
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="text-left py-3 px-4 font-semibold text-gray-700"
+                    >
+                      {h}
+                    </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="6" className="text-center py-8 text-gray-500">Loading...</td>
+                    <td colSpan="6" className="text-center py-8 text-gray-500">
+                      Loading...
+                    </td>
                   </tr>
                 ) : currentData.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="text-center py-8 text-gray-500">No data available in table</td>
+                    <td colSpan="6" className="text-center py-8 text-gray-500">
+                      No data available in table
+                    </td>
                   </tr>
                 ) : (
                   currentData.map((item, index) => (
-                    <tr key={item.id || index} className="border-b border-gray-100 hover:bg-gray-50">
+                    <tr
+                      key={item.id || index}
+                      className="border-b border-gray-100 hover:bg-gray-50"
+                    >
                       <td className="py-3 px-4">
                         <div className="flex gap-2">
-                          <button className="text-blue-600 hover:text-blue-800 text-sm">Edit</button>
-                          <button className="text-red-600 hover:text-red-800 text-sm">Delete</button>
+                          <button className="text-blue-600 hover:text-blue-800 text-sm">
+                            Edit
+                          </button>
+                          <button className="text-red-600 hover:text-red-800 text-sm">
+                            Delete
+                          </button>
                         </div>
                       </td>
                       <td className="py-3 px-4 text-gray-700">{item.bidang}</td>
                       <td className="py-3 px-4 text-gray-700">{item.unit}</td>
-                      <td className="py-3 px-4 text-gray-700">{item.kodeSubUnit}</td>
-                      <td className="py-3 px-4 text-gray-700">{item.namaSubUnit}</td>
+                      <td className="py-3 px-4 text-gray-700">
+                        {item.kodeSubUnit}
+                      </td>
+                      <td className="py-3 px-4 text-gray-700">
+                        {item.namaSubUnit}
+                      </td>
                       <td className="py-3 px-4 text-gray-700">{item.kode}</td>
                     </tr>
                   ))
@@ -209,7 +248,8 @@ const SubUnitPage = () => {
 
           <div className="flex justify-between items-center mt-6 text-sm text-gray-600">
             <div>
-              Show {Math.min(startIndex + 1, totalEntries)} to {Math.min(endIndex, totalEntries)} of {totalEntries} entries
+              Show {Math.min(startIndex + 1, totalEntries)} to{" "}
+              {Math.min(endIndex, totalEntries)} of {totalEntries} entries
             </div>
             <div className="flex gap-2">
               <button
@@ -228,7 +268,6 @@ const SubUnitPage = () => {
               </button>
             </div>
           </div>
-
         </div>
       </div>
     </div>

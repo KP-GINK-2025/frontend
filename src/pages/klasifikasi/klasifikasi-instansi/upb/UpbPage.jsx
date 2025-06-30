@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import Navbar from "../../../components/Navbar";
-import Breadcrumbs from "../../../components/Breadcrumbs";
+import Navbar from "../../../../components/Navbar";
+import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
 
 const UpbPage = () => {
@@ -43,9 +43,11 @@ const UpbPage = () => {
       item.namaUpb?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.kodeUpb?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesBidang = selectedBidang === "" || item.bidang === selectedBidang;
+    const matchesBidang =
+      selectedBidang === "" || item.bidang === selectedBidang;
     const matchesUnit = selectedUnit === "" || item.unit === selectedUnit;
-    const matchesSubUnit = selectedSubUnit === "" || item.subUnit === selectedSubUnit;
+    const matchesSubUnit =
+      selectedSubUnit === "" || item.subUnit === selectedSubUnit;
 
     return matchesSearch && matchesBidang && matchesUnit && matchesSubUnit;
   });
@@ -99,7 +101,9 @@ const UpbPage = () => {
             >
               <option value=""> -- Pilih Bidang -- </option>
               {bidangData.map((b) => (
-                <option key={b.id} value={b.nama}>{b.nama}</option>
+                <option key={b.id} value={b.nama}>
+                  {b.nama}
+                </option>
               ))}
             </select>
 
@@ -110,7 +114,9 @@ const UpbPage = () => {
             >
               <option value=""> -- Pilih Unit -- </option>
               {unitData.map((u) => (
-                <option key={u.id} value={u.nama}>{u.nama}</option>
+                <option key={u.id} value={u.nama}>
+                  {u.nama}
+                </option>
               ))}
             </select>
 
@@ -121,7 +127,9 @@ const UpbPage = () => {
             >
               <option value=""> -- Pilih Sub Unit -- </option>
               {subUnitData.map((s) => (
-                <option key={s.id} value={s.nama}>{s.nama}</option>
+                <option key={s.id} value={s.nama}>
+                  {s.nama}
+                </option>
               ))}
             </select>
 
@@ -155,19 +163,24 @@ const UpbPage = () => {
                 className="border border-gray-300 rounded px-2 py-1"
               >
                 {[10, 25, 50, 100].map((n) => (
-                  <option key={n} value={n}>{n}</option>
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
                 ))}
               </select>
               entries
             </div>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+              <Search
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={16}
+              />
               <input
                 type="text"
                 placeholder="Search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:outline-none"
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -176,8 +189,18 @@ const UpbPage = () => {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200 text-gray-700">
-                  {["Action", "Bidang", "Unit", "Sub Unit", "Kode UPB", "Nama UPB"].map((header) => (
-                    <th key={header} className="text-left py-3 px-4 font-semibold">
+                  {[
+                    "Action",
+                    "Bidang",
+                    "Unit",
+                    "Sub Unit",
+                    "Kode UPB",
+                    "Nama UPB",
+                  ].map((header) => (
+                    <th
+                      key={header}
+                      className="text-left py-3 px-4 font-semibold"
+                    >
                       {header}
                     </th>
                   ))}
@@ -186,19 +209,30 @@ const UpbPage = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="6" className="text-center py-8 text-gray-500">Loading...</td>
+                    <td colSpan="6" className="text-center py-8 text-gray-500">
+                      Loading...
+                    </td>
                   </tr>
                 ) : currentData.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="text-center py-8 text-gray-500">No data available in table</td>
+                    <td colSpan="6" className="text-center py-8 text-gray-500">
+                      No data available in table
+                    </td>
                   </tr>
                 ) : (
                   currentData.map((item, index) => (
-                    <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                    <tr
+                      key={index}
+                      className="border-b border-gray-100 hover:bg-gray-50"
+                    >
                       <td className="py-3 px-4">
                         <div className="flex gap-2">
-                          <button className="text-blue-600 hover:text-blue-800 text-sm">Edit</button>
-                          <button className="text-red-600 hover:text-red-800 text-sm">Delete</button>
+                          <button className="text-blue-600 hover:text-blue-800 text-sm">
+                            Edit
+                          </button>
+                          <button className="text-red-600 hover:text-red-800 text-sm">
+                            Delete
+                          </button>
                         </div>
                       </td>
                       <td className="py-3 px-4">{item.bidang}</td>
@@ -215,18 +249,23 @@ const UpbPage = () => {
 
           <div className="flex justify-between items-center mt-6 text-sm text-gray-600">
             <div>
-              Show {Math.min(startIndex + 1, totalEntries)} to {Math.min(endIndex, totalEntries)} of {totalEntries} entries
+              Show {Math.min(startIndex + 1, totalEntries)} to{" "}
+              {Math.min(endIndex, totalEntries)} of {totalEntries} entries
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
+                onClick={() =>
+                  currentPage > 1 && setCurrentPage(currentPage - 1)
+                }
                 disabled={currentPage === 1}
                 className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-100 cursor-pointer"
               >
                 Previous
               </button>
               <button
-                onClick={() => currentPage < totalPages && setCurrentPage(currentPage + 1)}
+                onClick={() =>
+                  currentPage < totalPages && setCurrentPage(currentPage + 1)
+                }
                 disabled={currentPage === totalPages || totalPages === 0}
                 className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-100 cursor-pointer"
               >
