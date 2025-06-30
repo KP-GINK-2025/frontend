@@ -1,5 +1,3 @@
-// pages/klasifikasi/klasifikasi-instansi/bidang/BidangPage.jsx
-
 import React, { useState, useEffect } from "react";
 import Navbar from "../../../../components/Navbar";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
@@ -21,14 +19,6 @@ const BidangPage = () => {
     setTimeout(() => {
       setBidangData([
         // Contoh data awal (bisa Anda ganti dengan data dari API)
-        {
-          id: 1,
-          kodeBidang: "BD001",
-          namaBidang: "Bidang Keuangan",
-          kode: "BK",
-        },
-        { id: 2, kodeBidang: "BD002", namaBidang: "Bidang SDM", kode: "BSDM" },
-        { id: 3, kodeBidang: "BD003", namaBidang: "Bidang Umum", kode: "BU" },
       ]);
       setLoading(false);
     }, 1000);
@@ -56,33 +46,17 @@ const BidangPage = () => {
     setLoading(true);
     setSearchTerm("");
     setCurrentPage(1);
-    // Simulasi refresh data
+
     setTimeout(() => {
-      setBidangData([
-        // Contoh data setelah refresh (misalnya, ambil lagi dari API)
-        {
-          id: 4,
-          kodeBidang: "BD004",
-          namaBidang: "Bidang Pemasaran",
-          kode: "BP",
-        },
-        {
-          id: 5,
-          kodeBidang: "BD005",
-          namaBidang: "Bidang Operasional",
-          kode: "BO",
-        },
-      ]);
+      // Isi ulang data yang hilang, jangan dikosongkan
       setLoading(false);
     }, 1000);
   };
 
-  // Fungsi untuk membuka modal "Add Bidang"
   const handleOpenAddModal = () => {
     setIsAddModalOpen(true);
   };
 
-  // Fungsi untuk menutup modal "Add Bidang"
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
   };
@@ -90,15 +64,15 @@ const BidangPage = () => {
   // Fungsi untuk menangani data yang disimpan dari modal
   const handleSaveNewBidang = (newBidang) => {
     console.log("Menyimpan data bidang baru:", newBidang);
-    // Di sini Anda akan:
-    // 1. Mengirim data `newBidang` ke backend API Anda (menggunakan fetch, axios, dll.)
+    // Di sini akan:
+    // 1. Mengirim data `newBidang` ke backend API (menggunakan fetch, axios, dll.)
     // 2. Jika berhasil, perbarui state `bidangData` agar tabel menampilkan data baru
-    //    Pastikan `newBidang` memiliki ID yang unik jika API Anda tidak memberikannya
+    //    Pastikan `newBidang` memiliki ID yang unik jika API tidak memberikannya
     setBidangData((prevData) => [
       ...prevData,
       { id: Date.now(), ...newBidang }, // Gunakan Date.now() sebagai ID sementara
     ]);
-    handleCloseAddModal(); // Tutup modal setelah data disimpan
+    handleCloseAddModal();
   };
 
   const handlePreviousPage = () => {

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Navbar from "../../../../components/Navbar";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
+import AddSubUnitModal from "./AddSubUnitModal";
 
 const SubUnitPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -14,16 +15,12 @@ const SubUnitPage = () => {
   const [selectedUnit, setSelectedUnit] = useState("");
   const [loading, setLoading] = useState(true);
 
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
   useEffect(() => {
     setTimeout(() => {
-      setBidangData([
-        { id: 1, namaBidang: "Bidang Keuangan" },
-        { id: 2, namaBidang: "Bidang SDM" },
-      ]);
-      setUnitData([
-        { id: 1, namaUnit: "Unit Anggaran" },
-        { id: 2, namaUnit: "Unit Gaji" },
-      ]);
+      setBidangData([]);
+      setUnitData([]);
       setSubUnitData([]);
       setLoading(false);
     }, 1000);
@@ -33,10 +30,17 @@ const SubUnitPage = () => {
     const matchesSearch =
       item.namaSubUnit?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.kodeSubUnit?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.kode?.toLowerCase().includes(searchTerm.toLowerCase());
+      item.kode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.namaUnit?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.kodeUnit?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.kode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.bidang?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.provinsi?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.kabKot?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesBidang =
       selectedBidang === "" || item.bidang === selectedBidang;
+
     const matchesUnit = selectedUnit === "" || item.unit === selectedUnit;
 
     return matchesSearch && matchesBidang && matchesUnit;
@@ -49,6 +53,7 @@ const SubUnitPage = () => {
   const currentData = filteredData.slice(startIndex, endIndex);
 
   const handleExport = () => console.log("Exporting unit data...");
+
   const handleRefresh = () => {
     setLoading(true);
     setSearchTerm("");
@@ -58,17 +63,35 @@ const SubUnitPage = () => {
 
     setTimeout(() => {
       // Isi ulang data yang hilang, jangan dikosongkan
-      setUnitData([
-        { id: 1, namaUnit: "Unit Anggaran" },
-        { id: 2, namaUnit: "Unit Gaji" },
-      ]);
       setLoading(false);
     }, 1000);
   };
 
-  const handleAddUnit = () => console.log("Adding new unit...");
+  const handleOpenAddModal = () => {
+    setIsAddModalOpen(true);
+  };
+
+  const handleCloseAddModal = () => {
+    setIsAddModalOpen(false);
+  };
+
+  // Fungsi untuk menangani data yang disimpan dari modal
+  const handleSaveNewUnit = (newUnit) => {
+    console.log("Menyimpan data unit baru:", newUnit);
+    // Di sini Anda akan:
+    // 1. Mengirim data `newUnit` ke backend API Anda (menggunakan fetch, axios, dll.)
+    // 2. Jika berhasil, perbarui state `unitData` agar tabel menampilkan data baru
+    //    Pastikan `newUnit` memiliki ID yang unik jika API Anda tidak memberikannya
+    setSubUnitData((prevData) => [
+      ...prevData,
+      { id: Date.now(), ...newUnit }, // Gunakan Date.now() sebagai ID sementara
+    ]);
+    handleCloseAddModal(); // Tutup modal setelah data disimpan
+  };
+
   const handlePreviousPage = () =>
     currentPage > 1 && setCurrentPage(currentPage - 1);
+
   const handleNextPage = () =>
     currentPage < totalPages && setCurrentPage(currentPage + 1);
 
@@ -138,7 +161,7 @@ const SubUnitPage = () => {
                 <RefreshCw size={16} /> Refresh
               </button>
               <button
-                onClick={handleAddUnit}
+                onClick={handleOpenAddModal}
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 cursor-pointer"
               >
                 <Plus size={16} /> Add Sub Unit
@@ -270,6 +293,11 @@ const SubUnitPage = () => {
           </div>
         </div>
       </div>
+      <AddSubUnitModal
+        isOpen={isAddModalOpen}
+        onClose={handleCloseAddModal}
+        onSave={handleSaveNewUnit}
+      />
     </div>
   );
 };
