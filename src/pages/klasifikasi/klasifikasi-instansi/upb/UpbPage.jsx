@@ -170,7 +170,7 @@ const UpbPage = () => {
               </select>
               entries
             </div>
-            <div className="relative">
+            <div className="relative w-full md:w-64">
               <Search
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                 size={16}
