@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Navbar from "../../../../components/Navbar";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
+import AddUpbModal from "./AddUpbModal"; // Import the AddUpbModal
 
 const UpbPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -18,21 +19,15 @@ const UpbPage = () => {
   const [selectedSubUnit, setSelectedSubUnit] = useState("");
 
   const [loading, setLoading] = useState(true);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false); // State for modal
 
   useEffect(() => {
+    // Simulate fetching data
     setTimeout(() => {
-      setBidangData([
-        { id: 1, nama: "Bidang Keuangan" },
-        { id: 2, nama: "Bidang Umum" },
-      ]);
-      setUnitData([
-        { id: 1, nama: "Unit Anggaran" },
-        { id: 2, nama: "Unit Gaji" },
-      ]);
-      setSubUnitData([
-        { id: 1, nama: "Sub Unit A" },
-        { id: 2, nama: "Sub Unit B" },
-      ]);
+      // In a real application, you would fetch this data from your backend
+      setBidangData([]);
+      setUnitData([]);
+      setSubUnitData([]);
       setUpbData([]);
       setLoading(false);
     }, 800);
@@ -41,7 +36,13 @@ const UpbPage = () => {
   const filteredData = upbData.filter((item) => {
     const matchesSearch =
       item.namaUpb?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.kodeUpb?.toLowerCase().includes(searchTerm.toLowerCase());
+      item.kodeUpb?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.kode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.provinsi?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.kabKot?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.bidang?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.unit?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.subUnit?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesBidang =
       selectedBidang === "" || item.bidang === selectedBidang;
@@ -59,21 +60,47 @@ const UpbPage = () => {
   const currentData = filteredData.slice(startIndex, endIndex);
 
   const handleExport = () => console.log("Exporting UPB data...");
+
   const handleRefresh = () => {
     setLoading(true);
     setSearchTerm("");
     setSelectedBidang("");
     setSelectedUnit("");
     setSelectedSubUnit("");
+    setCurrentPage(1); // Reset to first page on refresh
+    // In a real application, you would re-fetch data here
     setTimeout(() => {
-      setUnitData([
-        { id: 1, nama: "Unit Anggaran" },
-        { id: 2, nama: "Unit Gaji" },
-      ]);
+      // Re-populate dummy data or fetch from API
       setLoading(false);
     }, 800);
   };
-  const handleAddUpb = () => console.log("Add UPB clicked");
+
+  const handleOpenAddModal = () => {
+    setIsAddModalOpen(true);
+  };
+
+  const handleCloseAddModal = () => {
+    setIsAddModalOpen(false);
+  };
+
+  const handleSaveNewUpb = (newUpb) => {
+    console.log("Menyimpan data UPB baru:", newUpb);
+    // Di sini Anda akan:
+    // 1. Mengirim data `newUpb` ke backend API Anda (menggunakan fetch, axios, dll.)
+    // 2. Jika berhasil, perbarui state `upbData` agar tabel menampilkan data baru
+    // Pastikan `newUpb` memiliki ID yang unik jika API Anda tidak memberikannya
+    setUpbData((prevData) => [
+      ...prevData,
+      { id: Date.now(), ...newUpb }, // Gunakan Date.now() sebagai ID sementara yang unik
+    ]);
+    handleCloseAddModal(); // Tutup modal setelah data disimpan
+  };
+
+  const handlePreviousPage = () =>
+    currentPage > 1 && setCurrentPage(currentPage - 1);
+
+  const handleNextPage = () =>
+    currentPage < totalPages && setCurrentPage(currentPage + 1);
 
   return (
     <div className="min-h-screen bg-[#f7f7f7]">
@@ -81,7 +108,7 @@ const UpbPage = () => {
       <div className="px-8 py-8">
         <Breadcrumbs />
 
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-end mt-4 mb-4">
           <button
             onClick={handleExport}
             className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
@@ -91,7 +118,9 @@ const UpbPage = () => {
         </div>
 
         <div className="bg-white rounded-lg shadow-sm p-6">
-          <h1 className="text-2xl font-bold mb-6">Daftar UPB</h1>
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold">Daftar UPB</h1>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
             <select
@@ -133,25 +162,24 @@ const UpbPage = () => {
               ))}
             </select>
 
-            <div className="flex gap-2 items-center col-span-2 justify-end">
+            {/* Tombol di kanan */}
+            <div className="flex gap-3">
               <button
                 onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 cursor-pointer"
               >
-                <RefreshCw size={16} />
-                Refresh
+                <RefreshCw size={16} /> Refresh
               </button>
               <button
-                onClick={handleAddUpb}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+                onClick={handleOpenAddModal} // Changed to open the UPB modal
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 cursor-pointer"
               >
-                <Plus size={16} />
-                Add UPB
+                <Plus size={16} /> Add UPB
               </button>
             </div>
           </div>
 
-          <div className="flex justify-between items-center mb-4 text-sm text-gray-600">
+          <div className="flex justify-between items-center mb-6 text-sm text-gray-600">
             <div className="flex items-center gap-2">
               Show
               <select
@@ -188,7 +216,7 @@ const UpbPage = () => {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-200 text-gray-700">
+                <tr className="border-b border-gray-200">
                   {[
                     "Action",
                     "Bidang",
@@ -196,12 +224,13 @@ const UpbPage = () => {
                     "Sub Unit",
                     "Kode UPB",
                     "Nama UPB",
-                  ].map((header) => (
+                    "Kode", // Added "Kode" to table header
+                  ].map((h) => (
                     <th
-                      key={header}
-                      className="text-left py-3 px-4 font-semibold"
+                      key={h}
+                      className="text-left py-3 px-4 font-semibold text-gray-700"
                     >
-                      {header}
+                      {h}
                     </th>
                   ))}
                 </tr>
@@ -209,20 +238,20 @@ const UpbPage = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="6" className="text-center py-8 text-gray-500">
+                    <td colSpan="7" className="text-center py-8 text-gray-500">
                       Loading...
                     </td>
                   </tr>
                 ) : currentData.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="text-center py-8 text-gray-500">
+                    <td colSpan="7" className="text-center py-8 text-gray-500">
                       No data available in table
                     </td>
                   </tr>
                 ) : (
                   currentData.map((item, index) => (
                     <tr
-                      key={index}
+                      key={item.id || index}
                       className="border-b border-gray-100 hover:bg-gray-50"
                     >
                       <td className="py-3 px-4">
@@ -235,11 +264,18 @@ const UpbPage = () => {
                           </button>
                         </div>
                       </td>
-                      <td className="py-3 px-4">{item.bidang}</td>
-                      <td className="py-3 px-4">{item.unit}</td>
-                      <td className="py-3 px-4">{item.subUnit}</td>
-                      <td className="py-3 px-4">{item.kodeUpb}</td>
-                      <td className="py-3 px-4">{item.namaUpb}</td>
+                      <td className="py-3 px-4 text-gray-700">{item.bidang}</td>
+                      <td className="py-3 px-4 text-gray-700">{item.unit}</td>
+                      <td className="py-3 px-4 text-gray-700">
+                        {item.subUnit}
+                      </td>
+                      <td className="py-3 px-4 text-gray-700">
+                        {item.kodeUpb}
+                      </td>
+                      <td className="py-3 px-4 text-gray-700">
+                        {item.namaUpb}
+                      </td>
+                      <td className="py-3 px-4 text-gray-700">{item.kode}</td>
                     </tr>
                   ))
                 )}
@@ -254,18 +290,14 @@ const UpbPage = () => {
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() =>
-                  currentPage > 1 && setCurrentPage(currentPage - 1)
-                }
+                onClick={handlePreviousPage}
                 disabled={currentPage === 1}
                 className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-100 cursor-pointer"
               >
                 Previous
               </button>
               <button
-                onClick={() =>
-                  currentPage < totalPages && setCurrentPage(currentPage + 1)
-                }
+                onClick={handleNextPage}
                 disabled={currentPage === totalPages || totalPages === 0}
                 className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-100 cursor-pointer"
               >
@@ -275,6 +307,12 @@ const UpbPage = () => {
           </div>
         </div>
       </div>
+      {/* Add the AddUpbModal component here */}
+      <AddUpbModal
+        isOpen={isAddModalOpen}
+        onClose={handleCloseAddModal}
+        onSave={handleSaveNewUpb}
+      />
     </div>
   );
 };
