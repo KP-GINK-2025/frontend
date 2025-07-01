@@ -122,59 +122,45 @@ const UpbPage = () => {
             <h1 className="text-2xl font-bold">Daftar UPB</h1>
           </div>
 
-          <div className="flex flex-wrap items-center gap-6 mb-6 justify-between">
-            <div className="flex flex-wrap items-center gap-6">
-              {/* Filter Bidang */}
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-700">Bidang</label>
-                <select
-                  value={selectedBidang}
-                  onChange={(e) => setSelectedBidang(e.target.value)}
-                  className="border border-gray-300 rounded px-3 py-2 text-sm"
-                >
-                  <option value="">-- Pilih Bidang --</option>
-                  {bidangData.map((b) => (
-                    <option key={b.id} value={b.namaBidang}>
-                      {b.namaBidang}
-                    </option>
-                  ))}
-                </select>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+            <select
+              value={selectedBidang}
+              onChange={(e) => setSelectedBidang(e.target.value)}
+              className="border border-gray-300 rounded px-3 py-2 text-sm"
+            >
+              <option value=""> -- Bidang -- </option>
+              {bidangData.map((b) => (
+                <option key={b.id} value={b.nama}>
+                  {b.nama}
+                </option>
+              ))}
+            </select>
 
-              {/* Filter Unit */}
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-700">Unit</label>
-                <select
-                  value={selectedUnit}
-                  onChange={(e) => setSelectedUnit(e.target.value)}
-                  className="border border-gray-300 rounded px-3 py-2 text-sm"
-                >
-                  <option value="">-- Pilih Unit --</option>
-                  {unitData.map((u) => (
-                    <option key={u.id} value={u.namaUnit}>
-                      {u.namaUnit}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <select
+              value={selectedUnit}
+              onChange={(e) => setSelectedUnit(e.target.value)}
+              className="border border-gray-300 rounded px-3 py-2 text-sm"
+            >
+              <option value=""> -- Unit -- </option>
+              {unitData.map((u) => (
+                <option key={u.id} value={u.nama}>
+                  {u.nama}
+                </option>
+              ))}
+            </select>
 
-              {/* Filter Sub Unit */}
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-700">Sub Unit</label>
-                <select
-                  value={selectedSubUnit}
-                  onChange={(e) => setSelectedSubUnit(e.target.value)}
-                  className="border border-gray-300 rounded px-3 py-2 text-sm"
-                >
-                  <option value="">-- Pilih Sub Unit --</option>
-                  {subUnitData.map((s) => (
-                    <option key={s.id} value={s.namaSubUnit}>
-                      {s.namaSubUnit}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+            <select
+              value={selectedSubUnit}
+              onChange={(e) => setSelectedSubUnit(e.target.value)}
+              className="border border-gray-300 rounded px-3 py-2 text-sm"
+            >
+              <option value=""> -- Sub Unit -- </option>
+              {subUnitData.map((s) => (
+                <option key={s.id} value={s.nama}>
+                  {s.nama}
+                </option>
+              ))}
+            </select>
 
             {/* Tombol di kanan */}
             <div className="flex gap-3">

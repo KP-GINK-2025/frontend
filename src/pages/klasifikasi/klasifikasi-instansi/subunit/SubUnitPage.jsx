@@ -124,7 +124,7 @@ const SubUnitPage = () => {
                   onChange={(e) => setSelectedBidang(e.target.value)}
                   className="border border-gray-300 rounded px-3 py-2 text-sm"
                 >
-                  <option value="">-- Pilih Bidang --</option>
+                  <option value=""> -- Bidang -- </option>
                   {bidangData.map((b) => (
                     <option key={b.id} value={b.namaBidang}>
                       {b.namaBidang}
@@ -141,7 +141,7 @@ const SubUnitPage = () => {
                   onChange={(e) => setSelectedUnit(e.target.value)}
                   className="border border-gray-300 rounded px-3 py-2 text-sm"
                 >
-                  <option value="">-- Pilih Unit --</option>
+                  <option value=""> -- Unit -- </option>
                   {unitData.map((u) => (
                     <option key={u.id} value={u.namaUnit}>
                       {u.namaUnit}
