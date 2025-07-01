@@ -118,7 +118,6 @@ const SubUnitPage = () => {
             <div className="flex flex-wrap items-center gap-6">
               {/* Filter Bidang */}
               <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-700">Bidang</label>
                 <select
                   value={selectedBidang}
                   onChange={(e) => setSelectedBidang(e.target.value)}
@@ -135,7 +134,6 @@ const SubUnitPage = () => {
 
               {/* Filter Unit */}
               <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-700">Unit</label>
                 <select
                   value={selectedUnit}
                   onChange={(e) => setSelectedUnit(e.target.value)}
