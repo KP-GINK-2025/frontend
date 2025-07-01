@@ -99,7 +99,7 @@ const UpbPage = () => {
               onChange={(e) => setSelectedBidang(e.target.value)}
               className="border border-gray-300 rounded px-3 py-2 text-sm"
             >
-              <option value=""> -- Pilih Bidang -- </option>
+              <option value=""> -- Bidang -- </option>
               {bidangData.map((b) => (
                 <option key={b.id} value={b.nama}>
                   {b.nama}
@@ -112,7 +112,7 @@ const UpbPage = () => {
               onChange={(e) => setSelectedUnit(e.target.value)}
               className="border border-gray-300 rounded px-3 py-2 text-sm"
             >
-              <option value=""> -- Pilih Unit -- </option>
+              <option value=""> -- Unit -- </option>
               {unitData.map((u) => (
                 <option key={u.id} value={u.nama}>
                   {u.nama}
@@ -125,7 +125,7 @@ const UpbPage = () => {
               onChange={(e) => setSelectedSubUnit(e.target.value)}
               className="border border-gray-300 rounded px-3 py-2 text-sm"
             >
-              <option value=""> -- Pilih Sub Unit -- </option>
+              <option value=""> -- Sub Unit -- </option>
               {subUnitData.map((s) => (
                 <option key={s.id} value={s.nama}>
                   {s.nama}
