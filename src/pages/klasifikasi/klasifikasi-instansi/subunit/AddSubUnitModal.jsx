@@ -26,7 +26,7 @@ const AddSubUnitModal = ({ isOpen, onClose, onSave }) => {
       <div className="relative w-full max-w-lg p-6 bg-white rounded-lg shadow-lg">
         {/* Modal Header */}
         <div className="flex items-center justify-between pb-4 mb-4 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-800">TAMBAH SUB UNIT</h2>{" "}
+          <h2 className="text-xl font-bold text-gray-800">TAMBAH SUB UNIT</h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer"
@@ -48,8 +48,14 @@ const AddSubUnitModal = ({ isOpen, onClose, onSave }) => {
           </button>
         </div>
 
-        {/* Form Fields */}
-        <form onSubmit={handleSubmit}>
+        {/* Form Fields - Add max-h- and overflow-y-auto here */}
+        <form
+          onSubmit={handleSubmit}
+          className="max-h-[calc(100vh-180px)] overflow-y-auto pr-2 pb-4"
+        >
+          {/* max-h-[calc(100vh-180px)] is a placeholder; adjust 180px as needed */}
+          {/* pr-2 for scrollbar, pb-4 for bottom spacing */}
+
           <div className="mb-4">
             <label htmlFor="provinsi" className="block mb-2 text-gray-700">
               Provinsi: <span className="text-red-500">*</span>
@@ -63,7 +69,7 @@ const AddSubUnitModal = ({ isOpen, onClose, onSave }) => {
             >
               <option value="">- Pilih Provinsi -</option>
               {/* Add your options here dynamically or statically */}
-              <option value="18 - Lampung">Lampung</option>
+              <option value="18 - Lampung">18 - Lampung</option>
             </select>
           </div>
 
@@ -80,7 +86,9 @@ const AddSubUnitModal = ({ isOpen, onClose, onSave }) => {
             >
               <option value="">- Pilih Kabupaten/Kota -</option>
               {/* Add your options here dynamically or statically */}
-              <option value="1 - Kab. Tanggamus">Kab. Tanggamus</option>
+              <option value="0 - Kab. Tanggamus">
+                0 - PEMERINTAH PROVINSI LAMPUNG
+              </option>
             </select>
           </div>
 
@@ -97,8 +105,13 @@ const AddSubUnitModal = ({ isOpen, onClose, onSave }) => {
             >
               <option value="">- Pilih Bidang -</option>
               {/* Add your options here dynamically or statically */}
-              <option value="1. Sekwan">Sekwan</option>
-              <option value="2. DPRD">DPRD</option>
+              <option value="1 - Sekwan/DPRD">1 - Sekwan/DPRD</option>
+              <option value="2 - Gubernur/Bupati/Walikota">
+                2 - Gubernur/Bupati/Walikota
+              </option>
+              <option value="3 - Wakil Gubernur/Bupati/Walikota">
+                3 - Wakil Gubernur/Bupati/Walikota
+              </option>
             </select>
           </div>
 
@@ -115,8 +128,11 @@ const AddSubUnitModal = ({ isOpen, onClose, onSave }) => {
             >
               <option value="">- Pilih Unit -</option>
               {/* Add your options here dynamically or statically */}
-              <option value="1. Sekretariat Dewan">Sekretariat Dewan</option>
-              <option value="2. DPRD Lampung">DPRD Lampung</option>
+              <option value="1 - Sekretariat DPRD">1 - Sekretariat DPRD</option>
+              <option value="1 - Bupati Tanggamus">1 - Bupati Tanggamus</option>
+              <option value="1 - Wakil Bupati Tanggamus">
+                1 - Wakil Bupati Tanggamus
+              </option>
             </select>
           </div>
 
@@ -124,18 +140,15 @@ const AddSubUnitModal = ({ isOpen, onClose, onSave }) => {
             <label htmlFor="kodeSubUnit" className="block mb-2 text-gray-700">
               Kode Sub Unit: <span className="text-red-500">*</span>
             </label>
-            <select
+            <input
+              type="number"
               id="kodeSubUnit"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={kodeSubUnit}
               onChange={(e) => setKodeSubUnit(e.target.value)}
               required
-            >
-              <option value="">- Pilih Sub Unit -</option>
-              {/* Add your options here dynamically or statically */}
-              <option value="1">1</option>
-              <option value="2">2</option>
-            </select>
+              min="0"
+            />
           </div>
 
           <div className="mb-4">
@@ -165,23 +178,26 @@ const AddSubUnitModal = ({ isOpen, onClose, onSave }) => {
             />
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 cursor-pointer"
-            >
-              Batal
-            </button>
-            <button
-              type="submit"
-              className="px-6 py-2 text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
-            >
-              Simpan
-            </button>
-          </div>
+          {/* Action Buttons - These will stay at the bottom of the modal, not scroll with the form */}
         </form>
+
+        {/* Action Buttons - Placed outside the scrollable form but inside the modal content */}
+        <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200 mt-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-6 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 cursor-pointer"
+          >
+            Batal
+          </button>
+          <button
+            type="submit"
+            onClick={handleSubmit} // Moved handleSubmit to onClick for button outside form
+            className="px-6 py-2 text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
+          >
+            Simpan
+          </button>
+        </div>
       </div>
     </div>
   );
