@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Navbar from "../../../../components/Navbar";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
-import AddUpbModal from "./AddUpbModal"; // Import the AddUpbModal
+import AddUpbModal from "./AddUpbModal";
 
 const UpbPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -12,14 +12,14 @@ const UpbPage = () => {
   const [bidangData, setBidangData] = useState([]);
   const [unitData, setUnitData] = useState([]);
   const [subUnitData, setSubUnitData] = useState([]);
-  const [upbData, setUpbData] = useState([]); // This will hold your UPB list
+  const [upbData, setUpbData] = useState([]);
 
   const [selectedBidang, setSelectedBidang] = useState("");
   const [selectedUnit, setSelectedUnit] = useState("");
   const [selectedSubUnit, setSelectedSubUnit] = useState("");
 
   const [loading, setLoading] = useState(true);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false); // State for modal
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   useEffect(() => {
     // Simulate fetching data
@@ -85,7 +85,7 @@ const UpbPage = () => {
 
   const handleSaveNewUpb = (newUpb) => {
     console.log("Menyimpan data UPB baru:", newUpb);
-    // Di sini Anda akan:
+    // Di sini akan:
     // 1. Mengirim data `newUpb` ke backend API Anda (menggunakan fetch, axios, dll.)
     // 2. Jika berhasil, perbarui state `upbData` agar tabel menampilkan data baru
     // Pastikan `newUpb` memiliki ID yang unik jika API Anda tidak memberikannya
@@ -93,7 +93,7 @@ const UpbPage = () => {
       ...prevData,
       { id: Date.now(), ...newUpb }, // Gunakan Date.now() sebagai ID sementara yang unik
     ]);
-    handleCloseAddModal(); // Tutup modal setelah data disimpan
+    handleCloseAddModal();
   };
 
   const handlePreviousPage = () =>
@@ -163,18 +163,20 @@ const UpbPage = () => {
             </select>
 
             {/* Tombol di kanan */}
-            <div className="flex gap-3">
+            <div className="flex gap-2 items-center col-span-2 justify-end">
               <button
                 onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 cursor-pointer"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
-                <RefreshCw size={16} /> Refresh
+                <RefreshCw size={16} />
+                Refresh
               </button>
               <button
-                onClick={handleOpenAddModal} // Changed to open the UPB modal
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 cursor-pointer"
+                onClick={handleOpenAddModal}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
-                <Plus size={16} /> Add UPB
+                <Plus size={16} />
+                Add UPB
               </button>
             </div>
           </div>
@@ -224,7 +226,7 @@ const UpbPage = () => {
                     "Sub Unit",
                     "Kode UPB",
                     "Nama UPB",
-                    "Kode", // Added "Kode" to table header
+                    "Kode",
                   ].map((h) => (
                     <th
                       key={h}
@@ -307,7 +309,6 @@ const UpbPage = () => {
           </div>
         </div>
       </div>
-      {/* Add the AddUpbModal component here */}
       <AddUpbModal
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
