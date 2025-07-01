@@ -59,7 +59,6 @@ const SubUnitPage = () => {
     setSearchTerm("");
     setSelectedBidang("");
     setSelectedUnit("");
-    setCurrentPage(1);
 
     setTimeout(() => {
       // Isi ulang data yang hilang, jangan dikosongkan

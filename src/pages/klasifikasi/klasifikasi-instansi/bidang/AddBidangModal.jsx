@@ -20,8 +20,6 @@ const AddBidangModal = ({ isOpen, onClose, onSave }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       {/* Modal Overlay */}
       <div className="relative w-full max-w-lg p-6 bg-white rounded-lg shadow-lg">
-        {/* Modal Content */}
-
         {/* Modal Header */}
         <div className="flex items-center justify-between pb-4 mb-4 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-800">TAMBAH BIDANG</h2>
@@ -46,24 +44,27 @@ const AddBidangModal = ({ isOpen, onClose, onSave }) => {
           </button>
         </div>
 
-        {/* Form Fields */}
-        <form onSubmit={handleSubmit}>
+        {/* Form Fields - Add max-h- and overflow-y-auto here */}
+        <form
+          onSubmit={handleSubmit}
+          className="max-h-[calc(100vh-180px)] overflow-y-auto pr-2 pb-4"
+        >
+          {/* max-h-[calc(100vh-180px)] is a placeholder; adjust 180px as needed */}
+          {/* pr-2 for scrollbar, pb-4 for bottom spacing */}
           <div className="mb-4">
             <label htmlFor="kodeBidang" className="block mb-2 text-gray-700">
               Kode Bidang: <span className="text-red-500">*</span>
             </label>
-            <select
+            <input
+              type="number" // Already changed to "number"
               id="kodeBidang"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={kodeBidang}
               onChange={(e) => setKodeBidang(e.target.value)}
               required
-            >
-              <option value="">- Pilih Kode Bidang -</option>
-              {/* Add your options here dynamically or statically */}
-              <option value="1">1</option>
-              <option value="2">2</option>
-            </select>
+              min="0" // Optional: Set a minimum value if desired
+              // Can add max, step, etc., as needed for number inputs
+            />
           </div>
 
           <div className="mb-4">
@@ -93,23 +94,26 @@ const AddBidangModal = ({ isOpen, onClose, onSave }) => {
             />
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 cursor-pointer"
-            >
-              Batal
-            </button>
-            <button
-              type="submit"
-              className="px-6 py-2 text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
-            >
-              Simpan
-            </button>
-          </div>
+          {/* Action Buttons are moved out of the form tag and into the main modal content div */}
         </form>
+
+        {/* Action Buttons - Placed outside the scrollable form but inside the modal content */}
+        <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200 mt-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-6 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 cursor-pointer"
+          >
+            Batal
+          </button>
+          <button
+            type="submit"
+            onClick={handleSubmit} // Added onClick for submit button (since it's outside form)
+            className="px-6 py-2 text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
+          >
+            Simpan
+          </button>
+        </div>
       </div>
     </div>
   );

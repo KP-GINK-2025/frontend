@@ -45,7 +45,6 @@ const BidangPage = () => {
   const handleRefresh = () => {
     setLoading(true);
     setSearchTerm("");
-    setCurrentPage(1);
 
     setTimeout(() => {
       // Isi ulang data yang hilang, jangan dikosongkan

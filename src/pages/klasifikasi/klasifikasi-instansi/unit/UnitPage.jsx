@@ -64,7 +64,6 @@ const UnitPage = () => {
     setLoading(true);
     setSearchTerm("");
     setSelectedBidang("");
-    setCurrentPage(1);
 
     setTimeout(() => {
       // Isi ulang data yang hilang, jangan dikosongkan
@@ -214,13 +213,7 @@ const UnitPage = () => {
                   <th className="text-left py-3 px-4 font-semibold text-gray-700">
                     Action
                   </th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                    Provinsi
-                  </th>{" "}
-                  {/* <-- Tambah header ini */}
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                    Kabupaten/Kota
-                  </th>{" "}
+
                   {/* <-- Tambah header ini */}
                   <th className="text-left py-3 px-4 font-semibold text-gray-700">
                     Bidang
@@ -269,13 +262,7 @@ const UnitPage = () => {
                           </button>
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-gray-700">
-                        {item.provinsi}
-                      </td>{" "}
-                      {/* <-- Tambah render data ini */}
-                      <td className="py-3 px-4 text-gray-700">
-                        {item.kabKot}
-                      </td>{" "}
+
                       {/* <-- Tambah render data ini */}
                       <td className="py-3 px-4 text-gray-700">{item.bidang}</td>
                       <td className="py-3 px-4 text-gray-700">
