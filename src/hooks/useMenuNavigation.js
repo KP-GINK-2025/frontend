@@ -72,6 +72,42 @@ const useMenuNavigation = () => {
       case "Keuangan":
         navigate("/keuangan");
         break;
+      case "Belanja APBD":
+        navigate("/keuangan/belanja-apbd");
+        break;
+      case "Daftar Belanja":
+        navigate("/keuangan/belanja-apbd/daftar");
+        break;
+      case "Item Belanja":
+        navigate("/keuangan/belanja-apbd/item");
+        break;
+      case "Posting Belanja":
+        navigate("/keuangan/belanja-apbd/posting");
+        break;
+      case "Mutasi":
+        navigate("/keuangan/mutasi");
+        break;
+      case "Daftar Mutasi":
+        navigate("/keuangan/mutasi/daftar");
+        break;
+      case "Item Mutasi":
+        navigate("/keuangan/mutasi/item");
+        break;
+      case "Posting Mutasi":
+        navigate("/keuangan/mutasi/posting");
+        break;
+      case "Hibah":
+        navigate("/keuangan/hibah");
+        break;
+      case "Daftar Hibah":
+        navigate("/keuangan/hibah/daftar");
+        break;
+      case "Item Hibah":
+        navigate("/keuangan/hibah/item");
+        break;
+      case "Posting Hibah":
+        navigate("/keuangan/hibah/posting");
+        break;
       // Keuangan End
 
       // Laporan Start
