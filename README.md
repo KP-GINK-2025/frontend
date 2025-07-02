@@ -6,6 +6,7 @@
 - **Vite**: A next-generation frontend build tool that provides an incredibly fast development experience.
 - **Tailwind CSS**: A utility-first CSS framework that lets you build custom designs rapidly directly in your markup.
 - **React Router DOM**: A collection of navigational components that compose declaratively with your application.
+- **Material UI**: MUI offers a comprehensive suite of free UI tools to help you ship new features faster.
 - **Lucide Icons**: A beautiful & consistent icon toolkit based on Feather Icons.
 
 ## Getting Started
@@ -50,7 +51,15 @@ Make sure you have the following installed:
    yarn add react-router-dom
    ```
 
-5. Install Lucide Icons:
+5. Install Material UI:
+
+   ```bash
+   npm install @mui/material @emotion/react @emotion/styled @mui/x-data-grid
+   # or
+   yarn add @mui/material @emotion/react @emotion/styled @mui/x-data-grid
+   ```
+
+6. Install Lucide Icons:
 
    ```bash
    npm install lucide-react

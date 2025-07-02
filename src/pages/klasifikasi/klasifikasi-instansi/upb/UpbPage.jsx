@@ -3,16 +3,17 @@ import Navbar from "../../../../components/Navbar";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import AddUpbModal from "./AddUpbModal";
+import DataTable from "../../../../components/DataTable"; // Import DataTable
 
 const UpbPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(10);
-  const [currentPage, setCurrentPage] = useState(1);
+  // const [currentPage, setCurrentPage] = useState(1);
 
   const [bidangData, setBidangData] = useState([]);
   const [unitData, setUnitData] = useState([]);
   const [subUnitData, setSubUnitData] = useState([]);
-  const [upbData, setUpbData] = useState([]);
+  const [upbData, setUpbData] = useState([]); // Menyimpan daftar UPB
 
   const [selectedBidang, setSelectedBidang] = useState("");
   const [selectedUnit, setSelectedUnit] = useState("");
@@ -20,17 +21,127 @@ const UpbPage = () => {
 
   const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingUpb, setEditingUpb] = useState(null); // State untuk data yang sedang diedit
 
-  useEffect(() => {
-    // Simulate fetching data
+  // State untuk melacak pagination model dari DataTable
+  const [dataTablePaginationModel, setDataTablePaginationModel] =
+    React.useState({
+      page: 0,
+      pageSize: entriesPerPage,
+    });
+
+  const fetchData = () => {
+    setLoading(true);
     setTimeout(() => {
-      // In a real application, you would fetch this data from your backend
-      setBidangData([]);
-      setUnitData([]);
-      setSubUnitData([]);
-      setUpbData([]);
+      // Dummy data untuk pengujian
+      setBidangData([
+        { id: 1, namaBidang: "1 - Sekwan/DPRD" },
+        { id: 2, namaBidang: "2 - Gubernur/Bupati/Walikota" },
+      ]);
+      setUnitData([
+        { id: 1, namaUnit: "1 - Sekretariat DPRD" },
+        { id: 2, namaUnit: "1 - Bupati Tanggamus" },
+      ]);
+      setSubUnitData([
+        { id: 1, namaSubUnit: "1 - Sub Unit A" },
+        { id: 2, namaSubUnit: "2 - Sub Unit B" },
+      ]);
+      setUpbData([
+        {
+          id: 1,
+          provinsi: "18 - Lampung",
+          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
+          bidang: "1 - Sekwan/DPRD",
+          unit: "1 - Sekretariat DPRD",
+          subUnit: "1 - Sub Unit A",
+          kodeUpb: "1",
+          namaUpb: "UPB Kantor Pusat",
+          kode: "XYZ1",
+        },
+        {
+          id: 2,
+          provinsi: "18 - Lampung",
+          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
+          bidang: "2 - Gubernur/Bupati/Walikota",
+          unit: "1 - Bupati Tanggamus",
+          subUnit: "2 - Sub Unit B",
+          kodeUpb: "2",
+          namaUpb: "UPB Cabang Lampung",
+          kode: "XYZ2",
+        },
+        {
+          id: 3,
+          provinsi: "18 - Lampung",
+          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
+          bidang: "1 - Sekwan/DPRD",
+          unit: "1 - Sekretariat DPRD",
+          subUnit: "1 - Sub Unit A",
+          kodeUpb: "3",
+          namaUpb: "UPB Divisi Keuangan",
+          kode: "XYZ3",
+        },
+        {
+          id: 4,
+          provinsi: "18 - Lampung",
+          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
+          bidang: "2 - Gubernur/Bupati/Walikota",
+          unit: "1 - Bupati Tanggamus",
+          subUnit: "2 - Sub Unit B",
+          kodeUpb: "4",
+          namaUpb: "UPB Pemasaran",
+          kode: "XYZ4",
+        },
+        {
+          id: 5,
+          provinsi: "18 - Lampung",
+          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
+          bidang: "1 - Sekwan/DPRD",
+          unit: "1 - Sekretariat DPRD",
+          subUnit: "1 - Sub Unit A",
+          kodeUpb: "5",
+          namaUpb: "UPB Operasional",
+          kode: "XYZ5",
+        },
+        {
+          id: 6,
+          provinsi: "18 - Lampung",
+          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
+          bidang: "2 - Gubernur/Bupati/Walikota",
+          unit: "1 - Bupati Tanggamus",
+          subUnit: "2 - Sub Unit B",
+          kodeUpb: "6",
+          namaUpb: "UPB HRD",
+          kode: "XYZ6",
+        },
+        {
+          id: 7,
+          provinsi: "18 - Lampung",
+          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
+          bidang: "1 - Sekwan/DPRD",
+          unit: "1 - Sekretariat DPRD",
+          subUnit: "1 - Sub Unit A",
+          kodeUpb: "7",
+          namaUpb: "UPB Teknologi",
+          kode: "XYZ7",
+        },
+        {
+          id: 8,
+          provinsi: "18 - Lampung",
+          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
+          bidang: "2 - Gubernur/Bupati/Walikota",
+          unit: "1 - Bupati Tanggamus",
+          subUnit: "2 - Sub Unit B",
+          kodeUpb: "8",
+          namaUpb: "UPB Logistik",
+          kode: "XYZ8",
+        },
+      ]);
       setLoading(false);
     }, 800);
+  };
+
+  useEffect(() => {
+    fetchData();
   }, []);
 
   const filteredData = upbData.filter((item) => {
@@ -53,12 +164,6 @@ const UpbPage = () => {
     return matchesSearch && matchesBidang && matchesUnit && matchesSubUnit;
   });
 
-  const totalEntries = filteredData.length;
-  const totalPages = Math.ceil(totalEntries / entriesPerPage);
-  const startIndex = (currentPage - 1) * entriesPerPage;
-  const endIndex = startIndex + entriesPerPage;
-  const currentData = filteredData.slice(startIndex, endIndex);
-
   const handleExport = () => console.log("Exporting UPB data...");
 
   const handleRefresh = () => {
@@ -67,40 +172,92 @@ const UpbPage = () => {
     setSelectedBidang("");
     setSelectedUnit("");
     setSelectedSubUnit("");
-    setCurrentPage(1); // Reset to first page on refresh
-    // In a real application, you would re-fetch data here
-    setTimeout(() => {
-      // Re-populate dummy data or fetch from API
-      setLoading(false);
-    }, 800);
+    fetchData();
   };
 
   const handleOpenAddModal = () => {
+    setEditingUpb(null); // Penting: Reset editing state saat ingin menambah baru
     setIsAddModalOpen(true);
   };
 
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
+    setEditingUpb(null); // Reset editing state saat modal ditutup
   };
 
-  const handleSaveNewUpb = (newUpb) => {
-    console.log("Menyimpan data UPB baru:", newUpb);
-    // Di sini akan:
-    // 1. Mengirim data `newUpb` ke backend API Anda (menggunakan fetch, axios, dll.)
-    // 2. Jika berhasil, perbarui state `upbData` agar tabel menampilkan data baru
-    // Pastikan `newUpb` memiliki ID yang unik jika API Anda tidak memberikannya
-    setUpbData((prevData) => [
-      ...prevData,
-      { id: Date.now(), ...newUpb }, // Gunakan Date.now() sebagai ID sementara yang unik
-    ]);
+  const handleSaveNewUpb = (upbToSave) => {
+    if (upbToSave.id) {
+      // Ini adalah mode edit
+      setUpbData((prevData) =>
+        prevData.map((item) => (item.id === upbToSave.id ? upbToSave : item))
+      );
+      console.log("Update UPB:", upbToSave);
+    } else {
+      // Ini adalah mode tambah baru
+      setUpbData((prevData) => [
+        ...prevData,
+        { id: Date.now(), ...upbToSave }, // Buat ID baru
+      ]);
+      console.log("Menyimpan UPB baru:", upbToSave);
+    }
     handleCloseAddModal();
   };
 
-  const handlePreviousPage = () =>
-    currentPage > 1 && setCurrentPage(currentPage - 1);
+  const handleEditClick = (id) => {
+    const upbToEdit = upbData.find((item) => item.id === id);
+    if (upbToEdit) {
+      setEditingUpb(upbToEdit);
+      setIsAddModalOpen(true);
+    }
+  };
 
-  const handleNextPage = () =>
-    currentPage < totalPages && setCurrentPage(currentPage + 1);
+  const handleDeleteClick = (id) => {
+    if (window.confirm("Apakah Anda yakin ingin menghapus data ini?")) {
+      setUpbData((prevData) => prevData.filter((item) => item.id !== id));
+      console.log("Menghapus UPB dengan ID:", id);
+    }
+  };
+
+  const columns = [
+    { field: "id", headerName: "ID", width: 90 },
+    { field: "provinsi", headerName: "Provinsi", width: 180 },
+    { field: "kabKot", headerName: "Kabupaten/Kota", width: 250 },
+    { field: "bidang", headerName: "Bidang", width: 180 },
+    { field: "unit", headerName: "Unit", width: 180 },
+    { field: "subUnit", headerName: "Sub Unit", width: 180 },
+    {
+      field: "kodeUpb",
+      headerName: "Kode UPB",
+      type: "number",
+      width: 150,
+    },
+    { field: "namaUpb", headerName: "Nama UPB", flex: 1 },
+    { field: "kode", headerName: "Kode", width: 120 },
+    {
+      field: "action",
+      headerName: "Action",
+      width: 150,
+      sortable: false,
+      renderCell: (params) => (
+        <div className="flex gap-2 items-center">
+          {" "}
+          {/* Tambahkan items-center */}
+          <button
+            onClick={() => handleEditClick(params.row.id)}
+            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => handleDeleteClick(params.row.id)}
+            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
+          >
+            Delete
+          </button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-[#f7f7f7]">
@@ -122,61 +279,73 @@ const UpbPage = () => {
             <h1 className="text-2xl font-bold">Daftar UPB</h1>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-            <select
-              value={selectedBidang}
-              onChange={(e) => setSelectedBidang(e.target.value)}
-              className="border border-gray-300 rounded px-3 py-2 text-sm"
-            >
-              <option value=""> -- Bidang -- </option>
-              {bidangData.map((b) => (
-                <option key={b.id} value={b.nama}>
-                  {b.nama}
-                </option>
-              ))}
-            </select>
+          <div className="flex flex-wrap items-center gap-6 mb-6 justify-between">
+            <div className="flex flex-wrap items-center gap-6">
+              {/* Filter Bidang */}
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-700">Bidang</label>
+                <select
+                  value={selectedBidang}
+                  onChange={(e) => setSelectedBidang(e.target.value)}
+                  className="border border-gray-300 rounded px-3 py-2 text-sm"
+                >
+                  <option value=""> -- Bidang -- </option>
+                  {bidangData.map((b) => (
+                    <option key={b.id} value={b.namaBidang}>
+                      {b.namaBidang}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <select
-              value={selectedUnit}
-              onChange={(e) => setSelectedUnit(e.target.value)}
-              className="border border-gray-300 rounded px-3 py-2 text-sm"
-            >
-              <option value=""> -- Unit -- </option>
-              {unitData.map((u) => (
-                <option key={u.id} value={u.nama}>
-                  {u.nama}
-                </option>
-              ))}
-            </select>
+              {/* Filter Unit */}
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-700">Unit</label>
+                <select
+                  value={selectedUnit}
+                  onChange={(e) => setSelectedUnit(e.target.value)}
+                  className="border border-gray-300 rounded px-3 py-2 text-sm"
+                >
+                  <option value=""> -- Unit -- </option>
+                  {unitData.map((u) => (
+                    <option key={u.id} value={u.namaUnit}>
+                      {u.namaUnit}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <select
-              value={selectedSubUnit}
-              onChange={(e) => setSelectedSubUnit(e.target.value)}
-              className="border border-gray-300 rounded px-3 py-2 text-sm"
-            >
-              <option value=""> -- Sub Unit -- </option>
-              {subUnitData.map((s) => (
-                <option key={s.id} value={s.nama}>
-                  {s.nama}
-                </option>
-              ))}
-            </select>
+              {/* Filter Sub Unit */}
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-700">Sub Unit</label>
+                <select
+                  value={selectedSubUnit}
+                  onChange={(e) => setSelectedSubUnit(e.target.value)}
+                  className="border border-gray-300 rounded px-3 py-2 text-sm"
+                >
+                  <option value=""> -- Sub Unit -- </option>
+                  {subUnitData.map((s) => (
+                    <option key={s.id} value={s.namaSubUnit}>
+                      {s.namaSubUnit}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
             {/* Tombol di kanan */}
-            <div className="flex gap-2 items-center col-span-2 justify-end">
+            <div className="flex gap-3">
               <button
                 onClick={handleRefresh}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
-                <RefreshCw size={16} />
-                Refresh
+                <RefreshCw size={16} /> Refresh
               </button>
               <button
                 onClick={handleOpenAddModal}
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
-                <Plus size={16} />
-                Add UPB
+                <Plus size={16} /> Add UPB
               </button>
             </div>
           </div>
@@ -188,11 +357,15 @@ const UpbPage = () => {
                 value={entriesPerPage}
                 onChange={(e) => {
                   setEntriesPerPage(Number(e.target.value));
-                  setCurrentPage(1);
+                  setDataTablePaginationModel((prev) => ({
+                    ...prev,
+                    pageSize: Number(e.target.value),
+                    page: 0,
+                  }));
                 }}
                 className="border border-gray-300 rounded px-2 py-1"
               >
-                {[10, 25, 50, 100].map((n) => (
+                {[5, 10, 25, 50, 100].map((n) => (
                   <option key={n} value={n}>
                     {n}
                   </option>
@@ -215,104 +388,27 @@ const UpbPage = () => {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  {[
-                    "Action",
-                    "Bidang",
-                    "Unit",
-                    "Sub Unit",
-                    "Kode UPB",
-                    "Nama UPB",
-                    "Kode",
-                  ].map((h) => (
-                    <th
-                      key={h}
-                      className="text-left py-3 px-4 font-semibold text-gray-700"
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan="7" className="text-center py-8 text-gray-500">
-                      Loading...
-                    </td>
-                  </tr>
-                ) : currentData.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" className="text-center py-8 text-gray-500">
-                      No data available in table
-                    </td>
-                  </tr>
-                ) : (
-                  currentData.map((item, index) => (
-                    <tr
-                      key={item.id || index}
-                      className="border-b border-gray-100 hover:bg-gray-50"
-                    >
-                      <td className="py-3 px-4">
-                        <div className="flex gap-2">
-                          <button className="text-blue-600 hover:text-blue-800 text-sm">
-                            Edit
-                          </button>
-                          <button className="text-red-600 hover:text-red-800 text-sm">
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 text-gray-700">{item.bidang}</td>
-                      <td className="py-3 px-4 text-gray-700">{item.unit}</td>
-                      <td className="py-3 px-4 text-gray-700">
-                        {item.subUnit}
-                      </td>
-                      <td className="py-3 px-4 text-gray-700">
-                        {item.kodeUpb}
-                      </td>
-                      <td className="py-3 px-4 text-gray-700">
-                        {item.namaUpb}
-                      </td>
-                      <td className="py-3 px-4 text-gray-700">{item.kode}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="flex justify-between items-center mt-6 text-sm text-gray-600">
-            <div>
-              Show {Math.min(startIndex + 1, totalEntries)} to{" "}
-              {Math.min(endIndex, totalEntries)} of {totalEntries} entries
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={handlePreviousPage}
-                disabled={currentPage === 1}
-                className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-100 cursor-pointer"
-              >
-                Previous
-              </button>
-              <button
-                onClick={handleNextPage}
-                disabled={currentPage === totalPages || totalPages === 0}
-                className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-100 cursor-pointer"
-              >
-                Next
-              </button>
-            </div>
-          </div>
+          {loading ? (
+            <div className="text-center py-8 text-gray-500">Loading...</div>
+          ) : (
+            <DataTable
+              rows={filteredData}
+              columns={columns}
+              initialPageSize={entriesPerPage}
+              pageSizeOptions={[5, 10, 25, 50, 100]}
+              height={500}
+              emptyRowsMessage="No UPB data available"
+              paginationModel={dataTablePaginationModel}
+              onPaginationModelChange={setDataTablePaginationModel}
+            />
+          )}
         </div>
       </div>
       <AddUpbModal
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
         onSave={handleSaveNewUpb}
+        initialData={editingUpb}
       />
     </div>
   );
