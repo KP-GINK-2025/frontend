@@ -1,14 +1,43 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-const AddBidangModal = ({ isOpen, onClose, onSave }) => {
+const AddBidangModal = ({ isOpen, onClose, onSave, initialData }) => {
   const [kodeBidang, setKodeBidang] = useState("");
   const [namaBidang, setNamaBidang] = useState("");
   const [kode, setKode] = useState("");
 
+  useEffect(() => {
+    // Isi form jika ada initialData (mode edit)
+    if (isOpen && initialData) {
+      setKodeBidang(initialData.kodeBidang || "");
+      setNamaBidang(initialData.namaBidang || "");
+      setKode(initialData.kode || "");
+    } else if (isOpen && !initialData) {
+      // Reset form jika tidak ada initialData (mode add baru)
+      setKodeBidang("");
+      setNamaBidang("");
+      setKode("");
+    }
+  }, [isOpen, initialData]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    // You'd typically perform validation here before calling onSave
-    onSave({ kodeBidang, namaBidang, kode });
+
+    if (!kodeBidang || !namaBidang) {
+      alert("Harap lengkapi semua field yang wajib diisi (*).");
+      return;
+    }
+
+    const dataToSave = {
+      kodeBidang,
+      namaBidang,
+      kode,
+    };
+
+    if (initialData && initialData.id) {
+      onSave({ ...dataToSave, id: initialData.id }); // Sertakan ID untuk update
+    } else {
+      onSave(dataToSave); // Tanpa ID untuk penambahan baru
+    }
     onClose();
   };
 
@@ -18,11 +47,12 @@ const AddBidangModal = ({ isOpen, onClose, onSave }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      {/* Modal Overlay */}
       <div className="relative w-full max-w-lg p-6 bg-white rounded-lg shadow-lg">
-        {/* Modal Header */}
         <div className="flex items-center justify-between pb-4 mb-4 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-800">TAMBAH BIDANG</h2>
+          <h2 className="text-xl font-bold text-gray-800">
+            {initialData ? "EDIT BIDANG" : "TAMBAH BIDANG"}{" "}
+            {/* Judul dinamis */}
+          </h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer"
@@ -44,26 +74,19 @@ const AddBidangModal = ({ isOpen, onClose, onSave }) => {
           </button>
         </div>
 
-        {/* Form Fields - Add max-h- and overflow-y-auto here */}
-        <form
-          onSubmit={handleSubmit}
-          className="max-h-[calc(100vh-180px)] overflow-y-auto pr-2 pb-4"
-        >
-          {/* max-h-[calc(100vh-180px)] is a placeholder; adjust 180px as needed */}
-          {/* pr-2 for scrollbar, pb-4 for bottom spacing */}
+        <form className="max-h-[calc(100vh-180px)] overflow-y-auto pr-2 pb-4">
           <div className="mb-4">
             <label htmlFor="kodeBidang" className="block mb-2 text-gray-700">
               Kode Bidang: <span className="text-red-500">*</span>
             </label>
             <input
-              type="number" // Already changed to "number"
+              type="number"
               id="kodeBidang"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={kodeBidang}
               onChange={(e) => setKodeBidang(e.target.value)}
               required
-              min="0" // Optional: Set a minimum value if desired
-              // Can add max, step, etc., as needed for number inputs
+              min="0"
             />
           </div>
 
@@ -93,11 +116,8 @@ const AddBidangModal = ({ isOpen, onClose, onSave }) => {
               onChange={(e) => setKode(e.target.value)}
             />
           </div>
-
-          {/* Action Buttons are moved out of the form tag and into the main modal content div */}
         </form>
 
-        {/* Action Buttons - Placed outside the scrollable form but inside the modal content */}
         <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200 mt-4">
           <button
             type="button"
@@ -108,10 +128,10 @@ const AddBidangModal = ({ isOpen, onClose, onSave }) => {
           </button>
           <button
             type="submit"
-            onClick={handleSubmit} // Added onClick for submit button (since it's outside form)
+            onClick={handleSubmit}
             className="px-6 py-2 text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
           >
-            Simpan
+            {initialData ? "Simpan Perubahan" : "Simpan"}
           </button>
         </div>
       </div>

@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-const AddUpbModal = ({ isOpen, onClose, onSave }) => {
+const AddUpbModal = ({ isOpen, onClose, onSave, initialData }) => {
   const [provinsi, setProvinsi] = useState("");
   const [kabKot, setKabKot] = useState("");
   const [bidang, setBidang] = useState("");
@@ -10,9 +10,62 @@ const AddUpbModal = ({ isOpen, onClose, onSave }) => {
   const [namaUpb, setNamaUpb] = useState("");
   const [kode, setKode] = useState("");
 
+  useEffect(() => {
+    // Isi form jika ada initialData (mode edit)
+    if (isOpen && initialData) {
+      setProvinsi(initialData.provinsi || "");
+      setKabKot(initialData.kabKot || "");
+      setBidang(initialData.bidang || "");
+      setUnit(initialData.unit || "");
+      setSubUnit(initialData.subUnit || "");
+      setKodeUpb(initialData.kodeUpb || "");
+      setNamaUpb(initialData.namaUpb || "");
+      setKode(initialData.kode || "");
+    } else if (isOpen && !initialData) {
+      // Reset form jika tidak ada initialData (mode add baru)
+      setProvinsi("");
+      setKabKot("");
+      setBidang("");
+      setUnit("");
+      setSubUnit("");
+      setKodeUpb("");
+      setNamaUpb("");
+      setKode("");
+    }
+  }, [isOpen, initialData]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave({ provinsi, kabKot, bidang, unit, subUnit, kodeUpb, namaUpb, kode });
+
+    if (
+      !provinsi ||
+      !kabKot ||
+      !bidang ||
+      !unit ||
+      !subUnit ||
+      !kodeUpb ||
+      !namaUpb
+    ) {
+      alert("Harap lengkapi semua field yang wajib diisi (*).");
+      return;
+    }
+
+    const dataToSave = {
+      provinsi,
+      kabKot,
+      bidang,
+      unit,
+      subUnit,
+      kodeUpb,
+      namaUpb,
+      kode,
+    };
+
+    if (initialData && initialData.id) {
+      onSave({ ...dataToSave, id: initialData.id }); // Sertakan ID untuk update
+    } else {
+      onSave(dataToSave); // Tanpa ID untuk penambahan baru
+    }
     onClose();
   };
 
@@ -22,13 +75,11 @@ const AddUpbModal = ({ isOpen, onClose, onSave }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      {/* Modal Overlay */}
       <div className="relative w-full max-w-lg p-6 bg-white rounded-lg shadow-lg">
-        {/* Modal Content */}
-
-        {/* Modal Header */}
         <div className="flex items-center justify-between pb-4 mb-4 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-800">TAMBAH UPB</h2>
+          <h2 className="text-xl font-bold text-gray-800">
+            {initialData ? "EDIT UPB" : "TAMBAH UPB"}
+          </h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer"
@@ -50,15 +101,10 @@ const AddUpbModal = ({ isOpen, onClose, onSave }) => {
           </button>
         </div>
 
-        {/* Form Fields - Add max-h- and overflow-y-auto here */}
         <form
           onSubmit={handleSubmit}
           className="max-h-[calc(100vh-180px)] overflow-y-auto pr-2 pb-4"
         >
-          {/* max-h-[calc(100vh-180px)] calculates max height relative to viewport height.
-              You might need to adjust '180px' based on the height of your header, footer,
-              and desired spacing. 'pr-2' is for scrollbar aesthetics. 'pb-4' for bottom spacing. */}
-
           <div className="mb-4">
             <label htmlFor="provinsi" className="block mb-2 text-gray-700">
               Provinsi: <span className="text-red-500">*</span>
@@ -71,8 +117,9 @@ const AddUpbModal = ({ isOpen, onClose, onSave }) => {
               required
             >
               <option value="">- Pilih Provinsi -</option>
-              {/* Add your options here dynamically or statically */}
               <option value="18 - Lampung">18 - Lampung</option>
+              <option value="19 - Jawa Barat">19 - Jawa Barat</option>
+              <option value="20 - DKI Jakarta">20 - DKI Jakarta</option>
             </select>
           </div>
 
@@ -88,9 +135,14 @@ const AddUpbModal = ({ isOpen, onClose, onSave }) => {
               required
             >
               <option value="">- Pilih Kabupaten/Kota -</option>
-              {/* Add your options here dynamically or statically */}
               <option value="0 - PEMERINTAH PROVINSI LAMPUNG">
                 0 - PEMERINTAH PROVINSI LAMPUNG
+              </option>
+              <option value="1 - Kota Bandar Lampung">
+                1 - Kota Bandar Lampung
+              </option>
+              <option value="2 - Kabupaten Lampung Selatan">
+                2 - Kabupaten Lampung Selatan
               </option>
             </select>
           </div>
@@ -107,7 +159,6 @@ const AddUpbModal = ({ isOpen, onClose, onSave }) => {
               required
             >
               <option value="">- Pilih Bidang -</option>
-              {/* Add your options here dynamically or statically */}
               <option value="1 - Sekwan/DPRD">1 - Sekwan/DPRD</option>
               <option value="2 - Gubernur/Bupati/Walikota">
                 2 - Gubernur/Bupati/Walikota
@@ -130,7 +181,6 @@ const AddUpbModal = ({ isOpen, onClose, onSave }) => {
               required
             >
               <option value="">- Pilih Unit -</option>
-              {/* Add your options here dynamically or statically */}
               <option value="1 - Sekretariat DPRD">1 - Sekretariat DPRD</option>
               <option value="1 - Bupati Tanggamus">1 - Bupati Tanggamus</option>
               <option value="1 - Wakil Bupati Tanggamus">
@@ -151,12 +201,9 @@ const AddUpbModal = ({ isOpen, onClose, onSave }) => {
               required
             >
               <option value="">- Pilih Sub Unit -</option>
-              {/* Add your options here dynamically or statically */}
-              <option value="1 - Sekretariat DPRD">1 - Sekretariat DPRD</option>
-              <option value="1 - Bupati Tanggamus">1 - Bupati Tanggamus</option>
-              <option value="1 - Wakil Bupati Tanggamus">
-                1 - Wakil Bupati Tanggamus
-              </option>
+              <option value="1 - Sub Unit A">1 - Sub Unit A</option>
+              <option value="2 - Sub Unit B">2 - Sub Unit B</option>
+              <option value="3 - Sub Unit C">3 - Sub Unit C</option>
             </select>
           </div>
 
@@ -204,7 +251,6 @@ const AddUpbModal = ({ isOpen, onClose, onSave }) => {
         </form>
 
         <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200 mt-4">
-          {" "}
           <button
             type="button"
             onClick={onClose}
@@ -214,10 +260,10 @@ const AddUpbModal = ({ isOpen, onClose, onSave }) => {
           </button>
           <button
             type="submit"
-            onClick={handleSubmit} // Moved handleSubmit to onClick for button outside form
+            onClick={handleSubmit}
             className="px-6 py-2 text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
           >
-            Simpan
+            {initialData ? "Simpan Perubahan" : "Simpan"}{" "}
           </button>
         </div>
       </div>

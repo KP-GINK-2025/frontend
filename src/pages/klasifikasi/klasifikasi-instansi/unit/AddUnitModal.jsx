@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-const AddUnitModal = ({ isOpen, onClose, onSave }) => {
+const AddUnitModal = ({ isOpen, onClose, onSave, initialData }) => {
   const [provinsi, setProvinsi] = useState("");
   const [kabKot, setKabKot] = useState("");
   const [bidang, setBidang] = useState("");
@@ -8,10 +8,48 @@ const AddUnitModal = ({ isOpen, onClose, onSave }) => {
   const [namaUnit, setNamaUnit] = useState("");
   const [kode, setKode] = useState("");
 
+  useEffect(() => {
+    // Isi form jika ada initialData (mode edit)
+    if (isOpen && initialData) {
+      setProvinsi(initialData.provinsi || "");
+      setKabKot(initialData.kabKot || "");
+      setBidang(initialData.bidang || "");
+      setKodeUnit(initialData.kodeUnit || "");
+      setNamaUnit(initialData.namaUnit || "");
+      setKode(initialData.kode || "");
+    } else if (isOpen && !initialData) {
+      // Reset form jika tidak ada initialData (mode add baru)
+      setProvinsi("");
+      setKabKot("");
+      setBidang("");
+      setKodeUnit("");
+      setNamaUnit("");
+      setKode("");
+    }
+  }, [isOpen, initialData]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Anda bisa menambahkan validasi di sini sebelum memanggil onSave
-    onSave({ provinsi, kabKot, bidang, kodeUnit, namaUnit, kode });
+
+    if (!provinsi || !kabKot || !bidang || !kodeUnit || !namaUnit) {
+      alert("Harap lengkapi semua field yang wajib diisi (*).");
+      return;
+    }
+
+    const dataToSave = {
+      provinsi,
+      kabKot,
+      bidang,
+      kodeUnit,
+      namaUnit,
+      kode,
+    };
+
+    if (initialData && initialData.id) {
+      onSave({ ...dataToSave, id: initialData.id }); // Sertakan ID untuk update
+    } else {
+      onSave(dataToSave); // Tanpa ID untuk penambahan baru
+    }
     onClose();
   };
 
@@ -21,11 +59,11 @@ const AddUnitModal = ({ isOpen, onClose, onSave }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      {/* Modal Overlay */}
       <div className="relative w-full max-w-lg p-6 bg-white rounded-lg shadow-lg">
-        {/* Modal Header */}
         <div className="flex items-center justify-between pb-4 mb-4 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-800">TAMBAH UNIT</h2>
+          <h2 className="text-xl font-bold text-gray-800">
+            {initialData ? "EDIT UNIT" : "TAMBAH UNIT"}
+          </h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer"
@@ -47,14 +85,10 @@ const AddUnitModal = ({ isOpen, onClose, onSave }) => {
           </button>
         </div>
 
-        {/* Form Fields - Add max-h- and overflow-y-auto here */}
         <form
           onSubmit={handleSubmit}
           className="max-h-[calc(100vh-180px)] overflow-y-auto pr-2 pb-4"
         >
-          {/* max-h-[calc(100vh-180px)] is a placeholder; adjust 180px as needed */}
-          {/* pr-2 for scrollbar, pb-4 for bottom spacing */}
-
           <div className="mb-4">
             <label htmlFor="provinsi" className="block mb-2 text-gray-700">
               Provinsi: <span className="text-red-500">*</span>
@@ -67,8 +101,9 @@ const AddUnitModal = ({ isOpen, onClose, onSave }) => {
               required
             >
               <option value="">- Pilih Provinsi -</option>
-              {/* Add your options here dynamically or statically */}
               <option value="18 - Lampung">18 - Lampung</option>
+              <option value="19 - Jawa Barat">19 - Jawa Barat</option>
+              <option value="20 - DKI Jakarta">20 - DKI Jakarta</option>
             </select>
           </div>
 
@@ -84,9 +119,14 @@ const AddUnitModal = ({ isOpen, onClose, onSave }) => {
               required
             >
               <option value="">- Pilih Kabupaten/Kota -</option>
-              {/* Add your options here dynamically or statically */}
-              <option value="0 - Kab. Tanggamus">
+              <option value="0 - PEMERINTAH PROVINSI LAMPUNG">
                 0 - PEMERINTAH PROVINSI LAMPUNG
+              </option>
+              <option value="1 - Kota Bandar Lampung">
+                1 - Kota Bandar Lampung
+              </option>
+              <option value="2 - Kabupaten Lampung Selatan">
+                2 - Kabupaten Lampung Selatan
               </option>
             </select>
           </div>
@@ -103,7 +143,6 @@ const AddUnitModal = ({ isOpen, onClose, onSave }) => {
               required
             >
               <option value="">- Pilih Bidang -</option>
-              {/* Add your options here dynamically or statically */}
               <option value="1 - Sekwan/DPRD">1 - Sekwan/DPRD</option>
               <option value="2 - Gubernur/Bupati/Walikota">
                 2 - Gubernur/Bupati/Walikota
@@ -119,13 +158,13 @@ const AddUnitModal = ({ isOpen, onClose, onSave }) => {
               Kode Unit: <span className="text-red-500">*</span>
             </label>
             <input
-              type="number" // Change type to "number"
+              type="number"
               id="kodeUnit"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={kodeUnit}
               onChange={(e) => setKodeUnit(e.target.value)}
               required
-              min="0" // Optional: Set a minimum value if desired
+              min="0"
             />
           </div>
 
@@ -155,11 +194,8 @@ const AddUnitModal = ({ isOpen, onClose, onSave }) => {
               onChange={(e) => setKode(e.target.value)}
             />
           </div>
-
-          {/* Action Buttons are moved out of the form tag and into the main modal content div */}
         </form>
 
-        {/* Action Buttons - Placed outside the scrollable form but inside the modal content */}
         <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200 mt-4">
           <button
             type="button"
@@ -170,10 +206,10 @@ const AddUnitModal = ({ isOpen, onClose, onSave }) => {
           </button>
           <button
             type="submit"
-            onClick={handleSubmit} // Added onClick for submit button (since it's outside form)
+            onClick={handleSubmit}
             className="px-6 py-2 text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
           >
-            Simpan
+            {initialData ? "Simpan Perubahan" : "Simpan"}{" "}
           </button>
         </div>
       </div>
