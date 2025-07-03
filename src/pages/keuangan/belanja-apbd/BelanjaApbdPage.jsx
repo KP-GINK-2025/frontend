@@ -1,5 +1,5 @@
 import React from "react";
-import { Wallet } from "lucide-react"; // kamu bisa ganti ikon jika perlu
+import { Wallet } from "lucide-react";
 import Navbar from "../../../components/Navbar";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import MenuItem from "../../../components/MenuItem";
