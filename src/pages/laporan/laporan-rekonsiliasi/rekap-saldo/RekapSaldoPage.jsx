@@ -1,18 +1,16 @@
 import React from "react";
 import { Layers } from "lucide-react";
-import Navbar from "../../../components/Navbar";
-import MenuItem from "../../../components/MenuItem";
-import useMenuNavigation from "../../../hooks/useMenuNavigation";
-import Breadcrumbs from "../../../components/Breadcrumbs";
+import Navbar from "../../../../components/Navbar";
+import MenuItem from "../../../../components/MenuItem";
+import useMenuNavigation from "../../../../hooks/useMenuNavigation";
+import Breadcrumbs from "../../../../components/Breadcrumbs";
 
 const menuItems = [
-  { name: "Hibah per UPB", icon: Layers },
-  { name: "Rekapitulasi Hibah", icon: Layers },
-  { name: "Rincian Hibah", icon: Layers },
-  { name: "Rekap Hibah", icon: Layers },
+  { name: "Rekap Saldo Awal", icon: Layers },
+  { name: "Rekap Saldo Akhir", icon: Layers },
 ];
 
-const LaporanHibahPage = () => {
+const RekapSaldoPage = () => {
   const { handleMenuItemClick } = useMenuNavigation();
 
   return (
@@ -23,10 +21,10 @@ const LaporanHibahPage = () => {
       {/* Content */}
       <div className="px-8 py-8">
         <Breadcrumbs />
-        <h1 className="text-2xl font-bold mb-4 mt-4">Laporan Hibah</h1>
+        <h1 className="text-2xl font-bold mb-4 mt-4">Rekap Saldo</h1>
       </div>
       <div className="flex flex-col items-center gap-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 gap-8 justify-items-center">
           {menuItems.map((item, index) => (
             <MenuItem
               key={index}
@@ -41,4 +39,4 @@ const LaporanHibahPage = () => {
   );
 };
 
-export default LaporanHibahPage;
+export default RekapSaldoPage;
