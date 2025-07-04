@@ -30,10 +30,12 @@ const SubUnitPage = () => {
       setBidangData([
         { id: 1, namaBidang: "1 - Sekwan/DPRD" },
         { id: 2, namaBidang: "2 - Gubernur/Bupati/Walikota" },
+        { id: 3, namaBidang: "3 - Wakil Gubernur/Bupati/Walikota" },
       ]);
       setUnitData([
         { id: 1, namaUnit: "1 - Sekretariat DPRD" },
         { id: 2, namaUnit: "1 - Bupati Tanggamus" },
+        { id: 3, namaUnit: "1 - Wakil Bupati Tanggamus" },
       ]);
       setSubUnitData([
         {
@@ -43,118 +45,38 @@ const SubUnitPage = () => {
           bidang: "1 - Sekwan/DPRD",
           unit: "1 - Sekretariat DPRD",
           kodeSubUnit: "1",
-          namaSubUnit: "Sub Unit A",
-          kode: "ABC1",
+          namaSubUnit: "Sekretariat DPRD",
+          kode: "1",
         },
         {
           id: 2,
           provinsi: "18 - Lampung",
           kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
-          bidang: "2 - Gubernur/Bupati/Walikota",
-          unit: "1 - Bupati Tanggamus",
+          bidang: "1 - Sekwan/DPRD",
+          unit: "1 - Sekretariat DPRD",
           kodeSubUnit: "2",
-          namaSubUnit: "Sub Unit B",
-          kode: "ABC2",
+          namaSubUnit: "Bagian Umum",
+          kode: "2",
         },
         {
           id: 3,
           provinsi: "18 - Lampung",
           kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
-          bidang: "1 - Sekwan/DPRD",
-          unit: "1 - Sekretariat DPRD",
-          kodeSubUnit: "3",
-          namaSubUnit: "Sub Unit C",
-          kode: "ABC3",
+          bidang: "2 - Gubernur/Bupati/Walikota",
+          unit: "1 - Bupati Tanggamus",
+          kodeSubUnit: "1",
+          namaSubUnit: "Bupati Tanggamus",
+          kode: "1",
         },
         {
           id: 4,
           provinsi: "18 - Lampung",
           kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
-          bidang: "2 - Gubernur/Bupati/Walikota",
-          unit: "1 - Bupati Tanggamus",
-          kodeSubUnit: "4",
-          namaSubUnit: "Sub Unit D",
-          kode: "ABC4",
-        },
-        {
-          id: 5,
-          provinsi: "18 - Lampung",
-          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
-          bidang: "1 - Sekwan/DPRD",
-          unit: "1 - Sekretariat DPRD",
-          kodeSubUnit: "5",
-          namaSubUnit: "Sub Unit E",
-          kode: "ABC5",
-        },
-        {
-          id: 6,
-          provinsi: "18 - Lampung",
-          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
-          bidang: "2 - Gubernur/Bupati/Walikota",
-          unit: "1 - Bupati Tanggamus",
-          kodeSubUnit: "6",
-          namaSubUnit: "Sub Unit F",
-          kode: "ABC6",
-        },
-        {
-          id: 7,
-          provinsi: "18 - Lampung",
-          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
-          bidang: "1 - Sekwan/DPRD",
-          unit: "1 - Sekretariat DPRD",
-          kodeSubUnit: "7",
-          namaSubUnit: "Sub Unit G",
-          kode: "ABC7",
-        },
-        {
-          id: 8,
-          provinsi: "18 - Lampung",
-          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
-          bidang: "2 - Gubernur/Bupati/Walikota",
-          unit: "1 - Bupati Tanggamus",
-          kodeSubUnit: "8",
-          namaSubUnit: "Sub Unit H",
-          kode: "ABC8",
-        },
-        {
-          id: 9,
-          provinsi: "18 - Lampung",
-          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
-          bidang: "1 - Sekwan/DPRD",
-          unit: "1 - Sekretariat DPRD",
-          kodeSubUnit: "9",
-          namaSubUnit: "Sub Unit I",
-          kode: "ABC9",
-        },
-        {
-          id: 10,
-          provinsi: "18 - Lampung",
-          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
-          bidang: "2 - Gubernur/Bupati/Walikota",
-          unit: "1 - Bupati Tanggamus",
-          kodeSubUnit: "10",
-          namaSubUnit: "Sub Unit J",
-          kode: "ABC10",
-        },
-        {
-          id: 11,
-          provinsi: "18 - Lampung",
-          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
-          bidang: "1 - Sekwan/DPRD",
-          unit: "1 - Sekretariat DPRD",
-          kodeSubUnit: "11",
-          namaSubUnit: "Sub Unit K",
-          kode: "ABC11",
-        },
-        {
-          id: 12,
-          provinsi: "18 - Lampung",
-          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
-          bidang: "2 - Gubernur/Bupati/Walikota",
-          unit: "1 - Bupati Tanggamus",
-          kodeSubUnit: "12",
-          namaSubUnit: "Sub Unit L",
-          kode: "ABC12",
+          bidang: "3 - Wakil Gubernur/Bupati/Walikota",
+          unit: "1 - Wakil Bupati Tanggamus",
+          kodeSubUnit: "1",
+          namaSubUnit: "Wakil Bupati Tanggamus",
+          kode: "1",
         },
       ]);
       setLoading(false);
@@ -305,7 +227,7 @@ const SubUnitPage = () => {
                 <select
                   value={selectedBidang}
                   onChange={(e) => setSelectedBidang(e.target.value)}
-                  className="border border-gray-300 rounded px-3 py-2 text-sm"
+                  className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
                 >
                   <option value="">-- Pilih Bidang --</option>
                   {bidangData.map((b) => (
@@ -322,7 +244,7 @@ const SubUnitPage = () => {
                 <select
                   value={selectedUnit}
                   onChange={(e) => setSelectedUnit(e.target.value)}
-                  className="border border-gray-300 rounded px-3 py-2 text-sm"
+                  className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
                 >
                   <option value="">-- Pilih Unit --</option>
                   {unitData.map((u) => (

@@ -37,14 +37,18 @@ const UpbPage = () => {
       setBidangData([
         { id: 1, namaBidang: "1 - Sekwan/DPRD" },
         { id: 2, namaBidang: "2 - Gubernur/Bupati/Walikota" },
+        { id: 3, namaBidang: "3 - Wakil Gubernur/Bupati/Walikota" },
       ]);
       setUnitData([
         { id: 1, namaUnit: "1 - Sekretariat DPRD" },
         { id: 2, namaUnit: "1 - Bupati Tanggamus" },
+        { id: 3, namaUnit: "1 - Wakil Bupati Tanggamus" },
       ]);
       setSubUnitData([
-        { id: 1, namaSubUnit: "1 - Sub Unit A" },
-        { id: 2, namaSubUnit: "2 - Sub Unit B" },
+        { id: 1, namaSubUnit: "1 - Sekretariat DPRD" },
+        { id: 2, namaSubUnit: "2 - Bagian Umum" },
+        { id: 3, namaSubUnit: "1 - Bupati Tanggamus" },
+        { id: 4, namaSubUnit: "1 - Wakil Bupati Tanggamus" },
       ]);
       setUpbData([
         {
@@ -53,87 +57,43 @@ const UpbPage = () => {
           kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
           bidang: "1 - Sekwan/DPRD",
           unit: "1 - Sekretariat DPRD",
-          subUnit: "1 - Sub Unit A",
+          subUnit: "1 - Sekretariat DPRD",
           kodeUpb: "1",
-          namaUpb: "UPB Kantor Pusat",
-          kode: "XYZ1",
+          namaUpb: "Sekretariat DPRD",
+          kode: "1",
         },
         {
           id: 2,
           provinsi: "18 - Lampung",
           kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
-          bidang: "2 - Gubernur/Bupati/Walikota",
-          unit: "1 - Bupati Tanggamus",
-          subUnit: "2 - Sub Unit B",
-          kodeUpb: "2",
-          namaUpb: "UPB Cabang Lampung",
-          kode: "XYZ2",
+          bidang: "1 - Sekwan/DPRD",
+          unit: "1 - Sekretariat DPRD",
+          subUnit: "2 - Bagian Umum",
+          kodeUpb: "1",
+          namaUpb: "Subbag Tata Usaha",
+          kode: "1",
         },
         {
           id: 3,
           provinsi: "18 - Lampung",
           kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
-          bidang: "1 - Sekwan/DPRD",
-          unit: "1 - Sekretariat DPRD",
-          subUnit: "1 - Sub Unit A",
-          kodeUpb: "3",
-          namaUpb: "UPB Divisi Keuangan",
-          kode: "XYZ3",
+          bidang: "2 - Gubernur/Bupati/Walikota",
+          unit: "1 - Bupati Tanggamus",
+          subUnit: "1 - Bupati Tanggamus",
+          kodeUpb: "101",
+          namaUpb: "Bupati Tanggamus",
+          kode: "10",
         },
         {
           id: 4,
           provinsi: "18 - Lampung",
           kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
-          bidang: "2 - Gubernur/Bupati/Walikota",
-          unit: "1 - Bupati Tanggamus",
-          subUnit: "2 - Sub Unit B",
-          kodeUpb: "4",
-          namaUpb: "UPB Pemasaran",
-          kode: "XYZ4",
-        },
-        {
-          id: 5,
-          provinsi: "18 - Lampung",
-          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
-          bidang: "1 - Sekwan/DPRD",
-          unit: "1 - Sekretariat DPRD",
-          subUnit: "1 - Sub Unit A",
-          kodeUpb: "5",
-          namaUpb: "UPB Operasional",
-          kode: "XYZ5",
-        },
-        {
-          id: 6,
-          provinsi: "18 - Lampung",
-          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
-          bidang: "2 - Gubernur/Bupati/Walikota",
-          unit: "1 - Bupati Tanggamus",
-          subUnit: "2 - Sub Unit B",
-          kodeUpb: "6",
-          namaUpb: "UPB HRD",
-          kode: "XYZ6",
-        },
-        {
-          id: 7,
-          provinsi: "18 - Lampung",
-          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
-          bidang: "1 - Sekwan/DPRD",
-          unit: "1 - Sekretariat DPRD",
-          subUnit: "1 - Sub Unit A",
-          kodeUpb: "7",
-          namaUpb: "UPB Teknologi",
-          kode: "XYZ7",
-        },
-        {
-          id: 8,
-          provinsi: "18 - Lampung",
-          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
-          bidang: "2 - Gubernur/Bupati/Walikota",
-          unit: "1 - Bupati Tanggamus",
-          subUnit: "2 - Sub Unit B",
-          kodeUpb: "8",
-          namaUpb: "UPB Logistik",
-          kode: "XYZ8",
+          bidang: "3 - Wakil Gubernur/Bupati/Walikota",
+          unit: "1 - Wakil Bupati Tanggamus",
+          subUnit: "1 - Wakil Bupati Tanggamus",
+          kodeUpb: "101",
+          namaUpb: "Wakil Bupati Tanggamus",
+          kode: "10",
         },
       ]);
       setLoading(false);
@@ -287,7 +247,7 @@ const UpbPage = () => {
                 <select
                   value={selectedBidang}
                   onChange={(e) => setSelectedBidang(e.target.value)}
-                  className="border border-gray-300 rounded px-3 py-2 text-sm"
+                  className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
                 >
                   <option value=""> -- Bidang -- </option>
                   {bidangData.map((b) => (
@@ -304,7 +264,7 @@ const UpbPage = () => {
                 <select
                   value={selectedUnit}
                   onChange={(e) => setSelectedUnit(e.target.value)}
-                  className="border border-gray-300 rounded px-3 py-2 text-sm"
+                  className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
                 >
                   <option value=""> -- Unit -- </option>
                   {unitData.map((u) => (
@@ -321,7 +281,7 @@ const UpbPage = () => {
                 <select
                   value={selectedSubUnit}
                   onChange={(e) => setSelectedSubUnit(e.target.value)}
-                  className="border border-gray-300 rounded px-3 py-2 text-sm"
+                  className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
                 >
                   <option value=""> -- Sub Unit -- </option>
                   {subUnitData.map((s) => (

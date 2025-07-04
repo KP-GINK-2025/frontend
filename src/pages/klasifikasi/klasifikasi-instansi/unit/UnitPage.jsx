@@ -42,7 +42,7 @@ const UnitPage = () => {
           bidang: "1 - Sekwan/DPRD",
           kodeUnit: "1",
           namaUnit: "Sekretariat DPRD",
-          kode: "ABC1",
+          kode: "1",
         },
         {
           id: 2,
@@ -51,34 +51,16 @@ const UnitPage = () => {
           bidang: "2 - Gubernur/Bupati/Walikota",
           kodeUnit: "1",
           namaUnit: "Bupati Tanggamus",
-          kode: "ABC2",
+          kode: "1",
         },
         {
           id: 3,
           provinsi: "18 - Lampung",
           kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
-          bidang: "1 - Sekwan/DPRD",
-          kodeUnit: "2",
-          namaUnit: "Bagian Keuangan",
-          kode: "ABC3",
-        },
-        {
-          id: 4,
-          provinsi: "18 - Lampung",
-          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
           bidang: "3 - Wakil Gubernur/Bupati/Walikota",
           kodeUnit: "1",
           namaUnit: "Wakil Bupati Tanggamus",
-          kode: "ABC4",
-        },
-        {
-          id: 5,
-          provinsi: "18 - Lampung",
-          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
-          bidang: "1 - Sekwan/DPRD",
-          kodeUnit: "3",
-          namaUnit: "Bagian Umum",
-          kode: "ABC5",
+          kode: "1",
         },
       ]);
       setLoading(false);
@@ -178,7 +160,6 @@ const UnitPage = () => {
       sortable: false,
       renderCell: (params) => (
         <div className="flex gap-2 items-center">
-          {" "}
           <button
             onClick={() => handleEditClick(params.row.id)}
             className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
@@ -224,7 +205,7 @@ const UnitPage = () => {
                 <select
                   value={selectedBidang}
                   onChange={(e) => setSelectedBidang(e.target.value)}
-                  className="border border-gray-300 rounded px-3 py-2 text-sm"
+                  className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
                 >
                   <option value=""> -- Pilih Bidang -- </option>
                   {bidangData.map((b) => (
