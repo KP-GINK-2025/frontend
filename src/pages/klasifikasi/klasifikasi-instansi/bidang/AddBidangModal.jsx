@@ -12,7 +12,6 @@ const AddBidangModal = ({ isOpen, onClose, onSave, initialData }) => {
       setNamaBidang(initialData.namaBidang || "");
       setKode(initialData.kode || "");
     } else if (isOpen && !initialData) {
-      // Reset form jika tidak ada initialData (mode add baru)
       setKodeBidang("");
       setNamaBidang("");
       setKode("");
@@ -51,7 +50,6 @@ const AddBidangModal = ({ isOpen, onClose, onSave, initialData }) => {
         <div className="flex items-center justify-between pb-4 mb-4 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-800">
             {initialData ? "EDIT BIDANG" : "TAMBAH BIDANG"}{" "}
-            {/* Judul dinamis */}
           </h2>
           <button
             onClick={onClose}

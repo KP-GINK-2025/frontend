@@ -102,8 +102,6 @@ const AddUnitModal = ({ isOpen, onClose, onSave, initialData }) => {
             >
               <option value="">- Pilih Provinsi -</option>
               <option value="18 - Lampung">18 - Lampung</option>
-              <option value="19 - Jawa Barat">19 - Jawa Barat</option>
-              <option value="20 - DKI Jakarta">20 - DKI Jakarta</option>
             </select>
           </div>
 
@@ -121,12 +119,6 @@ const AddUnitModal = ({ isOpen, onClose, onSave, initialData }) => {
               <option value="">- Pilih Kabupaten/Kota -</option>
               <option value="0 - PEMERINTAH PROVINSI LAMPUNG">
                 0 - PEMERINTAH PROVINSI LAMPUNG
-              </option>
-              <option value="1 - Kota Bandar Lampung">
-                1 - Kota Bandar Lampung
-              </option>
-              <option value="2 - Kabupaten Lampung Selatan">
-                2 - Kabupaten Lampung Selatan
               </option>
             </select>
           </div>

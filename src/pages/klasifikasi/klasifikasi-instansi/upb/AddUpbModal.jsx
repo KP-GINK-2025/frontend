@@ -118,8 +118,6 @@ const AddUpbModal = ({ isOpen, onClose, onSave, initialData }) => {
             >
               <option value="">- Pilih Provinsi -</option>
               <option value="18 - Lampung">18 - Lampung</option>
-              <option value="19 - Jawa Barat">19 - Jawa Barat</option>
-              <option value="20 - DKI Jakarta">20 - DKI Jakarta</option>
             </select>
           </div>
 
@@ -137,12 +135,6 @@ const AddUpbModal = ({ isOpen, onClose, onSave, initialData }) => {
               <option value="">- Pilih Kabupaten/Kota -</option>
               <option value="0 - PEMERINTAH PROVINSI LAMPUNG">
                 0 - PEMERINTAH PROVINSI LAMPUNG
-              </option>
-              <option value="1 - Kota Bandar Lampung">
-                1 - Kota Bandar Lampung
-              </option>
-              <option value="2 - Kabupaten Lampung Selatan">
-                2 - Kabupaten Lampung Selatan
               </option>
             </select>
           </div>
@@ -201,9 +193,12 @@ const AddUpbModal = ({ isOpen, onClose, onSave, initialData }) => {
               required
             >
               <option value="">- Pilih Sub Unit -</option>
-              <option value="1 - Sub Unit A">1 - Sub Unit A</option>
-              <option value="2 - Sub Unit B">2 - Sub Unit B</option>
-              <option value="3 - Sub Unit C">3 - Sub Unit C</option>
+              <option value="1 - Sekretariat DPRD">1 - Sub Unit A</option>
+              <option value="2 - Sekretariat DPRD">2 - Sekretariat DPRD</option>
+              <option value="1 - Bupati Tanggamus">1 - Bupati Tanggamus</option>
+              <option value="1 - Wakil Bupati Tanggamus">
+                1 - Wakil Bupati Tanggamus
+              </option>
             </select>
           </div>
 

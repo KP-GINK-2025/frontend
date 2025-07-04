@@ -28,55 +28,18 @@ const BidangPage = () => {
     setTimeout(() => {
       // Dummy data untuk pengujian
       setBidangData([
-        { id: 1, kodeBidang: "1", namaBidang: "Sekwan/DPRD", kode: "BID001" },
+        { id: 1, kodeBidang: "1", namaBidang: "Sekwan/DPRD", kode: "1" },
         {
           id: 2,
           kodeBidang: "2",
           namaBidang: "Gubernur/Bupati/Walikota",
-          kode: "BID002",
+          kode: "3",
         },
         {
           id: 3,
           kodeBidang: "3",
           namaBidang: "Wakil Gubernur/Bupati/Walikota",
-          kode: "BID003",
-        },
-        {
-          id: 4,
-          kodeBidang: "4",
-          namaBidang: "Sekretariat Daerah",
-          kode: "BID004",
-        },
-        { id: 5, kodeBidang: "5", namaBidang: "Inspektorat", kode: "BID005" },
-        {
-          id: 6,
-          kodeBidang: "6",
-          namaBidang: "Dinas Pendidikan",
-          kode: "BID006",
-        },
-        {
-          id: 7,
-          kodeBidang: "7",
-          namaBidang: "Dinas Kesehatan",
-          kode: "BID007",
-        },
-        {
-          id: 8,
-          kodeBidang: "8",
-          namaBidang: "Dinas Pekerjaan Umum",
-          kode: "BID008",
-        },
-        {
-          id: 9,
-          kodeBidang: "9",
-          namaBidang: "Dinas Pertanian",
-          kode: "BID009",
-        },
-        {
-          id: 10,
-          kodeBidang: "10",
-          namaBidang: "Dinas Lingkungan Hidup",
-          kode: "BID010",
+          kode: "3",
         },
       ]);
       setLoading(false);
