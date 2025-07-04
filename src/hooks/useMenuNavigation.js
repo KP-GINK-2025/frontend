@@ -9,6 +9,7 @@ const useMenuNavigation = () => {
       case "Klasifikasi":
         navigate("/klasifikasi");
         break;
+      // Klasifikasi Instansi
       case "Klasifikasi Instansi":
         navigate("/klasifikasi/instansi");
         break;
@@ -24,6 +25,7 @@ const useMenuNavigation = () => {
       case "UPB":
         navigate("/klasifikasi/instansi/upb");
         break;
+      // Klasifikasi Aset
       case "Klasifikasi Aset":
         navigate("/klasifikasi/aset");
         break;
@@ -72,6 +74,7 @@ const useMenuNavigation = () => {
       case "Keuangan":
         navigate("/keuangan");
         break;
+      // Belanja APBD
       case "Belanja APBD":
         navigate("/keuangan/belanja-apbd");
         break;
@@ -84,6 +87,7 @@ const useMenuNavigation = () => {
       case "Posting Belanja":
         navigate("/keuangan/belanja-apbd/posting-belanja");
         break;
+      // Mutasi
       case "Mutasi":
         navigate("/keuangan/mutasi");
         break;
@@ -96,6 +100,7 @@ const useMenuNavigation = () => {
       case "Posting Mutasi":
         navigate("/keuangan/mutasi/posting-mutasi");
         break;
+      // Hibah
       case "Hibah":
         navigate("/keuangan/hibah");
         break;
@@ -113,6 +118,18 @@ const useMenuNavigation = () => {
       // Laporan Start
       case "Laporan":
         navigate("/laporan");
+        break;
+      // Laporan Rekonsiliasi
+      case "Laporan Rekonsiliasi":
+        navigate("/laporan/laporan-rekonsiliasi");
+        break;
+      // Laporan Hibah
+      case "Laporan Hibah":
+        navigate("/laporan/laporan-hibah");
+        break;
+      // LRA vs BM
+      case "LRA VS BM":
+        navigate("/laporan/lra-vs-bm");
         break;
       // Laporan End
 
