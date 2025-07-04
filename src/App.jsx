@@ -34,8 +34,26 @@ import ItemHibahPage from "./pages/keuangan/hibah/item-hibah/ItemHibahPage";
 import PostingHibahPage from "./pages/keuangan/hibah/posting-hibah/PostingHibahPage";
 import LaporanPage from "./pages/laporan/LaporanPage";
 import LaporanRekonsiliasiPage from "./pages/laporan/laporan-rekonsiliasi/LaporanRekonsiliasiPage";
+import LaporanPerUpbPage from "./pages/laporan/laporan-rekonsiliasi/laporan-per-upb/LaporanPerUpbPage";
+import RekapRekonsiliasiPage from "./pages/laporan/laporan-rekonsiliasi/rekap-rekonsiliasi/RekapRekonsiliasiPage";
+import RekapKibPage from "./pages/laporan/laporan-rekonsiliasi/rekap-kib/RekapKibPage";
+import RekapSaldoPage from "./pages/laporan/laporan-rekonsiliasi/rekap-saldo/RekapSaldoPage";
 import LaporanHibahPage from "./pages/laporan/laporan-hibah/LaporanHibahPage";
+import HibahPerUpbPage from "./pages/laporan/laporan-hibah/hibah-per-upb/HibahPerUpbPage";
+import RekapitulasiHibahPage from "./pages/laporan/laporan-hibah/rekapitulasi-hibah/RekapitulasiHibahPage";
+import RekapitulasiHibahPerUpbPage from "./pages/laporan/laporan-hibah/rekapitulasi-hibah/RekapitulasiHibahPerUpbPage";
+import RekapitulasiSeluruhHibahPage from "./pages/laporan/laporan-hibah/rekapitulasi-hibah/RekapitulasiSeluruhHibahPage";
+import RincianHibahPage from "./pages/laporan/laporan-hibah/rincian-hibah/RincianHibahPage";
+import RincianRealisasiAnggaranPage from "./pages/laporan/laporan-hibah/rincian-hibah/RincianRealisasiAnggaranPage";
+import RincianSudahDiadministrasiPage from "./pages/laporan/laporan-hibah/rincian-hibah/RincianSudahDiadministrasiPage";
+import RincianBelumDiadministrasiPage from "./pages/laporan/laporan-hibah/rincian-hibah/RincianBelumDiadministrasiPage";
+import RekapHibahPage from "./pages/laporan/laporan-hibah/rekap-hibah/RekapHibahPage";
+import RekapAdministrasiHibahPage from "./pages/laporan/laporan-hibah/rekap-hibah/RekapAdministrasiHibahPage";
+import RekapHibahUpbPage from "./pages/laporan/laporan-hibah/rekap-hibah/RekapHibahUpbPage";
+import RekapHibahSkpdPage from "./pages/laporan/laporan-hibah/rekap-hibah/RekapHibahSkpdPage";
 import LraVsBmPage from "./pages/laporan/lra-vs-bm/LraVsBmPage";
+import LraVsBmUpbPage from "./pages/laporan/lra-vs-bm/LraVsBmUpbPage";
+import LraVsBmSkpdPage from "./pages/laporan/lra-vs-bm/LraVsBmSkpdPage";
 import PengaturanPage from "./pages/pengaturan/PengaturanPage";
 
 function App() {
@@ -109,10 +127,28 @@ function App() {
         <Route path="/laporan" element={<LaporanPage />} />
         {/* Laporan Rekonsiliasi */}
         <Route path="/laporan/laporan-rekonsiliasi" element={<LaporanRekonsiliasiPage />} />
+        <Route path="/laporan/laporan-rekonsiliasi/laporan-per-upb" element={<LaporanPerUpbPage />} />
+        <Route path="/laporan/laporan-rekonsiliasi/rekap-rekonsiliasi" element={<RekapRekonsiliasiPage />} />
+        <Route path="/laporan/laporan-rekonsiliasi/rekap-kib" element={<RekapKibPage />} />
+        <Route path="/laporan/laporan-rekonsiliasi/rekap-saldo" element={<RekapSaldoPage />} />
         {/* Laporan Hibah */}
         <Route path="/laporan/laporan-hibah" element={<LaporanHibahPage />} />
+        <Route path="/laporan/laporan-hibah/hibah-per-upb" element={<HibahPerUpbPage />} />
+        <Route path="/laporan/laporan-hibah/rekapitulasi-hibah" element={<RekapitulasiHibahPage />} />
+        <Route path="/laporan/laporan-hibah/rekapitulasi-hibah-per-upb" element={<RekapitulasiHibahPerUpbPage />} />
+        <Route path="/laporan/laporan-hibah/rekapitulasi-seluruh-hibah" element={<RekapitulasiSeluruhHibahPage />} />
+        <Route path="/laporan/laporan-hibah/rincian-hibah" element={<RincianHibahPage />} />
+        <Route path="/laporan/laporan-hibah/rincian-realisasi-anggaran" element={<RincianRealisasiAnggaranPage />} />
+        <Route path="/laporan/laporan-hibah/rincian-sudah-diadministrasi" element={<RincianSudahDiadministrasiPage />} />
+        <Route path="/laporan/laporan-hibah/rincian-belum-diadministrasi" element={<RincianBelumDiadministrasiPage />} />
+        <Route path="/laporan/laporan-hibah/rekap-hibah" element={<RekapHibahPage />} />
+        <Route path="/laporan/laporan-hibah/rekap-administrasi-hibah" element={<RekapAdministrasiHibahPage />} />
+        <Route path="/laporan/laporan-hibah/rekap-hibah-upb" element={<RekapHibahUpbPage />} />
+        <Route path="/laporan/laporan-hibah/rekap-hibah-skpd" element={<RekapHibahSkpdPage />} />
         {/* Laporan LRA vs BM */}
         <Route path="/laporan/lra-vs-bm" element={<LraVsBmPage />} />
+        <Route path="/laporan/lra-vs-bm/upb" element={<LraVsBmUpbPage />} />
+        <Route path="/laporan/lra-vs-bm/skpd" element={<LraVsBmSkpdPage />} />
         {/* Laporan End */}
 
         {/* Pengaturan Start */}
