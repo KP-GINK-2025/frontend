@@ -9,6 +9,7 @@ const useMenuNavigation = () => {
       case "Klasifikasi":
         navigate("/klasifikasi");
         break;
+      // Klasifikasi Instansi
       case "Klasifikasi Instansi":
         navigate("/klasifikasi/instansi");
         break;
@@ -24,6 +25,7 @@ const useMenuNavigation = () => {
       case "UPB":
         navigate("/klasifikasi/instansi/upb");
         break;
+      // Klasifikasi Aset
       case "Klasifikasi Aset":
         navigate("/klasifikasi/aset");
         break;
@@ -72,47 +74,62 @@ const useMenuNavigation = () => {
       case "Keuangan":
         navigate("/keuangan");
         break;
+      // Belanja APBD
       case "Belanja APBD":
         navigate("/keuangan/belanja-apbd");
         break;
       case "Daftar Belanja":
-        navigate("/keuangan/belanja-apbd/daftar");
+        navigate("/keuangan/belanja-apbd/daftar-belanja");
         break;
       case "Item Belanja":
-        navigate("/keuangan/belanja-apbd/item");
+        navigate("/keuangan/belanja-apbd/item-belanja");
         break;
       case "Posting Belanja":
-        navigate("/keuangan/belanja-apbd/posting");
+        navigate("/keuangan/belanja-apbd/posting-belanja");
         break;
+      // Mutasi
       case "Mutasi":
         navigate("/keuangan/mutasi");
         break;
       case "Daftar Mutasi":
-        navigate("/keuangan/mutasi/daftar");
+        navigate("/keuangan/mutasi/daftar-mutasi");
         break;
       case "Item Mutasi":
-        navigate("/keuangan/mutasi/item");
+        navigate("/keuangan/mutasi/item-mutasi");
         break;
       case "Posting Mutasi":
-        navigate("/keuangan/mutasi/posting");
+        navigate("/keuangan/mutasi/posting-mutasi");
         break;
+      // Hibah
       case "Hibah":
         navigate("/keuangan/hibah");
         break;
       case "Daftar Hibah":
-        navigate("/keuangan/hibah/daftar");
+        navigate("/keuangan/hibah/daftar-hibah");
         break;
       case "Item Hibah":
-        navigate("/keuangan/hibah/item");
+        navigate("/keuangan/hibah/item-hibah");
         break;
       case "Posting Hibah":
-        navigate("/keuangan/hibah/posting");
+        navigate("/keuangan/hibah/posting-hibah");
         break;
       // Keuangan End
 
       // Laporan Start
       case "Laporan":
         navigate("/laporan");
+        break;
+      // Laporan Rekonsiliasi
+      case "Laporan Rekonsiliasi":
+        navigate("/laporan/laporan-rekonsiliasi");
+        break;
+      // Laporan Hibah
+      case "Laporan Hibah":
+        navigate("/laporan/laporan-hibah");
+        break;
+      // LRA vs BM
+      case "LRA VS BM":
+        navigate("/laporan/lra-vs-bm");
         break;
       // Laporan End
 

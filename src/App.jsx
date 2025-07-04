@@ -33,6 +33,9 @@ import DaftarHibahPage from "./pages/keuangan/hibah/daftar-hibah/DaftarHibahPage
 import ItemHibahPage from "./pages/keuangan/hibah/item-hibah/ItemHibahPage";
 import PostingHibahPage from "./pages/keuangan/hibah/posting-hibah/PostingHibahPage";
 import LaporanPage from "./pages/laporan/LaporanPage";
+import LaporanRekonsiliasiPage from "./pages/laporan/laporan-rekonsiliasi/LaporanRekonsiliasiPage";
+import LaporanHibahPage from "./pages/laporan/laporan-hibah/LaporanHibahPage";
+import LraVsBmPage from "./pages/laporan/lra-vs-bm/LraVsBmPage";
 import PengaturanPage from "./pages/pengaturan/PengaturanPage";
 
 function App() {
@@ -104,6 +107,12 @@ function App() {
 
         {/* Laporan Start */}
         <Route path="/laporan" element={<LaporanPage />} />
+        {/* Laporan Rekonsiliasi */}
+        <Route path="/laporan/laporan-rekonsiliasi" element={<LaporanRekonsiliasiPage />} />
+        {/* Laporan Hibah */}
+        <Route path="/laporan/laporan-hibah" element={<LaporanHibahPage />} />
+        {/* Laporan LRA vs BM */}
+        <Route path="/laporan/lra-vs-bm" element={<LraVsBmPage />} />
         {/* Laporan End */}
 
         {/* Pengaturan Start */}
