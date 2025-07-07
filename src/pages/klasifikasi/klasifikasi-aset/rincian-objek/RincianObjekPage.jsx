@@ -2,67 +2,216 @@ import React, { useState, useEffect } from "react";
 import Navbar from "../../../../components/Navbar";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
+import AddRincianObjekModal from "./AddRincianObjekModal";
+import DataTable from "../../../../components/DataTable";
 
 const RincianObjekPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(10);
-  const [currentPage, setCurrentPage] = useState(1);
+  // const [currentPage, setCurrentPage] = useState(1);
   const [rincianObjekData, setRincianObjekData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  // State untuk data filter Aset 1, 2, 3, 4
+  const [asetSatuData, setAsetSatuData] = useState([]);
+  const [selectedAsetSatu, setSelectedAsetSatu] = useState("");
+
+  const [asetDuaData, setAsetDuaData] = useState([]);
+  const [selectedAsetDua, setSelectedAsetDua] = useState("");
+
+  const [asetTigaData, setAsetTigaData] = useState([]);
+  const [selectedAsetTiga, setSelectedAsetTiga] = useState("");
+
+  const [asetEmpatData, setAsetEmpatData] = useState([]);
+  const [selectedAsetEmpat, setSelectedAsetEmpat] = useState("");
+
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingRincianObjek, setEditingRincianObjek] = useState(null);
+
+  const [dataTablePaginationModel, setDataTablePaginationModel] =
+    React.useState({
+      page: 0,
+      pageSize: entriesPerPage,
+    });
+
+  const fetchData = () => {
+    setLoading(true);
     setTimeout(() => {
+      setAsetSatuData([{ id: 1, namaAset: "Aset" }]);
+
+      setAsetDuaData([
+        { id: 1, namaAset2: "Aset Lancar" },
+        { id: 2, namaAset2: "Aset Tetap" },
+        { id: 3, namaAset2: "Aset Lainnya" },
+      ]);
+
+      setAsetTigaData([
+        { id: 1, namaAset3: "Tanah" },
+        { id: 2, namaAset3: "Peralatan dan Mesin" },
+        { id: 3, namaAset3: "Gedung dan Bangunan" },
+      ]);
+
+      setAsetEmpatData([
+        { id: 1, namaAset4: "Tanah" },
+        { id: 2, namaAset4: "Alat Berat" },
+        { id: 3, namaAset4: "Alat Angkutan" },
+      ]);
+
       setRincianObjekData([
-        // Contoh data dummy
-        // { id: 1, aset1: "Akun 1", aset2: "Kelompok Bangunan", aset3: "Jenis Bangunan Kantor", aset4: "Objek Gedung Perkantoran", kodeAset5: "RNC001", namaAset5: "Rincian Gedung Kantor Utama", kode: "RGKU" },
+        {
+          id: 1,
+          aset1: "Aset",
+          aset2: "Aset Tetap",
+          aset3: "Tanah",
+          aset4: "Tanah",
+          kodeAset5: "1",
+          namaAset5: "Tanah Persil",
+          kode: "01",
+        },
+        {
+          id: 2,
+          aset1: "Aset",
+          aset2: "Aset Tetap",
+          aset3: "Peralatan dan Mesin",
+          aset4: "Alat Berat",
+          kodeAset5: "2",
+          namaAset5: "Alat Besar Darat",
+          kode: "02",
+        },
       ]);
       setLoading(false);
     }, 1000);
+  };
+
+  useEffect(() => {
+    fetchData();
   }, []);
 
-  const handleRefresh = () => {
-    setLoading(true);
-    setSearchTerm("");
-    setCurrentPage(1);
-    setTimeout(() => {
-      setRincianObjekData([
-        // Refresh data bisa diisi ulang dari sumber
-      ]);
-      setLoading(false);
-    }, 1000);
-  };
+  const filteredData = rincianObjekData.filter((item) => {
+    const matchesSearch =
+      item.aset1?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.aset2?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.aset3?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.aset4?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.kodeAset5?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.namaAset5?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.kode?.toLowerCase().includes(searchTerm.toLowerCase());
 
-  const handleAddRincianObjek = () => {
-    console.log("Menambahkan Rincian Objek...");
-  };
+    const matchesAsetSatu =
+      selectedAsetSatu === "" || item.aset1 === selectedAsetSatu;
+    const matchesAsetDua =
+      selectedAsetDua === "" || item.aset2 === selectedAsetDua;
+    const matchesAsetTiga =
+      selectedAsetTiga === "" || item.aset3 === selectedAsetTiga;
+    const matchesAsetEmpat =
+      selectedAsetEmpat === "" || item.aset4 === selectedAsetEmpat;
+
+    return (
+      matchesSearch &&
+      matchesAsetSatu &&
+      matchesAsetDua &&
+      matchesAsetTiga &&
+      matchesAsetEmpat
+    );
+  });
 
   const handleExport = () => {
     console.log("Exporting rincian objek data...");
   };
 
-  const filteredData = rincianObjekData.filter((item) =>
-    item.aset1?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.aset2?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.aset3?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.aset4?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.kodeAset5?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.namaAset5?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.kode?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const totalEntries = filteredData.length;
-  const totalPages = Math.ceil(totalEntries / entriesPerPage);
-  const startIndex = (currentPage - 1) * entriesPerPage;
-  const endIndex = startIndex + entriesPerPage;
-  const currentData = filteredData.slice(startIndex, endIndex);
-
-  const handlePreviousPage = () => {
-    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  const handleRefresh = () => {
+    setLoading(true);
+    setSearchTerm("");
+    setSelectedAsetSatu("");
+    setSelectedAsetDua("");
+    setSelectedAsetTiga("");
+    setSelectedAsetEmpat("");
+    fetchData();
   };
 
-  const handleNextPage = () => {
-    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  const handleOpenAddModal = () => {
+    setEditingRincianObjek(null);
+    setIsAddModalOpen(true);
   };
+
+  const handleCloseAddModal = () => {
+    setIsAddModalOpen(false);
+    setEditingRincianObjek(null);
+  };
+
+  const handleSaveNewRincianObjek = (rincianObjekToSave) => {
+    if (rincianObjekToSave.id) {
+      setRincianObjekData((prevData) =>
+        prevData.map((item) =>
+          item.id === rincianObjekToSave.id ? rincianObjekToSave : item
+        )
+      );
+      console.log("Update Rincian Objek:", rincianObjekToSave);
+    } else {
+      setRincianObjekData((prevData) => [
+        ...prevData,
+        { id: Date.now(), ...rincianObjekToSave },
+      ]);
+      console.log("Menyimpan Rincian Objek baru:", rincianObjekToSave);
+    }
+    handleCloseAddModal();
+  };
+
+  const handleEditClick = (id) => {
+    const rincianObjekToEdit = rincianObjekData.find((item) => item.id === id);
+    if (rincianObjekToEdit) {
+      setEditingRincianObjek(rincianObjekToEdit);
+      setIsAddModalOpen(true);
+    }
+  };
+
+  const handleDeleteClick = (id) => {
+    if (window.confirm("Apakah Anda yakin ingin menghapus data ini?")) {
+      setRincianObjekData((prevData) =>
+        prevData.filter((item) => item.id !== id)
+      );
+      console.log("Menghapus Rincian Objek dengan ID:", id);
+    }
+  };
+
+  // Data kolom untuk MUI DataGrid
+  const columns = [
+    { field: "id", headerName: "ID", width: 90 },
+    { field: "aset1", headerName: "Aset 1", width: 150 },
+    { field: "aset2", headerName: "Aset 2", width: 150 },
+    { field: "aset3", headerName: "Aset 3", width: 150 },
+    { field: "aset4", headerName: "Aset 4", width: 150 },
+    {
+      field: "kodeAset5",
+      headerName: "Kode Aset 5",
+      type: "number",
+      width: 120,
+    },
+    { field: "namaAset5", headerName: "Nama Aset 5", flex: 1 },
+    { field: "kode", headerName: "Kode", width: 100 },
+    {
+      field: "action",
+      headerName: "Action",
+      width: 150,
+      sortable: false,
+      renderCell: (params) => (
+        <div className="flex gap-2 items-center">
+          <button
+            onClick={() => handleEditClick(params.row.id)}
+            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => handleDeleteClick(params.row.id)}
+            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
+          >
+            Delete
+          </button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-[#f7f7f7]">
@@ -76,52 +225,130 @@ const RincianObjekPage = () => {
             onClick={handleExport}
             className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
           >
-            <Download size={16} />
-            Export
+            <Download size={16} /> Export
           </button>
         </div>
 
         <div className="bg-white rounded-lg shadow-sm p-6">
+          {/* Header dan Tombol Aksi (Refresh, Add) */}
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-gray-800">
               Daftar Klasifikasi Aset 5
             </h1>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-6 mb-6 justify-between">
+            <div className="flex flex-wrap items-center gap-6">
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-700">Aset 1</label>
+                <select
+                  value={selectedAsetSatu}
+                  onChange={(e) => setSelectedAsetSatu(e.target.value)}
+                  className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
+                >
+                  <option value=""> -- Pilih Aset 1 -- </option>
+                  {asetSatuData.map((b) => (
+                    <option key={b.id} value={b.namaAset}>
+                      {b.namaAset}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-700">Aset 2</label>
+                <select
+                  value={selectedAsetDua}
+                  onChange={(e) => setSelectedAsetDua(e.target.value)}
+                  className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
+                >
+                  <option value=""> -- Pilih Aset 2 -- </option>
+                  {asetDuaData.map((b) => (
+                    <option key={b.id} value={b.namaAset2}>
+                      {b.namaAset2}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-700">Aset 3</label>
+                <select
+                  value={selectedAsetTiga}
+                  onChange={(e) => setSelectedAsetTiga(e.target.value)}
+                  className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
+                >
+                  <option value=""> -- Pilih Aset 3 -- </option>
+                  {asetTigaData.map((b) => (
+                    <option key={b.id} value={b.namaAset3}>
+                      {b.namaAset3}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-700">Aset 4</label>
+                <select
+                  value={selectedAsetEmpat}
+                  onChange={(e) => setSelectedAsetEmpat(e.target.value)}
+                  className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
+                >
+                  <option value=""> -- Pilih Aset 4 -- </option>
+                  {asetEmpatData.map((aset) => (
+                    <option key={aset.id} value={aset.namaAset4}>
+                      {aset.namaAset4}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             <div className="flex gap-3">
               <button
                 onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 cursor-pointer"
               >
                 <RefreshCw size={16} /> Refresh
               </button>
               <button
-                onClick={handleAddRincianObjek}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+                onClick={handleOpenAddModal}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 cursor-pointer"
               >
-                <Plus size={16} /> Add Rincian Objek
+                <Plus size={16} /> Add Aset 5
               </button>
             </div>
           </div>
 
+          {/* BARIS KETIGA: Show entries + Search Box */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+            {/* Show entries */}
             <div className="flex items-center gap-2">
               <span className="text-gray-600 text-sm">Show</span>
               <select
                 value={entriesPerPage}
                 onChange={(e) => {
                   setEntriesPerPage(Number(e.target.value));
-                  setCurrentPage(1);
+                  setDataTablePaginationModel((prev) => ({
+                    ...prev,
+                    pageSize: Number(e.target.value),
+                    page: 0,
+                  }));
                 }}
                 className="border border-gray-300 rounded px-3 py-1 text-sm"
               >
-                {[10, 25, 50, 100].map((n) => (
-                  <option key={n} value={n}>{n}</option>
+                {[5, 10, 25, 50, 100].map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
                 ))}
               </select>
               <span className="text-gray-600 text-sm">entries</span>
             </div>
 
+            {/* Search Box */}
             <div className="relative w-full md:w-64">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+              <Search
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={16}
+              />
               <input
                 type="text"
                 placeholder="Search"
@@ -132,79 +359,30 @@ const RincianObjekPage = () => {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Action</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Aset 1</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Aset 2</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Aset 3</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Aset 4</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Kode Aset 5</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Nama Aset 5</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Kode</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan="8" className="text-center py-8 text-gray-500">
-                      Loading...
-                    </td>
-                  </tr>
-                ) : currentData.length === 0 ? (
-                  <tr>
-                    <td colSpan="8" className="text-center py-8 text-gray-500">
-                      No data available in table
-                    </td>
-                  </tr>
-                ) : (
-                  currentData.map((item, index) => (
-                    <tr key={item.id || index} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-3 px-4">
-                        <div className="flex gap-2">
-                          <button className="text-blue-600 hover:text-blue-800 text-sm">Edit</button>
-                          <button className="text-red-600 hover:text-red-800 text-sm">Delete</button>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 text-gray-700">{item.aset1}</td>
-                      <td className="py-3 px-4 text-gray-700">{item.aset2}</td>
-                      <td className="py-3 px-4 text-gray-700">{item.aset3}</td>
-                      <td className="py-3 px-4 text-gray-700">{item.aset4}</td>
-                      <td className="py-3 px-4 text-gray-700">{item.kodeAset5}</td>
-                      <td className="py-3 px-4 text-gray-700">{item.namaAset5}</td>
-                      <td className="py-3 px-4 text-gray-700">{item.kode}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="flex justify-between items-center mt-6">
-            <div className="text-sm text-gray-600">
-              Show {Math.min(startIndex + 1, totalEntries)} to {Math.min(endIndex, totalEntries)} of {totalEntries} entries
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={handlePreviousPage}
-                disabled={currentPage === 1}
-                className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-100 cursor-pointer"
-              >
-                Previous
-              </button>
-              <button
-                onClick={handleNextPage}
-                disabled={currentPage === totalPages || totalPages === 0}
-                className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-100 cursor-pointer"
-              >
-                Next
-              </button>
-            </div>
-          </div>
+          {/* DataTable Component */}
+          {loading ? (
+            <div className="text-center py-8 text-gray-500">Loading...</div>
+          ) : (
+            <DataTable
+              rows={filteredData}
+              columns={columns}
+              initialPageSize={entriesPerPage}
+              pageSizeOptions={[5, 10, 25, 50, 100]}
+              height={500}
+              emptyRowsMessage="No Rincian Objek data available"
+              paginationModel={dataTablePaginationModel}
+              onPaginationModelChange={setDataTablePaginationModel}
+            />
+          )}
         </div>
       </div>
+
+      <AddRincianObjekModal
+        isOpen={isAddModalOpen}
+        onClose={handleCloseAddModal}
+        onSave={handleSaveNewRincianObjek}
+        initialData={editingRincianObjek}
+      />
     </div>
   );
 };
