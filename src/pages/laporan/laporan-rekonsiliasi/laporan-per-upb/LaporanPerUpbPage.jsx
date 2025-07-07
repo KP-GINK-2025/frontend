@@ -7,7 +7,7 @@ import Breadcrumbs from "../../../../components/Breadcrumbs";
 
 const menuItems = [
   { name: "Belanja APBD per UPB", icon: Layers },
-  { name: "Rekap Belanja APBD/UPB", icon: Layers },
+  { name: "Rekap Belanja APBD per UPB", icon: Layers },
   { name: "Mutasi per UPB", icon: Layers },
   { name: "Rekap Mutasi per UPB", icon: Layers },
 ];

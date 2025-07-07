@@ -126,14 +126,56 @@ const useMenuNavigation = () => {
       case "Laporan per UPB":
         navigate("/laporan/laporan-rekonsiliasi/laporan-per-upb");
         break;
+      case "Belanja APBD per UPB":
+        navigate("/laporan/laporan-rekonsiliasi/laporan-per-upb/belanja-apbd-per-upb");
+        break;
+      case "Rekap Belanja APBD per UPB":
+        navigate("/laporan/laporan-rekonsiliasi/laporan-per-upb/rekap-belanja-apbd-per-upb");
+        break;
+      case "Mutasi per UPB":
+        navigate("/laporan/laporan-rekonsiliasi/laporan-per-upb/mutasi-per-upb");
+        break;
+      case "Rekap Mutasi per UPB":
+        navigate("/laporan/laporan-rekonsiliasi/laporan-per-upb/rekap-mutasi-per-upb");
+        break;
       case "Rekap Rekonsiliasi":
         navigate("/laporan/laporan-rekonsiliasi/rekap-rekonsiliasi");
+        break;
+      case "Rekap Rekonsiliasi UPB":
+        navigate("/laporan/laporan-rekonsiliasi/rekap-rekonsiliasi/rekonsiliasi-upb");
+        break;
+      case "Rekap Seluruh Rekonsiliasi":
+        navigate("/laporan/laporan-rekonsiliasi/rekap-rekonsiliasi/seluruh-rekonsiliasi");
         break;
       case "Rekap KIB":
         navigate("/laporan/laporan-rekonsiliasi/rekap-kib");
         break;
+      case "Rekap KIB A 47":
+        navigate("/laporan/laporan-rekonsiliasi/rekap-kib/rekap-kib-a-47");
+        break;
+      case "Rekap KIB B 47":
+        navigate("/laporan/laporan-rekonsiliasi/rekap-kib/rekap-kib-b-47");
+        break;
+      case "Rekap KIB C 47":
+        navigate("/laporan/laporan-rekonsiliasi/rekap-kib/rekap-kib-c-47");
+        break;
+      case "Rekap KIB D 47":
+        navigate("/laporan/laporan-rekonsiliasi/rekap-kib/rekap-kib-d-47");
+        break;
+      case "Rekap KIB E 47":
+        navigate("/laporan/laporan-rekonsiliasi/rekap-kib/rekap-kib-e-47");
+        break;
+      case "Rekap KIB F 47":
+        navigate("/laporan/laporan-rekonsiliasi/rekap-kib/rekap-kib-f-47");
+        break;
       case "Rekap Saldo (awal dan akhir)":
         navigate("/laporan/laporan-rekonsiliasi/rekap-saldo");
+        break;
+      case "Rekap Saldo Awal":
+        navigate("/laporan/laporan-rekonsiliasi/rekap-saldo/saldo-awal");
+        break;
+      case "Rekap Saldo Akhir":
+        navigate("/laporan/laporan-rekonsiliasi/rekap-saldo/saldo-akhir");
         break;
       // Laporan Hibah
       case "Laporan Hibah":
