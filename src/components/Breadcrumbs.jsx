@@ -23,14 +23,19 @@ const Breadcrumbs = () => {
         return "UPB";
       case "aset":
         return "Aset";
+
       case "data-ruang":
         return "Data Ruang";
       case "saldo-awal":
         return "Saldo Awal";
       case "lra":
         return "LRA";
+
       case "keuangan":
         return "Keuangan";
+      case "belanja-apbd":
+        return "Belanja APBD";
+
       case "laporan":
         return "Laporan";
       case "pengaturan":

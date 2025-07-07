@@ -1,8 +1,8 @@
 import React from "react";
-import Navbar from "../../../../components/Navbar";
-import Breadcrumbs from "../../../../components/Breadcrumbs";
+import Navbar from "../../../../../components/Navbar";
+import Breadcrumbs from "../../../../../components/Breadcrumbs";
 
-const RincianRealisasiAnggaranPage = () => {
+const RekapAdministrasiHibahPage = () => {
   return (
     <div className="min-h-screen bg-[#f7f7f7]">
       <Navbar />
@@ -10,13 +10,13 @@ const RincianRealisasiAnggaranPage = () => {
       <div className="px-8 py-8">
         <Breadcrumbs />
         <h1 className="text-2xl font-bold mb-4 mt-4">
-          Rincian Realisasi Anggaran
+          Rekap Administrasi Hibah
         </h1>
       </div>
 
       <div className="max-w-3xl mx-auto bg-white rounded-xl shadow p-8">
         <h2 className="text-center font-bold text-base mb-2 uppercase leading-relaxed">
-          DATA RINCIAN REALISASI ANGGARAN HIBAH
+          REKAP HIBAH
         </h2>
         <p className="text-center text-base mb-6">Tahun Anggaran 2025</p>
 
@@ -27,18 +27,7 @@ const RincianRealisasiAnggaranPage = () => {
             "UPB",
             "Semester",
             "Status Verifikasi Belanja APBD",
-            "Nama Pimpinan",
-            "NIP Pimpinan",
-            "Jabatan Pimpinan",
-            "Nama Bendahara",
-            "NIP Bendahara",
-            "Jabatan Bendahara",
-            "Nama Pengurus",
-            "NIP Pengurus",
-            "Jabatan Pengurus",
-            "Nama Penyimpan",
-            "NIP Penyimpan",
-            "Jabatan Penyimpan",
+            "Status Verifikasi Administrasi Hibah",
           ].map((label, i) => (
             <div key={i} className="flex flex-col">
               <label className="text-sm font-medium mb-1">{label}</label>
@@ -62,4 +51,4 @@ const RincianRealisasiAnggaranPage = () => {
   );
 };
 
-export default RincianRealisasiAnggaranPage;
+export default RekapAdministrasiHibahPage;

@@ -1,8 +1,8 @@
 import React from "react";
-import Navbar from "../../../../components/Navbar";
-import Breadcrumbs from "../../../../components/Breadcrumbs";
+import Navbar from "../../../../../components/Navbar";
+import Breadcrumbs from "../../../../../components/Breadcrumbs";
 
-const RincianSudahDiadministrasiPage = () => {
+const RekapitulasiSeluruhHibahPage = () => {
   return (
     <div className="min-h-screen bg-[#f7f7f7]">
       <Navbar />
@@ -10,37 +10,20 @@ const RincianSudahDiadministrasiPage = () => {
       <div className="px-8 py-8">
         <Breadcrumbs />
         <h1 className="text-2xl font-bold mb-4 mt-4">
-          Rincian Sudah Diadministrasi
+          Rekapitulasi Seluruh Hibah
         </h1>
       </div>
 
       <div className="max-w-3xl mx-auto bg-white rounded-xl shadow p-8">
         <h2 className="text-center font-bold text-base mb-2 uppercase leading-relaxed">
-          DATA HIBAH YANG TELAH SELESAI ADMINISTRASI
+          REKAP AKHIR DATA REKONSILIASI ASET TETAP <br />
+          DARI PERSEDIAAN HIBAH BELANJA MODAL DAN BELANJA BARANG/JASA <br />
+          KABUPATEN TANGGAMUS
         </h2>
         <p className="text-center text-base mb-6">Tahun Anggaran 2025</p>
 
-        <form className="space-y-4">
-          {[
-            "Unit",
-            "Sub Unit",
-            "UPB",
-            "Semester",
-            "Status Verifikasi Belanja APBD",
-            "Status Verifikasi Administrasi Hibah",
-            "Nama Pimpinan",
-            "NIP Pimpinan",
-            "Jabatan Pimpinan",
-            "Nama Bendahara",
-            "NIP Bendahara",
-            "Jabatan Bendahara",
-            "Nama Pengurus",
-            "NIP Pengurus",
-            "Jabatan Pengurus",
-            "Nama Penyimpan",
-            "NIP Penyimpan",
-            "Jabatan Penyimpan",
-          ].map((label, i) => (
+        <form className="space-y-4 mt-6">
+          {["Semester", "Status Verifikasi"].map((label, i) => (
             <div key={i} className="flex flex-col">
               <label className="text-sm font-medium mb-1">{label}</label>
               <select className="border rounded-md px-3 py-2 focus:outline-none focus:ring focus:border-blue-300 text-sm">
@@ -63,4 +46,4 @@ const RincianSudahDiadministrasiPage = () => {
   );
 };
 
-export default RincianSudahDiadministrasiPage;
+export default RekapitulasiSeluruhHibahPage;
