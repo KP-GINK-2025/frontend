@@ -25,7 +25,7 @@ const LraVsBmPage = () => {
       </div>
       <div className="flex flex-col items-center gap-y-6">
         <div className="grid grid-cols-2 gap-8 justify-items-center">
-          {menuItems.slice(0, 3).map((item, index) => (
+          {menuItems.map((item, index) => (
             <MenuItem
               key={index}
               name={item.name}

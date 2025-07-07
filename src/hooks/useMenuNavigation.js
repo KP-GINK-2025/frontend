@@ -123,13 +123,67 @@ const useMenuNavigation = () => {
       case "Laporan Rekonsiliasi":
         navigate("/laporan/laporan-rekonsiliasi");
         break;
+      case "Laporan per UPB":
+        navigate("/laporan/laporan-rekonsiliasi/laporan-per-upb");
+        break;
+      case "Rekap Rekonsiliasi":
+        navigate("/laporan/laporan-rekonsiliasi/rekap-rekonsiliasi");
+        break;
+      case "Rekap KIB":
+        navigate("/laporan/laporan-rekonsiliasi/rekap-kib");
+        break;
+      case "Rekap Saldo (awal dan akhir)":
+        navigate("/laporan/laporan-rekonsiliasi/rekap-saldo");
+        break;
       // Laporan Hibah
       case "Laporan Hibah":
         navigate("/laporan/laporan-hibah");
         break;
+      case "Hibah per UPB":
+        navigate("/laporan/laporan-hibah/hibah-per-upb");
+        break;
+      case "Rekapitulasi Hibah":
+        navigate("/laporan/laporan-hibah/rekapitulasi-hibah");
+        break;
+      case "Rekapitulasi Hibah per UPB":
+        navigate("/laporan/laporan-hibah/rekapitulasi-hibah-per-upb");
+        break;
+      case "Rekapitulasi Seluruh Hibah":
+        navigate("/laporan/laporan-hibah/rekapitulasi-seluruh-hibah");
+        break;
+      case "Rincian Hibah":
+        navigate("/laporan/laporan-hibah/rincian-hibah");
+        break;
+      case "Rincian Realisasi Anggaran":
+        navigate("/laporan/laporan-hibah/rincian-realisasi-anggaran");
+        break;
+      case "Rincian sudah diadministrasi":
+        navigate("/laporan/laporan-hibah/rincian-sudah-diadministrasi");
+        break;
+      case "Rincian belum diadministrasi":
+        navigate("/laporan/laporan-hibah/rincian-belum-diadministrasi");
+        break;
+      case "Rekap Hibah":
+        navigate("/laporan/laporan-hibah/rekap-hibah");
+        break;
+      case "Rekap Administrasi Hibah":
+        navigate("/laporan/laporan-hibah/rekap-administrasi-hibah");
+        break;
+      case "Rekap Hibah UPB":
+        navigate("/laporan/laporan-hibah/rekap-hibah-upb");
+        break;
+      case "Rekap Hibah SKPD":
+        navigate("/laporan/laporan-hibah/rekap-hibah-skpd");
+        break;
       // LRA vs BM
       case "LRA VS BM":
         navigate("/laporan/lra-vs-bm");
+        break;
+      case "LRA VS BM UPB":
+        navigate("/laporan/lra-vs-bm/upb");
+        break;
+      case "LRA VS BM SKPD":
+        navigate("/laporan/lra-vs-bm/skpd");
         break;
       // Laporan End
 
