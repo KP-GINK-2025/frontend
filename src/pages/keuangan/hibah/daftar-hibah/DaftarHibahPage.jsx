@@ -214,7 +214,7 @@ const DaftarHibahPage = () => {
             </div>
 
             {/* Tombol Refresh dan Add Hibah */}
-            <div className="col-span-1 flex justify-end gap-2"> {/* Menyesuaikan layout agar tombol berada di kanan */}
+            <div className="col-span-1 flex justify-end gap-2">
               <button
                 onClick={handleRefresh}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
