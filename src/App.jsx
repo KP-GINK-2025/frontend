@@ -95,6 +95,7 @@ import LraVsBmUpbPage from "./pages/laporan/lra-vs-bm/upb/LraVsBmUpbPage";
 // Pengaturan Start
 import PengaturanPage from "./pages/pengaturan/PengaturanPage";
 import GroupPage from "./pages/pengaturan/group/GroupPage";
+import PenggunaPage from "./pages/pengaturan/pengguna/PenggunaPage";
 // Pengaturan End
 
 function App() {
@@ -271,6 +272,7 @@ function App() {
         {/* Pengaturan Start */}
         <Route path="/pengaturan" element={<PengaturanPage />} />
         <Route path="/pengaturan/group" element={<GroupPage />} />
+        <Route path="/pengaturan/pengguna" element={<PenggunaPage />} />
         {/* Pengaturan End */}
       </Routes>
     </Router>
