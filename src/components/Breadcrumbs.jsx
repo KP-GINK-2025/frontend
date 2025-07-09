@@ -99,7 +99,7 @@ const Breadcrumbs = () => {
         <li className="inline-flex items-center">
           <Link
             to="/dashboard"
-            className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-600"
+            className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-[#B53C3C] dark:text-gray-400 dark:hover:text[#B53C3C]"
           >
             <svg
               className="w-3 h-3 me-2.5"
@@ -145,7 +145,7 @@ const Breadcrumbs = () => {
                   ) : (
                     <Link
                       to={routeTo}
-                      className="ms-1 text-sm font-medium text-gray-700 hover:text-red-600 md:ms-2 dark:text-gray-400 dark:hover:text-red-600"
+                      className="ms-1 text-sm font-medium text-gray-700 hover:text-[#B53C3C] md:ms-2 dark:text-gray-400 dark:hover:text[#B53C3C]"
                     >
                       {formatBreadcrumbText(name)}
                     </Link>

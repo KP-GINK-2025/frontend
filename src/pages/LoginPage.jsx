@@ -58,7 +58,7 @@ const LoginPage = () => {
   return (
     <div className="select-none min-h-screen flex">
       {/* Left Panel */}
-      <div className="w-1/2 bg-red-600 flex flex-col items-center justify-center text-white">
+      <div className="w-1/2 bg-[#B53C3C] flex flex-col items-center justify-center text-white">
         <div className="mb-8">
           <div className="flex items-center justify-center mb-6">
             <img
@@ -94,7 +94,7 @@ const LoginPage = () => {
             </div>
           </div>
 
-          <h2 className="text-3xl font-bold text-red-600 text-center mb-8">
+          <h2 className="text-3xl font-bold text-[#B53C3C] text-center mb-8">
             Login
           </h2>
 
@@ -111,12 +111,12 @@ const LoginPage = () => {
                 onChange={(e) => setUsername(e.target.value)}
                 onKeyDown={handleUsernameKeyDown}
                 ref={usernameInputRef}
-                className={`w-full pl-12 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent ${
-                  usernameError ? "border-red-500" : "border-gray-300"
+                className={`w-full pl-12 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B53C3C] focus:border-transparent ${
+                  usernameError ? "border-[#B53C3C]" : "border-gray-300"
                 }`}
               />
               {usernameError && (
-                <p className="text-sm text-red-500 mt-1">{usernameError}</p>
+                <p className="text-sm text-[#B53C3C] mt-1">{usernameError}</p>
               )}
             </div>
 
@@ -132,26 +132,26 @@ const LoginPage = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyDown={handlePasswordKeyDown}
                 ref={passwordInputRef}
-                className={`w-full pl-12 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent ${
-                  passwordError ? "border-red-500" : "border-gray-300"
+                className={`w-full pl-12 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B53C3C] focus:border-transparent ${
+                  passwordError ? "border-[#B53C3C]" : "border-gray-300"
                 }`}
               />
               {passwordError && (
-                <p className="text-sm text-red-500 mt-1">{passwordError}</p>
+                <p className="text-sm text-[#B53C3C] mt-1">{passwordError}</p>
               )}
             </div>
 
             {/* Login Button */}
             <button
               type="submit"
-              className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition duration-200 shadow-lg cursor-pointer"
+              className="w-full bg-[#B53C3C] text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition duration-200 shadow-lg cursor-pointer"
             >
               Login
             </button>
           </form>
 
           <div className="text-center mt-6">
-            <a href="#" className="text-red-600 hover:text-red-700 text-sm">
+            <a href="#" className="text-[#B53C3C] hover:text-red-700 text-sm">
               Lupa Password?
             </a>
           </div>
