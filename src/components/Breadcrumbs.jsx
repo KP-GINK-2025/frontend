@@ -73,6 +73,13 @@ const Breadcrumbs = () => {
         return "Rekapitulasi Hibah per UPB";
       case "rekap-hibah-upb":
         return "Rekap Hibah UPB";
+      case "rekap-hibah-skpd":
+        return "Rekap Hibah SKPD";
+
+      case "lra-vs-bm":
+        return "LRA VS BM";
+      case "skpd":
+        return "SKPD";
 
       case "pengaturan":
         return "Pengaturan";
