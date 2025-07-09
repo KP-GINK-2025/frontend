@@ -255,6 +255,12 @@ const useMenuNavigation = () => {
       case "Pengaturan":
         navigate("/pengaturan");
         break;
+      case "Group":
+        navigate("/pengaturan/group");
+        break;
+      case "Pengguna":
+        navigate("/pengaturan/pengguna");
+        break;
       // Pengaturan End
 
       default:
