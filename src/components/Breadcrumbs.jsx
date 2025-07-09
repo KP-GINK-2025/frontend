@@ -38,6 +38,49 @@ const Breadcrumbs = () => {
 
       case "laporan":
         return "Laporan";
+      case "laporan-per-upb":
+        return "Laporan per UPB";
+      case "belanja-apbd-per-upb":
+        return "Belanja APBD per UPB";
+      case "rekap-belanja-apbd-per-upb":
+        return "Rekap Belanja APBD per UPB";
+      case "mutasi-per-upb":
+        return "Mutasi per UPB";
+      case "rekap-mutasi-per-upb":
+        return "Rekap Mutasi per UPB";
+
+      case "rekonsiliasi-upb":
+        return "Rekonsiliasi UPB";
+
+      case "rekap-kib":
+        return "Rekap KIB";
+      case "rekap-kib-a-47":
+        return "Rekap KIB A 47";
+      case "rekap-kib-b-47":
+        return "Rekap KIB B 47";
+      case "rekap-kib-c-47":
+        return "Rekap KIB C 47";
+      case "rekap-kib-d-47":
+        return "Rekap KIB D 47";
+      case "rekap-kib-e-47":
+        return "Rekap KIB E 47";
+      case "rekap-kib-f-47":
+        return "Rekap KIB F 47";
+
+      case "hibah-per-upb":
+        return "Hibah per UPB";
+      case "rekapitulasi-hibah-per-upb":
+        return "Rekapitulasi Hibah per UPB";
+      case "rekap-hibah-upb":
+        return "Rekap Hibah UPB";
+      case "rekap-hibah-skpd":
+        return "Rekap Hibah SKPD";
+
+      case "lra-vs-bm":
+        return "LRA VS BM";
+      case "skpd":
+        return "SKPD";
+
       case "pengaturan":
         return "Pengaturan";
       default:
