@@ -57,7 +57,7 @@ const GroupPage = () => {
           <Breadcrumbs />
           <button
             onClick={handleExport}
-            className="bg-[#b00020] hover:bg-[#9e001c] text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
           >
             <Download size={16} /> Export
           </button>
