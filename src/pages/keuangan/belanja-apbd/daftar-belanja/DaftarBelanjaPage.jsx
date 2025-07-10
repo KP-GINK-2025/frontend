@@ -255,7 +255,6 @@ const DaftarBelanjaPage = () => {
     setSelectedKualifikasiBelanja("");
     setSelectedStatusVerifikasi("");
     setSelectedStatusTotalHarga("");
-    setDataTablePaginationModel({ page: 0, pageSize: entriesPerPage });
     fetchData();
   };
 
@@ -500,7 +499,7 @@ const DaftarBelanjaPage = () => {
                 }}
                 className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
               >
-                <option value="">-- Pilih Kualifikasi --</option>
+                <option value="">-- Kualifikasi --</option>
                 {kualifikasiBelanjaData.map((k) => (
                   <option key={k.id} value={k.nama}>
                     {k.nama}
@@ -516,7 +515,7 @@ const DaftarBelanjaPage = () => {
                 }}
                 className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
               >
-                <option value="">-- Pilih Status --</option>
+                <option value="">-- Status Verifikasi --</option>
                 {statusVerifikasiData.map((s) => (
                   <option key={s.id} value={s.nama}>
                     {s.nama}
@@ -532,7 +531,7 @@ const DaftarBelanjaPage = () => {
                 }}
                 className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
               >
-                <option value="">-- Pilih Status --</option>
+                <option value="">-- Status Total --</option>
                 {statusTotalBelanjaData.map((s) => (
                   <option key={s.id} value={s.nama}>
                     {s.nama}
