@@ -261,6 +261,12 @@ const useMenuNavigation = () => {
       case "Pengguna":
         navigate("/pengaturan/pengguna");
         break;
+      case "Sistem":
+        navigate("/pengaturan/sistem");
+        break;
+      case "Updating Data":
+        navigate("/pengaturan/updating-data");
+        break;
       // Pengaturan End
 
       default:
