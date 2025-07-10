@@ -14,7 +14,7 @@ const Navbar = () => {
   };
 
   return (
-    <div className="bg-[#b00020] text-white flex items-center justify-between px-6 py-3 shadow select-none">
+    <div className="bg-[#B53C3C] text-white flex items-center justify-between px-6 py-3 shadow select-none">
       <div
         className="flex items-center gap-2 cursor-pointer"
         onClick={handleGoToDashboard}
@@ -36,7 +36,7 @@ const Navbar = () => {
         <UserCircle size={35} />
         <button
           onClick={handleLogout}
-          className="flex items-center gap-2 px-4 py-2 bg-[#b00020] text-white text-sm font-medium border-2 border-white rounded-full shadow-sm transition-all duration-200 hover:bg-white hover:text-[#b00020] hover:scale-[1.03] cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2 bg-[#B53C3C] text-white text-sm font-medium border-2 border-white rounded-full shadow-sm transition-all duration-200 hover:bg-white hover:text-[#B53C3C] hover:scale-[1.03] cursor-pointer"
         >
           <LogOut size={18} />
           Logout
