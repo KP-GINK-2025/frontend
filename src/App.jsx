@@ -96,6 +96,8 @@ import LraVsBmUpbPage from "./pages/laporan/lra-vs-bm/upb/LraVsBmUpbPage";
 import PengaturanPage from "./pages/pengaturan/PengaturanPage";
 import GroupPage from "./pages/pengaturan/group/GroupPage";
 import PenggunaPage from "./pages/pengaturan/pengguna/PenggunaPage";
+import UpdatingDataPage from "./pages/pengaturan/updating-data/UpdatingDataPage";
+import SistemPage from "./pages/pengaturan/sistem/SistemPage";
 // Pengaturan End
 
 function App() {
@@ -330,6 +332,8 @@ function App() {
         <Route path="/pengaturan" element={<PengaturanPage />} />
         <Route path="/pengaturan/group" element={<GroupPage />} />
         <Route path="/pengaturan/pengguna" element={<PenggunaPage />} />
+        <Route path="/pengaturan/updating-data" element={<UpdatingDataPage />} />
+        <Route path="/pengaturan/sistem" element={<SistemPage />} />
         {/* Pengaturan End */}
       </Routes>
     </Router>
