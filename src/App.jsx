@@ -1,7 +1,8 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
+import LoginPage from "./pages/LoginPage";
+import ProfilePage from "./pages/ProfilePage";
 
 // Klasifikasi Start
 import KlasifikasiPage from "./pages/klasifikasi/KlasifikasiPage";
@@ -104,8 +105,9 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<LoginPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
 
         {/* Klasifikasi Start */}
         <Route path="/klasifikasi" element={<KlasifikasiPage />} />
