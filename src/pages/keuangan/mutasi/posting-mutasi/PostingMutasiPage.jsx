@@ -174,15 +174,6 @@ const PostingMutasiPage = () => {
       headerName: "Total Harga",
       type: "number",
       width: 150,
-      valueFormatter: (params) => {
-        if (params.value == null) return "";
-        const value = Number(params.value);
-        if (isNaN(value)) return String(value);
-        return `Rp ${new Intl.NumberFormat("id-ID", {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0,
-        }).format(value)}`;
-      },
     },
     { field: "lampiran", headerName: "Lampiran", width: 100 }, // Jika berupa link/button, perlu renderCell
     { field: "statusVerifikasi", headerName: "Status Verifikasi", width: 150 },
