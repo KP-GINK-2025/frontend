@@ -5,9 +5,10 @@ import { useNavigate } from "react-router-dom";
 const Navbar = () => {
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const dropdownRef = useRef(null);
   const dropdownContentRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const storedUser = JSON.parse(localStorage.getItem("user")) || {
     name: "Guest",
@@ -32,18 +33,41 @@ const Navbar = () => {
     setIsDropdownOpen((prev) => !prev);
   };
 
-  const openPreview = () => {
-    setIsPreviewOpen(true);
-    setIsDropdownOpen(false); // Tutup dropdown ketika preview dibuka
-  };
-
-  const closePreview = () => {
-    setIsPreviewOpen(false);
-  };
-
   const handleProfile = () => {
     setIsDropdownOpen(false);
     navigate("/profile");
+  };
+
+  const handleChangePhoto = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      // Validasi tipe file
+      if (!file.type.startsWith("image/")) {
+        alert("Please select a valid image file.");
+        return;
+      }
+
+      // Validasi ukuran file (maksimal 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert("File size should be less than 5MB.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const newAvatarUrl = e.target.result;
+        setAvatarPreview(newAvatarUrl);
+
+        // Update localStorage
+        const updatedUser = { ...storedUser, avatar: newAvatarUrl };
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   useEffect(() => {
@@ -104,6 +128,15 @@ const Navbar = () => {
 
   return (
     <>
+      {/* Input file tersembunyi untuk upload foto */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+        style={{ display: "none" }}
+      />
+
       {/* Tambahkan style untuk memastikan navbar tidak overflow */}
       <style jsx>{`
         .navbar-container {
@@ -129,6 +162,39 @@ const Navbar = () => {
         /* Pastikan body tidak memiliki overflow hidden */
         body {
           overflow-x: auto;
+        }
+
+        .avatar-container {
+          position: relative;
+          display: inline-block;
+        }
+
+        .avatar-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          opacity: 0;
+          transition: opacity 0.3s ease;
+          cursor: pointer;
+        }
+
+        .avatar-container:hover .avatar-overlay {
+          opacity: 1;
+        }
+
+        .avatar-overlay-text {
+          color: white;
+          font-size: 10px;
+          font-weight: 600;
+          text-align: center;
+          line-height: 1.2;
         }
       `}</style>
 
@@ -173,12 +239,20 @@ const Navbar = () => {
             >
               {/* Bagian atas dropdown */}
               <div className="bg-[#B53C3C] flex flex-col items-center py-4 gap-2">
-                <img
-                  src={avatarSrc}
-                  alt="User Avatar"
-                  className="w-20 h-20 rounded-full border-4 border-white object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                  onClick={openPreview}
-                />
+                <div className="avatar-container">
+                  <img
+                    src={avatarSrc}
+                    alt="User Avatar"
+                    className="w-20 h-20 rounded-full border-4 border-white object-cover"
+                  />
+                  <div className="avatar-overlay" onClick={handleChangePhoto}>
+                    <span className="avatar-overlay-text">
+                      Change
+                      <br />
+                      Photo
+                    </span>
+                  </div>
+                </div>
 
                 <p className="text-white text-sm font-medium">
                   {storedUser.name}
@@ -204,31 +278,6 @@ const Navbar = () => {
           )}
         </div>
       </div>
-
-      {/* Modal Preview Avatar */}
-      {isPreviewOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-70 z-[9999] flex items-center justify-center"
-          onClick={closePreview}
-        >
-          <div
-            className="relative bg-white rounded shadow-lg p-2"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={closePreview}
-              className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-lg font-bold"
-            >
-              ✕
-            </button>
-            <img
-              src={avatarSrc}
-              alt="Preview Avatar"
-              className="max-w-[90vw] max-h-[90vh] object-contain rounded"
-            />
-          </div>
-        </div>
-      )}
     </>
   );
 };
