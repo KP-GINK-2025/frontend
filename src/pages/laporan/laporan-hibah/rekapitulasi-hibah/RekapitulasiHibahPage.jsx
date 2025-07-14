@@ -1,13 +1,13 @@
 import React from "react";
-import { Layers } from "lucide-react";
+import { Building2, BarChartBig } from "lucide-react";
 import Navbar from "../../../../components/Navbar";
 import MenuItem from "../../../../components/MenuItem";
 import useMenuNavigation from "../../../../hooks/useMenuNavigation";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
 
 const menuItems = [
-  { name: "Rekapitulasi Hibah per UPB", icon: Layers },
-  { name: "Rekapitulasi Seluruh Hibah", icon: Layers },
+  { name: "Rekapitulasi Hibah per UPB", icon: Building2 },
+  { name: "Rekapitulasi Seluruh Hibah", icon: BarChartBig },
 ];
 
 const RekapitulasiHibahPage = () => {

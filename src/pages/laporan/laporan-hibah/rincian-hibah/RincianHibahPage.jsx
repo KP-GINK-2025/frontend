@@ -1,14 +1,14 @@
 import React from "react";
-import { Layers } from "lucide-react";
+import { FileText, CheckCircle2, Clock } from "lucide-react";
 import Navbar from "../../../../components/Navbar";
 import MenuItem from "../../../../components/MenuItem";
 import useMenuNavigation from "../../../../hooks/useMenuNavigation";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
 
 const menuItems = [
-  { name: "Rincian Realisasi Anggaran", icon: Layers },
-  { name: "Rincian sudah diadministrasi", icon: Layers },
-  { name: "Rincian belum diadministrasi", icon: Layers },
+  { name: "Rincian Realisasi Anggaran", icon: FileText },
+  { name: "Rincian sudah diadministrasi", icon: CheckCircle2 },
+  { name: "Rincian belum diadministrasi", icon: Clock },
 ];
 
 const RincianHibahPage = () => {

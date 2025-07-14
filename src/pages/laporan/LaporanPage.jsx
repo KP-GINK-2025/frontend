@@ -1,14 +1,14 @@
 import React from "react";
-import { Layers } from "lucide-react";
+import { FileText, ScrollText, BarChart2 } from "lucide-react";
 import Navbar from "../../components/Navbar";
 import MenuItem from "../../components/MenuItem";
 import useMenuNavigation from "../../hooks/useMenuNavigation";
 import Breadcrumbs from "../../components/Breadcrumbs";
 
 const menuItems = [
-  { name: "Laporan Rekonsiliasi", icon: Layers },
-  { name: "Laporan Hibah", icon: Layers },
-  { name: "LRA VS BM", icon: Layers },
+  { name: "Laporan Rekonsiliasi", icon: FileText },
+  { name: "Laporan Hibah", icon: ScrollText },
+  { name: "LRA VS BM", icon: BarChart2 },
 ];
 
 const LaporanPage = () => {

@@ -1,14 +1,14 @@
 import React from "react";
-import { Wallet } from "lucide-react"; // kamu bisa ganti ikon jika perlu
+import { ListChecks, Boxes, Repeat } from "lucide-react"; // Ikon sudah disesuaikan
 import Navbar from "../../../components/Navbar";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import MenuItem from "../../../components/MenuItem";
 import useMenuNavigation from "../../../hooks/useMenuNavigation";
 
 const menuItems = [
-  { name: "Daftar Mutasi", icon: Wallet },
-  { name: "Item Mutasi", icon: Wallet },
-  { name: "Posting Mutasi", icon: Wallet },
+  { name: "Daftar Mutasi", icon: ListChecks },
+  { name: "Item Mutasi", icon: Boxes },
+  { name: "Posting Mutasi", icon: Repeat },
 ];
 
 const MutasiPage = () => {
