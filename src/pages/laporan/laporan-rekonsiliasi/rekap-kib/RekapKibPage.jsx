@@ -1,17 +1,17 @@
 import React from "react";
-import { Layers } from "lucide-react";
+import { Home, Car, Building2, TreeDeciduous, Book, Box } from "lucide-react";
 import Navbar from "../../../../components/Navbar";
 import MenuItem from "../../../../components/MenuItem";
 import useMenuNavigation from "../../../../hooks/useMenuNavigation";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
 
 const menuItems = [
-  { name: "Rekap KIB A 47", icon: Layers },
-  { name: "Rekap KIB B 47", icon: Layers },
-  { name: "Rekap KIB C 47", icon: Layers },
-  { name: "Rekap KIB D 47", icon: Layers },
-  { name: "Rekap KIB E 47", icon: Layers },
-  { name: "Rekap KIB F 47", icon: Layers },
+  { name: "Rekap KIB A 47", icon: Home },
+  { name: "Rekap KIB B 47", icon: Car },
+  { name: "Rekap KIB C 47", icon: Building2 },
+  { name: "Rekap KIB D 47", icon: TreeDeciduous },
+  { name: "Rekap KIB E 47", icon: Book },
+  { name: "Rekap KIB F 47", icon: Box },
 ];
 
 const LaporanKibPage = () => {
@@ -29,14 +29,14 @@ const LaporanKibPage = () => {
       </div>
       <div className="flex flex-col items-center gap-y-6">
         <div className="w-full flex flex-wrap justify-center gap-6">
-            {menuItems.map((item, index) => (
+          {menuItems.map((item, index) => (
             <MenuItem
-                key={index}
-                name={item.name}
-                icon={item.icon}
-                onClick={() => handleMenuItemClick(item.name)}
+              key={index}
+              name={item.name}
+              icon={item.icon}
+              onClick={() => handleMenuItemClick(item.name)}
             />
-            ))}
+          ))}
         </div>
       </div>
     </div>

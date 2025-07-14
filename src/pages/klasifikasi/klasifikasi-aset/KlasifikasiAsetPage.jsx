@@ -3,16 +3,16 @@ import Navbar from "../../../components/Navbar";
 import MenuItem from "../../../components/MenuItem";
 import useMenuNavigation from "../../../hooks/useMenuNavigation";
 import Breadcrumbs from "../../../components/Breadcrumbs";
-import { PieChart } from "lucide-react";
+import { Wallet, Layers, Tag, Box, FileText, List, Indent } from "lucide-react";
 
 const menuItems = [
-  { name: "Akun", icon: PieChart },
-  { name: "Kelompok", icon: PieChart },
-  { name: "Jenis", icon: PieChart },
-  { name: "Objek", icon: PieChart },
-  { name: "Rincian Objek", icon: PieChart },
-  { name: "Sub Rincian", icon: PieChart },
-  { name: "Sub Sub Rincian", icon: PieChart },
+  { name: "Akun", icon: Wallet },
+  { name: "Kelompok", icon: Layers },
+  { name: "Jenis", icon: Tag },
+  { name: "Objek", icon: Box },
+  { name: "Rincian Objek", icon: FileText },
+  { name: "Sub Rincian", icon: List },
+  { name: "Sub Sub Rincian", icon: Indent },
 ];
 
 const KlasifikasiAsetPage = () => {
@@ -30,7 +30,7 @@ const KlasifikasiAsetPage = () => {
       </div>
       <div className="flex flex-col items-center gap-y-6">
         <div className="grid grid-cols-7 gap-8">
-          {menuItems.slice(0, 7).map((item, index) => (
+          {menuItems.map((item, index) => (
             <MenuItem
               key={index}
               name={item.name}

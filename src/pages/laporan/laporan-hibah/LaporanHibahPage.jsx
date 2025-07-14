@@ -1,15 +1,15 @@
 import React from "react";
-import { Layers } from "lucide-react";
+import { Building2, PieChart, ListOrdered, FileText } from "lucide-react";
 import Navbar from "../../../components/Navbar";
 import MenuItem from "../../../components/MenuItem";
 import useMenuNavigation from "../../../hooks/useMenuNavigation";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 
 const menuItems = [
-  { name: "Hibah per UPB", icon: Layers },
-  { name: "Rekapitulasi Hibah", icon: Layers },
-  { name: "Rincian Hibah", icon: Layers },
-  { name: "Rekap Hibah", icon: Layers },
+  { name: "Hibah per UPB", icon: Building2 },
+  { name: "Rekapitulasi Hibah", icon: PieChart },
+  { name: "Rincian Hibah", icon: ListOrdered },
+  { name: "Rekap Hibah", icon: FileText },
 ];
 
 const LaporanHibahPage = () => {

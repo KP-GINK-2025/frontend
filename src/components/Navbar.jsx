@@ -5,9 +5,9 @@ import { useNavigate } from "react-router-dom";
 const Navbar = () => {
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
+  const [showImagePreview, setShowImagePreview] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState("");
   const dropdownRef = useRef(null);
-  const dropdownContentRef = useRef(null);
   const fileInputRef = useRef(null);
 
   const storedUser = JSON.parse(localStorage.getItem("user")) || {
@@ -15,120 +15,83 @@ const Navbar = () => {
     avatar: null,
   };
 
-  const [avatarPreview, setAvatarPreview] = useState(storedUser.avatar || "");
-
   const avatarSrc =
     avatarPreview ||
-    `https://ui-avatars.com/api/?name=${
-      storedUser.name || "Guest"
-    }&background=B53C3C&color=fff&size=128`;
+    storedUser.avatar ||
+    `https://ui-avatars.com/api/?name=${storedUser.name}&background=B53C3C&color=fff&size=128`;
 
   const handleLogout = () => {
-    const updatedUser = { ...storedUser, isLoggedIn: false };
-    localStorage.setItem("user", JSON.stringify(updatedUser));
+    localStorage.setItem(
+      "user",
+      JSON.stringify({ ...storedUser, isLoggedIn: false })
+    );
     navigate("/");
   };
 
-  const handleToggleDropdown = () => {
-    setIsDropdownOpen((prev) => !prev);
-  };
-
-  const handleProfile = () => {
-    setIsDropdownOpen(false);
-    navigate("/profile");
-  };
-
   const handleChangePhoto = () => {
+    if (fileInputRef.current) fileInputRef.current.value = "";
     fileInputRef.current?.click();
+  };
+
+  const handleDeletePhoto = () => {
+    if (window.confirm("Are you sure you want to delete your profile photo?")) {
+      setAvatarPreview("");
+      localStorage.setItem(
+        "user",
+        JSON.stringify({ ...storedUser, avatar: null })
+      );
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
-    if (file) {
-      // Validasi tipe file
-      if (!file.type.startsWith("image/")) {
-        alert("Please select a valid image file.");
-        return;
-      }
+    if (!file) return;
 
-      // Validasi ukuran file (maksimal 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert("File size should be less than 5MB.");
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const newAvatarUrl = e.target.result;
-        setAvatarPreview(newAvatarUrl);
-
-        // Update localStorage
-        const updatedUser = { ...storedUser, avatar: newAvatarUrl };
-        localStorage.setItem("user", JSON.stringify(updatedUser));
-      };
-      reader.readAsDataURL(file);
+    if (!file.type.startsWith("image/")) {
+      alert("Please select a valid image file.");
+      return;
     }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File size should be less than 5MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const newAvatarUrl = e.target.result;
+      setAvatarPreview(newAvatarUrl);
+      localStorage.setItem(
+        "user",
+        JSON.stringify({ ...storedUser, avatar: newAvatarUrl })
+      );
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+    reader.readAsDataURL(file);
   };
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const latestUser = JSON.parse(localStorage.getItem("user"));
-      if (latestUser?.avatar !== avatarPreview) {
-        setAvatarPreview(latestUser?.avatar || "");
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
-
+  // Handle click outside to close dropdown
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target) &&
-        dropdownContentRef.current &&
-        !dropdownContentRef.current.contains(event.target)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Effect untuk menyesuaikan posisi dropdown
+  // Sync avatar from localStorage
   useEffect(() => {
-    if (isDropdownOpen && dropdownContentRef.current) {
-      const dropdownRect = dropdownContentRef.current.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      const viewportWidth = window.innerWidth;
-
-      // Reset transform terlebih dahulu
-      dropdownContentRef.current.style.transform = "translateY(0)";
-      dropdownContentRef.current.style.right = "0";
-
-      // Dapatkan posisi baru setelah reset
-      const newRect = dropdownContentRef.current.getBoundingClientRect();
-
-      // Cek jika dropdown melebihi batas kanan viewport
-      if (newRect.right > viewportWidth) {
-        const overflowRight = newRect.right - viewportWidth + 10;
-        dropdownContentRef.current.style.right = `${overflowRight}px`;
-      }
-
-      // Cek jika dropdown melebihi batas bawah viewport
-      if (newRect.bottom > viewportHeight) {
-        const overflowBottom = newRect.bottom - viewportHeight + 10;
-        dropdownContentRef.current.style.transform = `translateY(-${overflowBottom}px)`;
-      }
+    const latestUser = JSON.parse(localStorage.getItem("user"));
+    if (latestUser?.avatar !== avatarPreview) {
+      setAvatarPreview(latestUser?.avatar || "");
     }
-  }, [isDropdownOpen, avatarPreview, storedUser.name]);
+  }, [avatarPreview]);
 
   return (
     <>
-      {/* Input file tersembunyi untuk upload foto */}
       <input
         ref={fileInputRef}
         type="file"
@@ -137,68 +100,82 @@ const Navbar = () => {
         style={{ display: "none" }}
       />
 
-      {/* Tambahkan style untuk memastikan navbar tidak overflow */}
       <style jsx>{`
-        .navbar-container {
-          position: relative;
-          overflow: visible;
-        }
-
-        .dropdown-container {
-          position: relative;
-          overflow: visible;
-        }
-
-        .dropdown-content {
-          position: absolute;
-          top: 100%;
-          right: 0;
-          z-index: 9999;
-          min-width: 16rem;
-          max-width: 20rem;
-          width: max-content;
-        }
-
-        /* Pastikan body tidak memiliki overflow hidden */
-        body {
-          overflow-x: auto;
-        }
-
         .avatar-container {
-          position: relative;
-          display: inline-block;
+          cursor: pointer;
         }
-
-        .avatar-overlay {
-          position: absolute;
+        .photo-action-btn {
+          background: rgba(255, 255, 255, 0.2);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          color: white;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 11px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        .photo-action-btn:hover {
+          background: rgba(255, 255, 255, 0.3);
+          border-color: rgba(255, 255, 255, 0.5);
+        }
+        .photo-action-btn.delete {
+          background: rgba(220, 38, 38, 0.2);
+          border-color: rgba(220, 38, 38, 0.3);
+        }
+        .photo-action-btn.delete:hover {
+          background: rgba(220, 38, 38, 0.3);
+          border-color: rgba(220, 38, 38, 0.5);
+        }
+        .image-preview-overlay {
+          position: fixed;
           top: 0;
           left: 0;
           right: 0;
           bottom: 0;
-          background: rgba(0, 0, 0, 0.5);
+          background: rgba(0, 0, 0, 0.8);
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: 50%;
-          opacity: 0;
-          transition: opacity 0.3s ease;
-          cursor: pointer;
+          z-index: 10000;
         }
-
-        .avatar-container:hover .avatar-overlay {
-          opacity: 1;
+        .image-preview-content {
+          position: relative;
+          max-width: 90vw;
+          max-height: 90vh;
+          background: white;
+          border-radius: 8px;
+          overflow: hidden;
         }
-
-        .avatar-overlay-text {
+        .image-preview-img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          max-width: 80vw;
+          max-height: 80vh;
+        }
+        .image-preview-close {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          background: rgba(0, 0, 0, 0.5);
           color: white;
-          font-size: 10px;
-          font-weight: 600;
-          text-align: center;
-          line-height: 1.2;
+          border: none;
+          border-radius: 50%;
+          width: 40px;
+          height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          font-size: 18px;
+          transition: background 0.2s ease;
+        }
+        .image-preview-close:hover {
+          background: rgba(0, 0, 0, 0.7);
         }
       `}</style>
 
-      <div className="navbar-container bg-[#B53C3C] text-white flex items-center justify-between px-6 py-3 shadow relative z-50">
+      <div className="bg-[#B53C3C] text-white flex items-center justify-between px-6 py-3 shadow relative z-50">
         <div
           className="flex items-center gap-2 cursor-pointer"
           onClick={() => navigate("/dashboard")}
@@ -216,12 +193,9 @@ const Navbar = () => {
           </h1>
         </div>
 
-        <div
-          className="dropdown-container flex items-center gap-4 relative"
-          ref={dropdownRef}
-        >
+        <div className="flex items-center gap-4 relative" ref={dropdownRef}>
           <button
-            onClick={handleToggleDropdown}
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="flex items-center gap-2 px-2 py-1"
           >
             <img
@@ -233,43 +207,50 @@ const Navbar = () => {
           </button>
 
           {isDropdownOpen && (
-            <div
-              className="dropdown-content bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden"
-              ref={dropdownContentRef}
-            >
-              {/* Bagian atas dropdown */}
+            <div className="absolute top-full right-0 z-50 min-w-64 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden">
               <div className="bg-[#B53C3C] flex flex-col items-center py-4 gap-2">
-                <div className="avatar-container">
+                <div
+                  className="avatar-container"
+                  onClick={() => setShowImagePreview(true)}
+                >
                   <img
                     src={avatarSrc}
                     alt="User Avatar"
                     className="w-20 h-20 rounded-full border-4 border-white object-cover"
                   />
-                  <div className="avatar-overlay" onClick={handleChangePhoto}>
-                    <span className="avatar-overlay-text">
-                      Change
-                      <br />
-                      Photo
-                    </span>
-                  </div>
                 </div>
 
-                <p className="text-white text-sm font-medium">
-                  {storedUser.name}
-                </p>
+                <div className="flex gap-2 mt-2">
+                  <button
+                    onClick={handleChangePhoto}
+                    className="photo-action-btn"
+                  >
+                    Change Photo
+                  </button>
+                  {(avatarPreview || storedUser.avatar) && (
+                    <button
+                      onClick={handleDeletePhoto}
+                      className="photo-action-btn"
+                    >
+                      Delete Photo
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {/* Tombol aksi */}
               <div className="flex justify-between px-4 py-3 bg-white border-t border-[#B53C3C] gap-2">
                 <button
-                  onClick={handleProfile}
-                  className="flex-1 px-3 py-2 border border-[#B53C3C] text-[#B53C3C] rounded hover:bg-[#B53C3C] hover:text-white transition-all duration-200 cursor-pointer text-sm"
+                  onClick={() => {
+                    setIsDropdownOpen(false);
+                    navigate("/profile");
+                  }}
+                  className="flex-1 px-3 py-2 border border-[#B53C3C] text-[#B53C3C] rounded hover:bg-[#B53C3C] hover:text-white transition-all duration-200 text-sm cursor-pointer"
                 >
                   Profile
                 </button>
                 <button
                   onClick={handleLogout}
-                  className="flex-1 px-3 py-2 border border-[#B53C3C] text-[#B53C3C] rounded hover:bg-[#B53C3C] hover:text-white transition-all duration-200 cursor-pointer text-sm"
+                  className="flex-1 px-3 py-2 border border-[#B53C3C] text-[#B53C3C] rounded hover:bg-[#B53C3C] hover:text-white transition-all duration-200 text-sm cursor-pointer"
                 >
                   Logout
                 </button>
@@ -278,6 +259,30 @@ const Navbar = () => {
           )}
         </div>
       </div>
+
+      {showImagePreview && (
+        <div
+          className="image-preview-overlay"
+          onClick={() => setShowImagePreview(false)}
+        >
+          <div
+            className="image-preview-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={avatarSrc}
+              alt="Profile Preview"
+              className="image-preview-img"
+            />
+            <button
+              className="image-preview-close"
+              onClick={() => setShowImagePreview(false)}
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 };

@@ -1,15 +1,20 @@
 import React from "react";
-import { Layers } from "lucide-react";
+import {
+  Building2,
+  FileBarChart2,
+  LayoutGrid,
+  CircleDollarSign,
+} from "lucide-react";
 import Navbar from "../../../components/Navbar";
 import MenuItem from "../../../components/MenuItem";
 import useMenuNavigation from "../../../hooks/useMenuNavigation";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 
 const menuItems = [
-  { name: "Laporan per UPB", icon: Layers },
-  { name: "Rekap Rekonsiliasi", icon: Layers },
-  { name: "Rekap KIB", icon: Layers },
-  { name: "Rekap Saldo (awal dan akhir)", icon: Layers },
+  { name: "Laporan per UPB", icon: Building2 },
+  { name: "Rekap Rekonsiliasi", icon: FileBarChart2 },
+  { name: "Rekap KIB", icon: LayoutGrid },
+  { name: "Rekap Saldo (awal dan akhir)", icon: CircleDollarSign },
 ];
 
 const LaporanRekonsiliasiPage = () => {
@@ -27,14 +32,14 @@ const LaporanRekonsiliasiPage = () => {
       </div>
       <div className="flex flex-col items-center gap-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-        {menuItems.map((item, index) => (
+          {menuItems.map((item, index) => (
             <MenuItem
-            key={index}
-            name={item.name}
-            icon={item.icon}
-            onClick={() => handleMenuItemClick(item.name)}
+              key={index}
+              name={item.name}
+              icon={item.icon}
+              onClick={() => handleMenuItemClick(item.name)}
             />
-        ))}
+          ))}
         </div>
       </div>
     </div>

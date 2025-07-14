@@ -3,13 +3,13 @@ import Navbar from "../../../components/Navbar";
 import MenuItem from "../../../components/MenuItem";
 import useMenuNavigation from "../../../hooks/useMenuNavigation";
 import Breadcrumbs from "../../../components/Breadcrumbs";
-import { Landmark } from "lucide-react";
+import { Layers, Building2, GitBranch, Archive } from "lucide-react";
 
 const menuItems = [
-  { name: "Bidang", icon: Landmark },
-  { name: "Unit", icon: Landmark },
-  { name: "Sub Unit", icon: Landmark },
-  { name: "UPB", icon: Landmark },
+  { name: "Bidang", icon: Layers },
+  { name: "Unit", icon: Building2 },
+  { name: "Sub Unit", icon: GitBranch },
+  { name: "UPB", icon: Archive },
 ];
 
 const KlasifikasiInstansiPage = () => {
@@ -27,7 +27,7 @@ const KlasifikasiInstansiPage = () => {
       </div>
       <div className="flex flex-col items-center gap-y-6">
         <div className="grid grid-cols-4 gap-8">
-          {menuItems.slice(0, 4).map((item, index) => (
+          {menuItems.map((item, index) => (
             <MenuItem
               key={index}
               name={item.name}

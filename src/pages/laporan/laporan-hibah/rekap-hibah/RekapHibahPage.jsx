@@ -1,14 +1,14 @@
 import React from "react";
-import { Layers } from "lucide-react";
+import { ClipboardList, Building2, Landmark } from "lucide-react";
 import Navbar from "../../../../components/Navbar";
 import MenuItem from "../../../../components/MenuItem";
 import useMenuNavigation from "../../../../hooks/useMenuNavigation";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
 
 const menuItems = [
-  { name: "Rekap Administrasi Hibah", icon: Layers },
-  { name: "Rekap Hibah UPB", icon: Layers },
-  { name: "Rekap Hibah SKPD", icon: Layers },
+  { name: "Rekap Administrasi Hibah", icon: ClipboardList },
+  { name: "Rekap Hibah UPB", icon: Building2 },
+  { name: "Rekap Hibah SKPD", icon: Landmark },
 ];
 
 const RekapHibahPage = () => {
