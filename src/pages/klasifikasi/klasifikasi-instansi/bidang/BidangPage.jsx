@@ -67,24 +67,31 @@ const BidangPage = () => {
     setEditingBidang(null); // Reset editing state saat modal ditutup
   };
 
-  const handleSaveNewBidang = (bidangToSave) => {
-    if (bidangToSave.id) {
-      // Ini adalah mode edit
-      setBidangData((prevData) =>
-        prevData.map((item) =>
-          item.id === bidangToSave.id ? bidangToSave : item
-        )
-      );
-      console.log("Update Bidang:", bidangToSave);
-    } else {
-      // Ini adalah mode tambah baru
-      setBidangData((prevData) => [
-        ...prevData,
-        { id: Date.now(), ...bidangToSave }, // Buat ID baru
-      ]);
-      console.log("Menyimpan Bidang baru:", bidangToSave);
+  const handleSaveNewBidang = async (bidangToSave) => {
+    try {
+      if (bidangToSave.id) {
+        // Mode edit
+        const response = await api.put(
+          `/klasifikasi-instansi/bidang/${bidangToSave.id}`,
+          bidangToSave
+        );
+        console.log("Berhasil update bidang:", response.data);
+      } else {
+        // Mode tambah baru
+        const response = await api.post(
+          "/klasifikasi-instansi/bidang",
+          bidangToSave
+        );
+        console.log("Berhasil tambah bidang:", response.data);
+      }
+
+      fetchData(); // Refresh data dari server
+    } catch (error) {
+      console.error("Gagal simpan bidang:", error);
+      alert("Gagal menyimpan data bidang. Cek console untuk detail.");
+    } finally {
+      handleCloseAddModal();
     }
-    handleCloseAddModal();
   };
 
   const handleEditClick = (id) => {
@@ -95,10 +102,19 @@ const BidangPage = () => {
     }
   };
 
-  const handleDeleteClick = (id) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus data ini?")) {
-      setBidangData((prevData) => prevData.filter((item) => item.id !== id));
-      console.log("Menghapus Bidang dengan ID:", id);
+  const handleDeleteClick = async (id) => {
+    const konfirmasi = window.confirm(
+      "Apakah Anda yakin ingin menghapus data ini?"
+    );
+    if (!konfirmasi) return;
+
+    try {
+      await api.delete(`/klasifikasi-instansi/bidang/${id}`);
+      console.log("Berhasil menghapus bidang dengan ID:", id);
+      fetchData(); // Refresh data dari server
+    } catch (error) {
+      console.error("Gagal menghapus bidang:", error);
+      alert("Gagal menghapus bidang. Cek console untuk detail.");
     }
   };
 
