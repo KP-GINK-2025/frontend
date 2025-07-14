@@ -24,7 +24,7 @@ const RekapSaldoPage = () => {
         <h1 className="text-2xl font-bold mb-4 mt-4">Rekap Saldo</h1>
       </div>
       <div className="flex flex-col items-center gap-y-6">
-        <div className="grid grid-cols-2 gap-8 justify-items-center">
+        <div className="grid grid-cols-2 gap-8">
           {menuItems.map((item, index) => (
             <MenuItem
               key={index}

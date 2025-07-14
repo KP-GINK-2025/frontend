@@ -26,7 +26,7 @@ const BelanjaApbdPage = () => {
       </div>
 
       <div className="flex flex-col items-center gap-y-6">
-        <div className="grid grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
           {menuItems.map((item, index) => (
             <MenuItem
               key={index}

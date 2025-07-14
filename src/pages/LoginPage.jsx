@@ -10,7 +10,7 @@ const LoginPage = () => {
   const [passwordError, setPasswordError] = useState("");
 
   const passwordInputRef = useRef(null);
-  const usernameInputRef = useRef(null); // Tambahkan ref untuk input username
+  const usernameInputRef = useRef(null);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -56,28 +56,31 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="select-none min-h-screen flex">
+    <div className="select-none min-h-screen flex flex-col md:flex-row">
       {/* Left Panel */}
-      <div className="w-1/2 bg-[#B53C3C] flex flex-col items-center justify-center text-white">
-        <div className="mb-8">
-          <div className="flex items-center justify-center mb-6">
+      <div className="w-full md:w-1/2 bg-[#B53C3C] flex flex-col items-center justify-center text-white px-6 py-6 md:px-0 md:py-0">
+        <div className="mb-4 md:mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold text-center leading-tight">
+            E-REKON
+          </h1>
+          <div className="flex items-center justify-center mt-4 mb-4 md:mt-6 md:mb-6">
             <img
               src="/assets/logo-tanggamus.png"
               alt="Logo Kabupaten Tanggamus"
-              className="w-48 h-auto"
+              className="w-32 md:w-48 h-auto"
               draggable="false"
             />
           </div>
+          <h1 className="text-2xl md:text-3xl font-bold text-center leading-tight">
+            KABUPATEN
+            <br />
+            TANGGAMUS
+          </h1>
         </div>
-        <h1 className="text-4xl font-bold text-center leading-tight">
-          Kabupaten
-          <br />
-          Tanggamus
-        </h1>
       </div>
 
       {/* Right Panel */}
-      <div className="w-1/2 bg-gray-100 flex items-center justify-center relative">
+      <div className="w-full md:w-1/2 bg-gray-100 flex flex-grow items-center justify-center relative overflow-hidden px-4 py-6 md:px-0 md:py-0">
         <div className="absolute inset-0">
           <img
             src="/assets/gedung-tanggamus.png"
@@ -87,18 +90,18 @@ const LoginPage = () => {
           <div className="absolute inset-0 bg-gradient-to-b from-gray-100/50 to-gray-200/70"></div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-2xl p-8 w-96 z-10">
-          <div className="flex justify-center mb-6">
-            <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">
-              <User size={32} className="text-gray-600" />
+        <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-sm z-10">
+          <div className="flex justify-center mb-4 sm:mb-6">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gray-200 rounded-full flex items-center justify-center">
+              <User size={28} className="text-gray-600" />
             </div>
           </div>
 
-          <h2 className="text-3xl font-bold text-[#B53C3C] text-center mb-8">
+          <h2 className="text-xl sm:text-2xl font-bold text-[#B53C3C] text-center mb-6 sm:mb-8">
             Login
           </h2>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             {/* Username Field */}
             <div className="relative">
               <div className="absolute left-3 top-3.5">
@@ -150,7 +153,7 @@ const LoginPage = () => {
             </button>
           </form>
 
-          <div className="text-center mt-6">
+          <div className="text-center mt-4 sm:mt-6">
             <a href="#" className="text-[#B53C3C] hover:text-red-700 text-sm">
               Lupa Password?
             </a>

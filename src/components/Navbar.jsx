@@ -27,6 +27,10 @@ const Navbar = () => {
     );
     navigate("/");
   };
+  
+  const handleGoToDashboard = () => {
+    navigate("/dashboard");
+  };
 
   const handleChangePhoto = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -175,23 +179,23 @@ const Navbar = () => {
         }
       `}</style>
 
-      <div className="bg-[#B53C3C] text-white flex items-center justify-between px-6 py-3 shadow relative z-50">
-        <div
-          className="flex items-center gap-2 cursor-pointer"
-          onClick={() => navigate("/dashboard")}
-        >
-          <img
-            src="/assets/logo-tanggamus.png"
-            alt="Logo"
-            className="w-12 h-auto"
-            draggable="false"
-          />
-          <h1 className="text-lg font-semibold">
-            E-Rekon
-            <br />
-            Kabupaten Tanggamus
-          </h1>
-        </div>
+      <div className="bg-[#B53C3C] text-white flex items-center justify-between px-4 md:px-6 py-4 shadow select-none">
+      <div
+        className="flex items-center gap-2 cursor-pointer"
+        onClick={handleGoToDashboard}
+      >
+        <img
+          src="/assets/logo-tanggamus.png"
+          alt="Logo"
+          className="w-12 h-auto"
+          draggable="false"
+        />
+        <h1 className="text-xs md:text-md lg:text-lg font-semibold">
+          E-REKON
+          <br />
+          KABUPATEN TANGGAMUS
+        </h1>
+      </div>
 
         <div className="flex items-center gap-4 relative" ref={dropdownRef}>
           <button
