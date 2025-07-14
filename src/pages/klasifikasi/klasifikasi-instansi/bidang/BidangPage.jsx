@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import api from "../../../../api/axios";
 import Navbar from "../../../../components/Navbar";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
@@ -23,27 +24,16 @@ const BidangPage = () => {
       pageSize: entriesPerPage,
     });
 
-  const fetchData = () => {
+  const fetchData = async () => {
     setLoading(true);
-    setTimeout(() => {
-      // Dummy data untuk pengujian
-      setBidangData([
-        { id: 1, kodeBidang: "1", namaBidang: "Sekwan/DPRD", kode: "1" },
-        {
-          id: 2,
-          kodeBidang: "2",
-          namaBidang: "Gubernur/Bupati/Walikota",
-          kode: "3",
-        },
-        {
-          id: 3,
-          kodeBidang: "3",
-          namaBidang: "Wakil Gubernur/Bupati/Walikota",
-          kode: "3",
-        },
-      ]);
+    try {
+      const response = await api.get("/klasifikasi-instansi/bidang");
+      setBidangData(response.data.data); // Pastikan struktur responsnya memang { data: [...] }
+    } catch (error) {
+      console.error("Gagal fetch data bidang:", error);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   useEffect(() => {
@@ -116,12 +106,12 @@ const BidangPage = () => {
   const columns = [
     { field: "id", headerName: "ID", width: 90 },
     {
-      field: "kodeBidang",
+      field: "kode_bidang",
       headerName: "Kode Bidang",
       type: "number",
       width: 150,
     },
-    { field: "namaBidang", headerName: "Nama Bidang", flex: 1 },
+    { field: "nama_bidang", headerName: "Nama Bidang", flex: 1 },
     { field: "kode", headerName: "Kode", width: 120 },
     {
       field: "action",
