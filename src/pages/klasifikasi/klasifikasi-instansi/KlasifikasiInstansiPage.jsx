@@ -26,8 +26,8 @@ const KlasifikasiInstansiPage = () => {
         <h1 className="text-2xl font-bold mb-4 mt-4">Klasifikasi Instansi</h1>
       </div>
       <div className="flex flex-col items-center gap-y-6">
-        <div className="grid grid-cols-4 gap-8">
-          {menuItems.map((item, index) => (
+        <div className="grid grid-cols-2 md:grid-cols-4 mb-6 gap-8">
+          {menuItems.slice(0, 4).map((item, index) => (
             <MenuItem
               key={index}
               name={item.name}
