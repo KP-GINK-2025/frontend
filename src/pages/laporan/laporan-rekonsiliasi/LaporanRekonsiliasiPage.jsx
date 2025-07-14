@@ -26,15 +26,15 @@ const LaporanRekonsiliasiPage = () => {
         <h1 className="text-2xl font-bold mb-4 mt-4">Laporan Rekonsiliasi</h1>
       </div>
       <div className="flex flex-col items-center gap-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-        {menuItems.map((item, index) => (
+        <div className="grid grid-cols-2 md:grid-cols-4 mb-6 gap-8">
+          {menuItems.map((item, index) => (
             <MenuItem
-            key={index}
-            name={item.name}
-            icon={item.icon}
-            onClick={() => handleMenuItemClick(item.name)}
+              key={index}
+              name={item.name}
+              icon={item.icon}
+              onClick={() => handleMenuItemClick(item.name)}
             />
-        ))}
+          ))}
         </div>
       </div>
     </div>

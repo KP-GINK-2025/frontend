@@ -14,7 +14,7 @@ const Navbar = () => {
   };
 
   return (
-    <div className="bg-[#B53C3C] text-white flex items-center justify-between px-6 py-3 shadow select-none">
+    <div className="bg-[#B53C3C] text-white flex items-center justify-between px-4 md:px-6 py-4 shadow select-none">
       <div
         className="flex items-center gap-2 cursor-pointer"
         onClick={handleGoToDashboard}
@@ -25,10 +25,10 @@ const Navbar = () => {
           className="w-12 h-auto"
           draggable="false"
         />
-        <h1 className="text-lg font-semibold">
-          E-Rekon
+        <h1 className="text-xs md:text-md lg:text-lg font-semibold">
+          E-REKON
           <br />
-          Kabupaten Tanggamus
+          KABUPATEN TANGGAMUS
         </h1>
       </div>
 

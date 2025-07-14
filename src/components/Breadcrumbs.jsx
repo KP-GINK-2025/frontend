@@ -93,7 +93,7 @@ const Breadcrumbs = () => {
   };
 
   return (
-    <nav className="flex" aria-label="Breadcrumb">
+    <nav className="flex select-none" aria-label="Breadcrumb">
       <ol className="inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse">
         {/* Item Home / Root */}
         <li className="inline-flex items-center">

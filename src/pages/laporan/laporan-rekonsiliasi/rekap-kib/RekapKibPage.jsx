@@ -28,15 +28,15 @@ const LaporanKibPage = () => {
         <h1 className="text-2xl font-bold mb-4 mt-4">Rekap KIB</h1>
       </div>
       <div className="flex flex-col items-center gap-y-6">
-        <div className="w-full flex flex-wrap justify-center gap-6">
-            {menuItems.map((item, index) => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 mb-6 gap-8">
+          {menuItems.map((item, index) => (
             <MenuItem
-                key={index}
-                name={item.name}
-                icon={item.icon}
-                onClick={() => handleMenuItemClick(item.name)}
+              key={index}
+              name={item.name}
+              icon={item.icon}
+              onClick={() => handleMenuItemClick(item.name)}
             />
-            ))}
+          ))}
         </div>
       </div>
     </div>

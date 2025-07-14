@@ -48,27 +48,30 @@ import PostingMutasiPage from "./pages/keuangan/mutasi/posting-mutasi/PostingMut
 
 // Laporan Start
 import LaporanPage from "./pages/laporan/LaporanPage";
-
+// LaporanRekonsiliasi
 import LaporanRekonsiliasiPage from "./pages/laporan/laporan-rekonsiliasi/LaporanRekonsiliasiPage";
 import LaporanPerUpbPage from "./pages/laporan/laporan-rekonsiliasi/laporan-per-upb/LaporanPerUpbPage";
-import BelanjaApbdPerUpbPage from "./pages/laporan/laporan-rekonsiliasi/laporan-per-upb/BelanjaApbdPerUpbPage";
-import RekapBelanjaApbdPerUpbPage from "./pages/laporan/laporan-rekonsiliasi/laporan-per-upb/RekapBelanjaApbdPerUpbPage";
-import MutasiPerUpbPage from "./pages/laporan/laporan-rekonsiliasi/laporan-per-upb/MutasiPerUpbPage";
-import RekapMutasiPerUpbPage from "./pages/laporan/laporan-rekonsiliasi/laporan-per-upb/RekapMutasiPerUpbPage";
-import RekapRekonsiliasiPage from "./pages/laporan/laporan-rekonsiliasi/rekap-rekonsiliasi/RekapRekonsiliasiPage";
-import RekapRekonsiliasiUpbPage from "./pages/laporan/laporan-rekonsiliasi/rekap-rekonsiliasi/RekapRekonsiliasiUpbPage";
-import RekapSeluruhRekonsiliasiPage from "./pages/laporan/laporan-rekonsiliasi/rekap-rekonsiliasi/RekapSeluruhRekonsiliasiPage";
-import RekapKibPage from "./pages/laporan/laporan-rekonsiliasi/rekap-kib/RekapKibPage";
-import RekapKibA47Page from "./pages/laporan/laporan-rekonsiliasi/rekap-kib/RekapKibA47Page";
-import RekapKibB47Page from "./pages/laporan/laporan-rekonsiliasi/rekap-kib/RekapKibB47Page";
-import RekapKibC47Page from "./pages/laporan/laporan-rekonsiliasi/rekap-kib/RekapKibC47Page";
-import RekapKibD47Page from "./pages/laporan/laporan-rekonsiliasi/rekap-kib/RekapKibD47Page";
-import RekapKibE47Page from "./pages/laporan/laporan-rekonsiliasi/rekap-kib/RekapKibE47Page";
-import RekapKibF47Page from "./pages/laporan/laporan-rekonsiliasi/rekap-kib/RekapKibF47Page";
-import RekapSaldoPage from "./pages/laporan/laporan-rekonsiliasi/rekap-saldo/RekapSaldoPage";
-import RekapSaldoAwalPage from "./pages/laporan/laporan-rekonsiliasi/rekap-saldo/RekapSaldoAwalPage";
-import RekapSaldoAkhirPage from "./pages/laporan/laporan-rekonsiliasi/rekap-saldo/RekapSaldoAkhirPage";
+import BelanjaApbdPerUpbPage from "./pages/laporan/laporan-rekonsiliasi/laporan-per-upb/belanja-apbd/BelanjaApbdPerUpbPage";
+import MutasiPerUpbPage from "./pages/laporan/laporan-rekonsiliasi/laporan-per-upb/mutasi/MutasiPerUpbPage";
+import RekapBelanjaApbdPerUpbPage from "./pages/laporan/laporan-rekonsiliasi/laporan-per-upb/rekap-belanja/RekapBelanjaApbdPerUpbPage";
+import RekapMutasiPerUpbPage from "./pages/laporan/laporan-rekonsiliasi/laporan-per-upb/rekap-mutasi/RekapMutasiPerUpbPage";
 
+import RekapRekonsiliasiPage from "./pages/laporan/laporan-rekonsiliasi/rekap-rekonsiliasi/RekapRekonsiliasiPage";
+import RekapRekonsiliasiUpbPage from "./pages/laporan/laporan-rekonsiliasi/rekap-rekonsiliasi/rekap-rekonsiliasi-upb/RekapRekonsiliasiUpbPage";
+import RekapSeluruhRekonsiliasiPage from "./pages/laporan/laporan-rekonsiliasi/rekap-rekonsiliasi/rekap-seluruh-rekonsiliasi/RekapSeluruhRekonsiliasiPage";
+
+import RekapKibPage from "./pages/laporan/laporan-rekonsiliasi/rekap-kib/RekapKibPage";
+import RekapKibA47Page from "./pages/laporan/laporan-rekonsiliasi/rekap-kib/kib-a/RekapKibA47Page";
+import RekapKibB47Page from "./pages/laporan/laporan-rekonsiliasi/rekap-kib/kib-b/RekapKibB47Page";
+import RekapKibC47Page from "./pages/laporan/laporan-rekonsiliasi/rekap-kib/kib-c/RekapKibC47Page";
+import RekapKibD47Page from "./pages/laporan/laporan-rekonsiliasi/rekap-kib/kib-d/RekapKibD47Page";
+import RekapKibE47Page from "./pages/laporan/laporan-rekonsiliasi/rekap-kib/kib-e/RekapKibE47Page";
+import RekapKibF47Page from "./pages/laporan/laporan-rekonsiliasi/rekap-kib/kib-f/RekapKibF47Page";
+
+import RekapSaldoPage from "./pages/laporan/laporan-rekonsiliasi/rekap-saldo/RekapSaldoPage";
+import RekapSaldoAwalPage from "./pages/laporan/laporan-rekonsiliasi/rekap-saldo/saldo-awal/RekapSaldoAwalPage";
+import RekapSaldoAkhirPage from "./pages/laporan/laporan-rekonsiliasi/rekap-saldo/saldo-akhir/RekapSaldoAkhirPage";
+// LaporanHibah
 import LaporanHibahPage from "./pages/laporan/laporan-hibah/LaporanHibahPage";
 import HibahPerUpbPage from "./pages/laporan/laporan-hibah/hibah-per-upb/HibahPerUpbPage";
 
@@ -85,7 +88,6 @@ import RincianHibahPage from "./pages/laporan/laporan-hibah/rincian-hibah/Rincia
 import RincianRealisasiAnggaranPage from "./pages/laporan/laporan-hibah/rincian-hibah/realisasi-anggaran/RincianRealisasiAnggaranPage";
 import RincianSudahDiadministrasiPage from "./pages/laporan/laporan-hibah/rincian-hibah/sudah-administrasi/RincianSudahDiadministrasiPage";
 import RincianBelumDiadministrasiPage from "./pages/laporan/laporan-hibah/rincian-hibah/belum-administrasi/RincianBelumDiadministrasiPage";
-// LaporanHibah End
 
 import LraVsBmPage from "./pages/laporan/lra-vs-bm/LraVsBmPage";
 import LraVsBmSkpdPage from "./pages/laporan/lra-vs-bm/skpd/LraVsBmSkpdPage";
@@ -332,7 +334,10 @@ function App() {
         <Route path="/pengaturan" element={<PengaturanPage />} />
         <Route path="/pengaturan/group" element={<GroupPage />} />
         <Route path="/pengaturan/pengguna" element={<PenggunaPage />} />
-        <Route path="/pengaturan/updating-data" element={<UpdatingDataPage />} />
+        <Route
+          path="/pengaturan/updating-data"
+          element={<UpdatingDataPage />}
+        />
         <Route path="/pengaturan/sistem" element={<SistemPage />} />
         {/* Pengaturan End */}
       </Routes>

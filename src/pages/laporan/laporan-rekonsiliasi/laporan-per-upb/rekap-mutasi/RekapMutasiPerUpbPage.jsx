@@ -1,6 +1,6 @@
 import React from "react";
-import Navbar from "../../../../components/Navbar";
-import Breadcrumbs from "../../../../components/Breadcrumbs";
+import Navbar from "../../../../../components/Navbar";
+import Breadcrumbs from "../../../../../components/Breadcrumbs";
 
 const RekapMutasiPerUpbPage = () => {
   return (
@@ -9,15 +9,15 @@ const RekapMutasiPerUpbPage = () => {
 
       <div className="px-8 py-8">
         <Breadcrumbs />
-        <h1 className="text-2xl font-bold mb-4 mt-4">
-          Rekap Mutasi per UPB
-        </h1>
+        <h1 className="text-2xl font-bold mb-4 mt-4">Rekap Mutasi per UPB</h1>
       </div>
 
       <div className="max-w-3xl mx-auto bg-white rounded-xl shadow p-8">
         <h2 className="text-center font-bold text-base mb-2 uppercase leading-relaxed">
-          REKAP DATA MUTASI AKTIVA TETAP KABUPATEN TANGGAMUS DARI DROPING PUSAT/ <br />
-          DROPING PEMDA/ MUTASI SKPD LAIN/ PENGHAPUSAN/ USULAN PENGHAPUSAN <br />
+          REKAP DATA MUTASI AKTIVA TETAP KABUPATEN TANGGAMUS DARI DROPING PUSAT/{" "}
+          <br />
+          DROPING PEMDA/ MUTASI SKPD LAIN/ PENGHAPUSAN/ USULAN PENGHAPUSAN{" "}
+          <br />
           TAHUN ANGGARAN 2025
         </h2>
 
