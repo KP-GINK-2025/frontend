@@ -1,13 +1,13 @@
 import React from "react";
-import { Layers } from "lucide-react";
+import { Building2, FileBarChart2 } from "lucide-react";
 import Navbar from "../../../../components/Navbar";
 import MenuItem from "../../../../components/MenuItem";
 import useMenuNavigation from "../../../../hooks/useMenuNavigation";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
 
 const menuItems = [
-  { name: "Rekap Rekonsiliasi UPB", icon: Layers },
-  { name: "Rekap Seluruh Rekonsiliasi", icon: Layers },
+  { name: "Rekap Rekonsiliasi UPB", icon: Building2 },
+  { name: "Rekap Seluruh Rekonsiliasi", icon: FileBarChart2 },
 ];
 
 const RekapRekonsiliasiPage = () => {

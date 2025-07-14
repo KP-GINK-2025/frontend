@@ -1,15 +1,15 @@
 import React from "react";
-import { Settings } from "lucide-react";
+import { Users, User, ServerCog, UploadCloud } from "lucide-react";
 import Navbar from "../../components/Navbar";
 import MenuItem from "../../components/MenuItem";
 import useMenuNavigation from "../../hooks/useMenuNavigation";
 import Breadcrumbs from "../../components/Breadcrumbs";
 
 const menuItems = [
-  { name: "Group", icon: Settings },
-  { name: "Pengguna", icon: Settings },
-  { name: "Sistem", icon: Settings },
-  { name: "Updating Data", icon: Settings },
+  { name: "Group", icon: Users },
+  { name: "Pengguna", icon: User },
+  { name: "Sistem", icon: ServerCog },
+  { name: "Updating Data", icon: UploadCloud },
 ];
 
 const PengaturanPage = () => {

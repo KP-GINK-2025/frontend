@@ -1,15 +1,20 @@
 import React from "react";
-import { Layers } from "lucide-react";
+import {
+  Building2,
+  FileBarChart2,
+  LayoutGrid,
+  CircleDollarSign,
+} from "lucide-react";
 import Navbar from "../../../components/Navbar";
 import MenuItem from "../../../components/MenuItem";
 import useMenuNavigation from "../../../hooks/useMenuNavigation";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 
 const menuItems = [
-  { name: "Laporan per UPB", icon: Layers },
-  { name: "Rekap Rekonsiliasi", icon: Layers },
-  { name: "Rekap KIB", icon: Layers },
-  { name: "Rekap Saldo (awal dan akhir)", icon: Layers },
+  { name: "Laporan per UPB", icon: Building2 },
+  { name: "Rekap Rekonsiliasi", icon: FileBarChart2 },
+  { name: "Rekap KIB", icon: LayoutGrid },
+  { name: "Rekap Saldo (awal dan akhir)", icon: CircleDollarSign },
 ];
 
 const LaporanRekonsiliasiPage = () => {

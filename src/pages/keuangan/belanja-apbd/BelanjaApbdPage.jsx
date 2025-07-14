@@ -1,14 +1,14 @@
 import React from "react";
-import { Wallet } from "lucide-react";
+import { ClipboardList, Package, Upload } from "lucide-react";
 import Navbar from "../../../components/Navbar";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import MenuItem from "../../../components/MenuItem";
 import useMenuNavigation from "../../../hooks/useMenuNavigation";
 
 const menuItems = [
-  { name: "Daftar Belanja", icon: Wallet },
-  { name: "Item Belanja", icon: Wallet },
-  { name: "Posting Belanja", icon: Wallet },
+  { name: "Daftar Belanja", icon: ClipboardList },
+  { name: "Item Belanja", icon: Package },
+  { name: "Posting Belanja", icon: Upload },
 ];
 
 const BelanjaApbdPage = () => {

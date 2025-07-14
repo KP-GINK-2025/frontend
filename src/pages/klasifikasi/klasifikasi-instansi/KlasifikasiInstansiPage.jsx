@@ -3,13 +3,13 @@ import Navbar from "../../../components/Navbar";
 import MenuItem from "../../../components/MenuItem";
 import useMenuNavigation from "../../../hooks/useMenuNavigation";
 import Breadcrumbs from "../../../components/Breadcrumbs";
-import { Landmark } from "lucide-react";
+import { Layers, Building2, GitBranch, Archive } from "lucide-react";
 
 const menuItems = [
-  { name: "Bidang", icon: Landmark },
-  { name: "Unit", icon: Landmark },
-  { name: "Sub Unit", icon: Landmark },
-  { name: "UPB", icon: Landmark },
+  { name: "Bidang", icon: Layers },
+  { name: "Unit", icon: Building2 },
+  { name: "Sub Unit", icon: GitBranch },
+  { name: "UPB", icon: Archive },
 ];
 
 const KlasifikasiInstansiPage = () => {

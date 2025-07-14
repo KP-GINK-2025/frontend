@@ -1,14 +1,14 @@
 import React from "react";
-import { Wallet } from "lucide-react";
+import { CreditCard, Repeat, Gift } from "lucide-react";
 import Navbar from "../../components/Navbar";
 import MenuItem from "../../components/MenuItem";
 import useMenuNavigation from "../../hooks/useMenuNavigation";
 import Breadcrumbs from "../../components/Breadcrumbs";
 
 const menuItems = [
-  { name: "Belanja APBD", icon: Wallet },
-  { name: "Mutasi", icon: Wallet },
-  { name: "Hibah", icon: Wallet },
+  { name: "Belanja APBD", icon: CreditCard },
+  { name: "Mutasi", icon: Repeat },
+  { name: "Hibah", icon: Gift },
 ];
 
 const KeuanganPage = () => {

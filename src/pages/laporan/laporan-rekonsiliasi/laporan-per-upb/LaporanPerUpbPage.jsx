@@ -1,15 +1,15 @@
 import React from "react";
-import { Layers } from "lucide-react";
+import { Wallet, ClipboardList, Repeat, FileBarChart2 } from "lucide-react";
 import Navbar from "../../../../components/Navbar";
 import MenuItem from "../../../../components/MenuItem";
 import useMenuNavigation from "../../../../hooks/useMenuNavigation";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
 
 const menuItems = [
-  { name: "Belanja APBD per UPB", icon: Layers },
-  { name: "Rekap Belanja APBD per UPB", icon: Layers },
-  { name: "Mutasi per UPB", icon: Layers },
-  { name: "Rekap Mutasi per UPB", icon: Layers },
+  { name: "Belanja APBD per UPB", icon: Wallet },
+  { name: "Rekap Belanja APBD per UPB", icon: ClipboardList },
+  { name: "Mutasi per UPB", icon: Repeat },
+  { name: "Rekap Mutasi per UPB", icon: FileBarChart2 },
 ];
 
 const LaporanPerUpbPage = () => {

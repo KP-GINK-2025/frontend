@@ -1,14 +1,14 @@
 import React from "react";
-import { Wallet } from "lucide-react"; // kamu bisa ganti ikon jika perlu
+import { Notebook, Gift, Send } from "lucide-react";
 import Navbar from "../../../components/Navbar";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import MenuItem from "../../../components/MenuItem";
 import useMenuNavigation from "../../../hooks/useMenuNavigation";
 
 const menuItems = [
-  { name: "Daftar Hibah", icon: Wallet },
-  { name: "Item Hibah", icon: Wallet },
-  { name: "Posting Hibah", icon: Wallet },
+  { name: "Daftar Hibah", icon: Notebook },
+  { name: "Item Hibah", icon: Gift },
+  { name: "Posting Hibah", icon: Send },
 ];
 
 const HibahPage = () => {

@@ -1,13 +1,13 @@
 import React from "react";
-import { Layers } from "lucide-react";
+import { BarChart2, Table2 } from "lucide-react";
 import Navbar from "../../../components/Navbar";
 import MenuItem from "../../../components/MenuItem";
 import useMenuNavigation from "../../../hooks/useMenuNavigation";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 
 const menuItems = [
-  { name: "LRA VS BM UPB", icon: Layers },
-  { name: "LRA VS BM SKPD", icon: Layers },
+  { name: "LRA VS BM UPB", icon: BarChart2 },
+  { name: "LRA VS BM SKPD", icon: Table2 },
 ];
 
 const LraVsBmPage = () => {
