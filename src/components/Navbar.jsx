@@ -27,7 +27,7 @@ const Navbar = () => {
     );
     navigate("/");
   };
-  
+
   const handleGoToDashboard = () => {
     navigate("/dashboard");
   };
@@ -180,32 +180,32 @@ const Navbar = () => {
       `}</style>
 
       <div className="bg-[#B53C3C] text-white flex items-center justify-between px-4 md:px-6 py-4 shadow select-none">
-      <div
-        className="flex items-center gap-2 cursor-pointer"
-        onClick={handleGoToDashboard}
-      >
-        <img
-          src="/assets/logo-tanggamus.png"
-          alt="Logo"
-          className="w-12 h-auto"
-          draggable="false"
-        />
-        <h1 className="text-xs md:text-md lg:text-lg font-semibold">
-          E-REKON
-          <br />
-          KABUPATEN TANGGAMUS
-        </h1>
-      </div>
+        <div
+          className="flex items-center gap-2 cursor-pointer"
+          onClick={handleGoToDashboard}
+        >
+          <img
+            src="/assets/logo-tanggamus.png"
+            alt="Logo"
+            className="w-12 h-auto"
+            draggable="false"
+          />
+          <h1 className="text-xs md:text-md lg:text-lg font-semibold">
+            E-REKON
+            <br />
+            KABUPATEN TANGGAMUS
+          </h1>
+        </div>
 
         <div className="flex items-center gap-4 relative" ref={dropdownRef}>
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-2 px-2 py-1"
+            className="flex items-center gap-2 px-2 py-1 cursor-pointer"
           >
             <img
               src={avatarSrc}
               alt="User Avatar"
-              className="w-9 h-9 rounded-full object-cover border border-white"
+              className="w-9 h-9 rounded-full object-cover border-3 border-white"
             />
             <span className="text-sm font-medium">{storedUser.name}</span>
           </button>
@@ -220,7 +220,7 @@ const Navbar = () => {
                   <img
                     src={avatarSrc}
                     alt="User Avatar"
-                    className="w-20 h-20 rounded-full border-4 border-white object-cover"
+                    className="w-20 h-20 rounded-full border-3 border-white object-cover"
                   />
                 </div>
 
