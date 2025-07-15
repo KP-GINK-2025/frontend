@@ -8,89 +8,104 @@ import DataTable from "../../../../components/DataTable";
 
 const BidangPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [entriesPerPage, setEntriesPerPage] = useState(10);
-  // const [currentPage, setCurrentPage] = useState(1);
   const [bidangData, setBidangData] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // State baru untuk mengontrol visibilitas modal
+  const [rowCount, setRowCount] = useState(0);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingBidang, setEditingBidang] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // State untuk melacak pagination model dari DataTable
-  const [dataTablePaginationModel, setDataTablePaginationModel] =
-    React.useState({
-      page: 0,
-      pageSize: entriesPerPage,
-    });
+  const [dataTablePaginationModel, setDataTablePaginationModel] = useState({
+    page: 0,
+    pageSize: 10,
+  });
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const response = await api.get("/klasifikasi-instansi/bidang");
-      setBidangData(response.data.data); // Pastikan struktur responsnya memang { data: [...] }
-    } catch (error) {
-      console.error("Gagal fetch data bidang:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // --- OPTIMISASI: Debounce search term ---
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300); // Tunggu 300ms setelah user berhenti mengetik
 
-  const filteredData = bidangData.filter(
-    (item) =>
-      item.namaBidang?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.kodeBidang?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.kode?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [searchTerm]);
+
+  useEffect(() => {
+    if (debouncedSearchTerm) {
+      setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
+    }
+  }, [debouncedSearchTerm]);
+
+  // --- EFEK UTAMA UNTUK FETCH DATA ---
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        params.append("page", dataTablePaginationModel.page + 1);
+        params.append("per_page", dataTablePaginationModel.pageSize);
+        if (debouncedSearchTerm) {
+          // Gunakan debounced search term
+          params.append("search", debouncedSearchTerm);
+        }
+
+        const response = await api.get(
+          `/klasifikasi-instansi/bidang?${params.toString()}`
+        );
+        setBidangData(response.data.data);
+        setRowCount(response.data.meta.total);
+      } catch (error) {
+        console.error("Gagal fetch data bidang:", error);
+        setBidangData([]); // Reset data jika gagal
+        setRowCount(0); // Reset total jika gagal
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [dataTablePaginationModel, debouncedSearchTerm, refreshTrigger]); // Trigger oleh paginasi atau search term yang sudah di-debounce
 
   const handleExport = () => {
     console.log("Exporting data...");
   };
 
   const handleRefresh = () => {
-    setLoading(true);
-    setSearchTerm("");
-    fetchData();
+    // setSearchTerm("");
+    setRefreshTrigger((c) => c + 1);
   };
 
   const handleOpenAddModal = () => {
-    setEditingBidang(null); // Penting: Reset editing state saat ingin menambah baru
+    setEditingBidang(null);
     setIsAddModalOpen(true);
   };
 
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
-    setEditingBidang(null); // Reset editing state saat modal ditutup
+    setEditingBidang(null);
   };
 
   const handleSaveNewBidang = async (bidangToSave) => {
     try {
       if (bidangToSave.id) {
-        // Mode edit
-        const response = await api.put(
-          `/klasifikasi-instansi/bidang/${bidangToSave.id}`,
-          bidangToSave
-        );
-        console.log("Berhasil update bidang:", response.data);
+        const { id, ...payload } = bidangToSave;
+        await api.put(`/klasifikasi-instansi/bidang/${id}`, payload);
       } else {
-        // Mode tambah baru
-        const response = await api.post(
-          "/klasifikasi-instansi/bidang",
-          bidangToSave
-        );
-        console.log("Berhasil tambah bidang:", response.data);
+        await api.post("/klasifikasi-instansi/bidang", bidangToSave);
       }
-
-      fetchData(); // Refresh data dari server
+      alert("Data berhasil disimpan!");
     } catch (error) {
-      console.error("Gagal simpan bidang:", error);
+      console.error(
+        "Gagal simpan bidang:",
+        error.response?.data || error.message
+      );
       alert("Gagal menyimpan data bidang. Cek console untuk detail.");
     } finally {
       handleCloseAddModal();
+      handleRefresh(); // Panggil refresh untuk mengambil data terbaru
     }
   };
 
@@ -111,23 +126,33 @@ const BidangPage = () => {
     try {
       await api.delete(`/klasifikasi-instansi/bidang/${id}`);
       console.log("Berhasil menghapus bidang dengan ID:", id);
-      fetchData(); // Refresh data dari server
+      handleRefresh(); // Refresh data setelah hapus
     } catch (error) {
       console.error("Gagal menghapus bidang:", error);
       alert("Gagal menghapus bidang. Cek console untuk detail.");
     }
   };
 
-  // Data kolom untuk MUI DataGrid
   const columns = [
-    { field: "id", headerName: "ID", width: 90 },
+    // { field: "id", headerName: "ID", width: 90 },
+    {
+      field: "kabupaten_kota",
+      headerName: "Kabupaten/Kota",
+      flex: 1,
+      minWidth: 250,
+      renderCell: (params) => {
+        if (params.row.kabupaten_kota) {
+          return `${params.row.kabupaten_kota.kode_kabupaten_kota} - ${params.row.kabupaten_kota.nama_kabupaten_kota}`;
+        }
+        return "N/A";
+      },
+    },
     {
       field: "kode_bidang",
       headerName: "Kode Bidang",
-      type: "number",
       width: 150,
     },
-    { field: "nama_bidang", headerName: "Nama Bidang", flex: 1 },
+    { field: "nama_bidang", headerName: "Nama Bidang", flex: 1, minWidth: 250 },
     { field: "kode", headerName: "Kode", width: 120 },
     {
       field: "action",
@@ -136,8 +161,6 @@ const BidangPage = () => {
       sortable: false,
       renderCell: (params) => (
         <div className="flex gap-2 items-center">
-          {" "}
-          {/* Tambahkan items-center */}
           <button
             onClick={() => handleEditClick(params.row.id)}
             className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
@@ -194,18 +217,17 @@ const BidangPage = () => {
             <div className="flex items-center gap-2">
               <span className="text-gray-600 text-sm">Show</span>
               <select
-                value={entriesPerPage}
+                value={dataTablePaginationModel.pageSize}
                 onChange={(e) => {
-                  setEntriesPerPage(Number(e.target.value));
                   setDataTablePaginationModel((prev) => ({
                     ...prev,
                     pageSize: Number(e.target.value),
-                    page: 0,
+                    page: 0, // Reset ke halaman pertama saat jumlah entri berubah
                   }));
                 }}
                 className="border border-gray-300 rounded px-3 py-1 text-sm"
               >
-                {[5, 10, 25, 50, 100].map((n) => (
+                {[5, 10, 25, 50, 75, 100].map((n) => (
                   <option key={n} value={n}>
                     {n}
                   </option>
@@ -221,7 +243,7 @@ const BidangPage = () => {
               />
               <input
                 type="text"
-                placeholder="Search"
+                placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
@@ -229,20 +251,19 @@ const BidangPage = () => {
             </div>
           </div>
 
-          {loading ? (
-            <div className="text-center py-8 text-gray-500">Loading...</div>
-          ) : (
-            <DataTable
-              rows={filteredData}
-              columns={columns}
-              initialPageSize={entriesPerPage}
-              pageSizeOptions={[5, 10, 25, 50, 100]}
-              height={500}
-              emptyRowsMessage="No Bidang data available"
-              paginationModel={dataTablePaginationModel}
-              onPaginationModelChange={setDataTablePaginationModel}
-            />
-          )}
+          <DataTable
+            rows={bidangData}
+            columns={columns}
+            rowCount={rowCount}
+            loading={loading}
+            paginationMode="server"
+            filterMode="server"
+            pageSizeOptions={[5, 10, 25, 50, 75, 100]}
+            paginationModel={dataTablePaginationModel}
+            onPaginationModelChange={setDataTablePaginationModel}
+            height={500}
+            emptyRowsMessage="Tidak ada data bidang yang tersedia"
+          />
         </div>
       </div>
 
