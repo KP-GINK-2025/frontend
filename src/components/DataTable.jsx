@@ -23,7 +23,7 @@ const DataTable = ({
   rows,
   columns,
   initialPageSize = 10, // Default to 10
-  pageSizeOptions = [5, 10, 25, 50, 100],
+  pageSizeOptions = [5, 10, 25, 50, 75, 100],
   checkboxSelection = false,
   height = 400,
   width = "100%",
