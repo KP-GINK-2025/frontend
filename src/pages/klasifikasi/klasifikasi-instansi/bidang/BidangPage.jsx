@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import api from "../../../../api/axios";
 import Navbar from "../../../../components/Navbar";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
@@ -23,27 +24,16 @@ const BidangPage = () => {
       pageSize: entriesPerPage,
     });
 
-  const fetchData = () => {
+  const fetchData = async () => {
     setLoading(true);
-    setTimeout(() => {
-      // Dummy data untuk pengujian
-      setBidangData([
-        { id: 1, kodeBidang: "1", namaBidang: "Sekwan/DPRD", kode: "1" },
-        {
-          id: 2,
-          kodeBidang: "2",
-          namaBidang: "Gubernur/Bupati/Walikota",
-          kode: "3",
-        },
-        {
-          id: 3,
-          kodeBidang: "3",
-          namaBidang: "Wakil Gubernur/Bupati/Walikota",
-          kode: "3",
-        },
-      ]);
+    try {
+      const response = await api.get("/klasifikasi-instansi/bidang");
+      setBidangData(response.data.data); // Pastikan struktur responsnya memang { data: [...] }
+    } catch (error) {
+      console.error("Gagal fetch data bidang:", error);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   useEffect(() => {
@@ -77,24 +67,31 @@ const BidangPage = () => {
     setEditingBidang(null); // Reset editing state saat modal ditutup
   };
 
-  const handleSaveNewBidang = (bidangToSave) => {
-    if (bidangToSave.id) {
-      // Ini adalah mode edit
-      setBidangData((prevData) =>
-        prevData.map((item) =>
-          item.id === bidangToSave.id ? bidangToSave : item
-        )
-      );
-      console.log("Update Bidang:", bidangToSave);
-    } else {
-      // Ini adalah mode tambah baru
-      setBidangData((prevData) => [
-        ...prevData,
-        { id: Date.now(), ...bidangToSave }, // Buat ID baru
-      ]);
-      console.log("Menyimpan Bidang baru:", bidangToSave);
+  const handleSaveNewBidang = async (bidangToSave) => {
+    try {
+      if (bidangToSave.id) {
+        // Mode edit
+        const response = await api.put(
+          `/klasifikasi-instansi/bidang/${bidangToSave.id}`,
+          bidangToSave
+        );
+        console.log("Berhasil update bidang:", response.data);
+      } else {
+        // Mode tambah baru
+        const response = await api.post(
+          "/klasifikasi-instansi/bidang",
+          bidangToSave
+        );
+        console.log("Berhasil tambah bidang:", response.data);
+      }
+
+      fetchData(); // Refresh data dari server
+    } catch (error) {
+      console.error("Gagal simpan bidang:", error);
+      alert("Gagal menyimpan data bidang. Cek console untuk detail.");
+    } finally {
+      handleCloseAddModal();
     }
-    handleCloseAddModal();
   };
 
   const handleEditClick = (id) => {
@@ -105,10 +102,19 @@ const BidangPage = () => {
     }
   };
 
-  const handleDeleteClick = (id) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus data ini?")) {
-      setBidangData((prevData) => prevData.filter((item) => item.id !== id));
-      console.log("Menghapus Bidang dengan ID:", id);
+  const handleDeleteClick = async (id) => {
+    const konfirmasi = window.confirm(
+      "Apakah Anda yakin ingin menghapus data ini?"
+    );
+    if (!konfirmasi) return;
+
+    try {
+      await api.delete(`/klasifikasi-instansi/bidang/${id}`);
+      console.log("Berhasil menghapus bidang dengan ID:", id);
+      fetchData(); // Refresh data dari server
+    } catch (error) {
+      console.error("Gagal menghapus bidang:", error);
+      alert("Gagal menghapus bidang. Cek console untuk detail.");
     }
   };
 
@@ -116,12 +122,12 @@ const BidangPage = () => {
   const columns = [
     { field: "id", headerName: "ID", width: 90 },
     {
-      field: "kodeBidang",
+      field: "kode_bidang",
       headerName: "Kode Bidang",
       type: "number",
       width: 150,
     },
-    { field: "namaBidang", headerName: "Nama Bidang", flex: 1 },
+    { field: "nama_bidang", headerName: "Nama Bidang", flex: 1 },
     { field: "kode", headerName: "Kode", width: 120 },
     {
       field: "action",
