@@ -1,128 +1,126 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react"; // Import useCallback
+import api from "../../../../api/axios";
 import Navbar from "../../../../components/Navbar";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
-import AddUnitModal from "./AddUnitModal";
 import DataTable from "../../../../components/DataTable";
+import AddUnitModal from "./AddUnitModal";
 
 const UnitPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [entriesPerPage, setEntriesPerPage] = useState(10);
-  // const [currentPage, setCurrentPage] = useState(1);
-
   const [unitData, setUnitData] = useState([]);
-  const [bidangData, setBidangData] = useState([]);
+  const [bidangList, setBidangList] = useState([]);
   const [selectedBidang, setSelectedBidang] = useState("");
   const [loading, setLoading] = useState(true);
-
+  const [totalRows, setTotalRows] = useState(0);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingUnit, setEditingUnit] = useState(null);
 
-  // State untuk melacak pagination model dari DataTable
-  const [dataTablePaginationModel, setDataTablePaginationModel] =
-    React.useState({
-      page: 0,
-      pageSize: entriesPerPage,
-    });
+  const [paginationModel, setPaginationModel] = useState({
+    page: 0,
+    pageSize: 10,
+  });
 
-  const fetchData = () => {
-    setLoading(true);
-    setTimeout(() => {
-      // Dummy data untuk pengujian
-      setBidangData([
-        { id: 1, namaBidang: "1 - Sekwan/DPRD" },
-        { id: 2, namaBidang: "2 - Gubernur/Bupati/Walikota" },
-        { id: 3, namaBidang: "3 - Wakil Gubernur/Bupati/Walikota" },
-      ]);
-      setUnitData([
-        {
-          id: 1,
-          provinsi: "18 - Lampung",
-          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
-          bidang: "1 - Sekwan/DPRD",
-          kodeUnit: "1",
-          namaUnit: "Sekretariat DPRD",
-          kode: "1",
-        },
-        {
-          id: 2,
-          provinsi: "18 - Lampung",
-          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
-          bidang: "2 - Gubernur/Bupati/Walikota",
-          kodeUnit: "1",
-          namaUnit: "Bupati Tanggamus",
-          kode: "1",
-        },
-        {
-          id: 3,
-          provinsi: "18 - Lampung",
-          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
-          bidang: "3 - Wakil Gubernur/Bupati/Walikota",
-          kodeUnit: "1",
-          namaUnit: "Wakil Bupati Tanggamus",
-          kode: "1",
-        },
-      ]);
-      setLoading(false);
-    }, 1000);
+  const fetchBidangList = async () => {
+    try {
+      const res = await api.get("/klasifikasi-instansi/bidang", {
+        params: { per_page: 100 },
+      });
+      const sorted = res.data.data
+        .map((b) => ({
+          id: b.id,
+          kode_bidang: b.kode_bidang,
+          nama_bidang: b.nama_bidang,
+        }))
+        .sort((a, b) => a.kode_bidang - b.kode_bidang);
+      setBidangList(sorted);
+    } catch (err) {
+      console.error("Gagal fetch bidang list:", err);
+    }
   };
 
+  // Gunakan useCallback untuk fetchData agar tidak membuat fungsi baru setiap render
+  const fetchData = useCallback(
+    async (
+      currentPaginationModel = paginationModel,
+      currentSearchTerm = searchTerm,
+      bidangFilter = selectedBidang
+    ) => {
+      setLoading(true);
+      try {
+        const response = await api.get("/klasifikasi-instansi/unit", {
+          params: {
+            page: currentPaginationModel.page + 1,
+            per_page: currentPaginationModel.pageSize,
+            search: currentSearchTerm,
+            bidang_id: bidangFilter || undefined,
+          },
+        });
+
+        const mappedData = response.data.data.map((item) => ({
+          ...item,
+          nama_unit: item.nama_unit || item.namaUnit,
+          kode_unit: item.kode_unit || item.kodeUnit,
+          bidang:
+            item.bidang?.kode_bidang && item.bidang?.nama_bidang
+              ? `${item.bidang.kode_bidang} - ${item.bidang.nama_bidang}`
+              : "-",
+        }));
+
+        setUnitData(mappedData);
+        setTotalRows(response.data.meta.total);
+      } catch (error) {
+        console.error("Gagal fetch data unit:", error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [paginationModel, searchTerm, selectedBidang] // Tambahkan semua dependensi di sini
+  );
+
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchBidangList();
+    fetchData(); // Panggil fetchData tanpa parameter untuk menggunakan state terbaru
+  }, [fetchData]); // Hanya panggil ulang jika fetchData itu sendiri berubah (karena useCallback)
 
-  const filteredData = unitData.filter((item) => {
-    const matchesSearch =
-      item.namaUnit?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.kodeUnit?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.kode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.bidang?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.provinsi?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.kabKot?.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesBidang =
-      selectedBidang === "" || item.bidang === selectedBidang;
-
-    return matchesSearch && matchesBidang;
-  });
+  const handleRefresh = () => {
+    setSearchTerm("");
+    setSelectedBidang("");
+    // Saat refresh, reset pagination ke halaman pertama
+    setPaginationModel({ page: 0, pageSize: paginationModel.pageSize });
+    // fetchData akan terpanggil otomatis karena perubahan state di atas akan memicu useEffect
+  };
 
   const handleExport = () => {
     console.log("Exporting unit data...");
   };
 
-  const handleRefresh = () => {
-    setLoading(true);
-    setSearchTerm("");
-    setSelectedBidang("");
-    fetchData();
-  };
-
   const handleOpenAddModal = () => {
-    setEditingUnit(null); // Penting: Reset editing state saat ingin menambah baru
+    setEditingUnit(null);
     setIsAddModalOpen(true);
   };
 
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
-    setEditingUnit(null); // Reset editing state saat modal ditutup
+    setEditingUnit(null);
   };
 
-  const handleSaveNewUnit = (unitToSave) => {
-    if (unitToSave.id) {
-      // Ini adalah mode edit
-      setUnitData((prevData) =>
-        prevData.map((item) => (item.id === unitToSave.id ? unitToSave : item))
-      );
-      console.log("Update Unit:", unitToSave);
-    } else {
-      // Ini adalah mode tambah baru
-      setUnitData((prevData) => [
-        ...prevData,
-        { id: Date.now(), ...unitToSave }, // Buat ID baru
-      ]);
-      console.log("Menyimpan Unit baru:", unitToSave);
+  const handleSaveNewUnit = async (unitToSave) => {
+    try {
+      if (unitToSave.id) {
+        await api.put(
+          `/klasifikasi-instansi/unit/${unitToSave.id}`,
+          unitToSave
+        );
+      } else {
+        await api.post("/klasifikasi-instansi/unit", unitToSave);
+      }
+      fetchData(); // Panggil fetchData setelah menyimpan untuk merefresh data
+    } catch (error) {
+      console.error("Gagal menyimpan unit:", error);
+    } finally {
+      handleCloseAddModal();
     }
-    handleCloseAddModal();
   };
 
   const handleEditClick = (id) => {
@@ -133,26 +131,51 @@ const UnitPage = () => {
     }
   };
 
-  const handleDeleteClick = (id) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus data ini?")) {
-      setUnitData((prevData) => prevData.filter((item) => item.id !== id));
-      console.log("Menghapus Unit dengan ID:", id);
+  const handleDeleteClick = async (id) => {
+    if (!window.confirm("Apakah Anda yakin ingin menghapus data ini?")) return;
+    try {
+      await api.delete(`/klasifikasi-instansi/unit/${id}`);
+      fetchData(); // Panggil fetchData setelah menghapus untuk merefresh data
+    } catch (error) {
+      console.error("Gagal menghapus unit:", error);
     }
   };
 
+  const handlePaginationModelChange = (newModel) => {
+    setPaginationModel(newModel);
+    // fetchData akan terpanggil otomatis karena perubahan paginationModel memicu useEffect
+  };
+
+  const handlePageSizeChange = (e) => {
+    const newPageSize = Number(e.target.value);
+    setPaginationModel({ page: 0, pageSize: newPageSize }); // Reset ke halaman 0 saat mengubah page size
+    // fetchData akan terpanggil otomatis karena perubahan paginationModel memicu useEffect
+  };
+
+  // Tambahkan useEffect terpisah untuk searchTerm agar tidak memicu pagination reset saat mencari
+  useEffect(() => {
+    // Reset halaman ke 0 saat searchTerm berubah untuk memulai pencarian dari awal
+    setPaginationModel((prev) =>
+      prev.page === 0 ? prev : { ...prev, page: 0 }
+    );
+    // fetchData akan terpanggil otomatis karena perubahan paginationModel atau searchTerm
+  }, [searchTerm]);
+
+  // Tambahkan useEffect terpisah untuk selectedBidang
+  useEffect(() => {
+    // Reset halaman ke 0 saat selectedBidang berubah untuk memulai filter dari awal
+    setPaginationModel((prev) =>
+      prev.page === 0 ? prev : { ...prev, page: 0 }
+    );
+    // fetchData akan terpanggil otomatis karena perubahan paginationModel atau selectedBidang
+  }, [selectedBidang]);
+
   const columns = [
-    { field: "id", headerName: "ID", width: 90 },
-    { field: "provinsi", headerName: "Provinsi", width: 180 },
-    { field: "kabKot", headerName: "Kabupaten/Kota", width: 250 },
-    { field: "bidang", headerName: "Bidang", width: 180 },
-    {
-      field: "kodeUnit",
-      headerName: "Kode Unit",
-      type: "number",
-      width: 150,
-    },
-    { field: "namaUnit", headerName: "Nama Unit", flex: 1 },
-    { field: "kode", headerName: "Kode", width: 120 },
+    // { field: "id", headerName: "ID", width: 90 },
+    { field: "bidang", headerName: "Bidang", flex: 1 },
+    { field: "kode_unit", headerName: "Kode Unit", width: 120 },
+    { field: "nama_unit", headerName: "Nama Unit", flex: 1 },
+    { field: "kode", headerName: "Kode", width: 100 },
     {
       field: "action",
       headerName: "Action",
@@ -162,13 +185,13 @@ const UnitPage = () => {
         <div className="flex gap-2 items-center">
           <button
             onClick={() => handleEditClick(params.row.id)}
-            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
+            className="text-blue-600 hover:text-blue-800 text-sm"
           >
             Edit
           </button>
           <button
             onClick={() => handleDeleteClick(params.row.id)}
-            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
+            className="text-red-600 hover:text-red-800 text-sm"
           >
             Delete
           </button>
@@ -182,7 +205,6 @@ const UnitPage = () => {
       <Navbar />
       <div className="px-8 py-8">
         <Breadcrumbs />
-
         <div className="flex justify-end mt-4 mb-4">
           <button
             onClick={handleExport}
@@ -194,96 +216,102 @@ const UnitPage = () => {
 
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold">Daftar Unit</h1>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-6 mb-6 justify-between">
-            <div className="flex flex-wrap items-center gap-6">
-              {/* Filter Bidang */}
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-700">Bidang</label>
-                <select
-                  value={selectedBidang}
-                  onChange={(e) => setSelectedBidang(e.target.value)}
-                  className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-                >
-                  <option value=""> -- Pilih Bidang -- </option>
-                  {bidangData.map((b) => (
-                    <option key={b.id} value={b.namaBidang}>
-                      {b.namaBidang}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Tombol di kanan */}
+            <h1 className="text-2xl font-bold text-gray-800">Daftar Unit</h1>
             <div className="flex gap-3">
               <button
                 onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 cursor-pointer"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
                 <RefreshCw size={16} /> Refresh
               </button>
               <button
                 onClick={handleOpenAddModal}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 cursor-pointer"
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
                 <Plus size={16} /> Add Unit
               </button>
             </div>
           </div>
 
-          <div className="flex justify-between items-center mb-6 text-sm text-gray-600">
-            <div className="flex items-center gap-2">
-              Show
-              <select
-                value={entriesPerPage}
-                onChange={(e) => {
-                  setEntriesPerPage(Number(e.target.value));
-                  setDataTablePaginationModel((prev) => ({
-                    ...prev,
-                    pageSize: Number(e.target.value),
-                    page: 0,
-                  }));
-                }}
-                className="border border-gray-300 rounded px-2 py-1"
-              >
-                {[5, 10, 25, 50, 100].map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-              entries
+          {/* Ini adalah div utama untuk filter dan pencarian */}
+          {/* Gunakan flex-row dan justify-between untuk layout dasar */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-4">
+            {/* Kiri: Grouping Bidang dan Show entries */}
+            {/* Gunakan flex-col di sini agar "Show entries" di bawah "Bidang" */}
+            <div className="flex flex-col gap-4 md:flex-row md:items-end">
+              {" "}
+              {/* Tambahkan md:flex-row md:items-end untuk alignment di desktop */}
+              {/* Bidang */}
+              <div className="flex items-center gap-2">
+                <span className="text-gray-800 font-semibold">Bidang</span>
+                <select
+                  value={selectedBidang}
+                  onChange={(e) => setSelectedBidang(e.target.value)}
+                  className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto"
+                >
+                  <option value="">-- Pilih Bidang --</option>
+                  {bidangList.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.kode_bidang} - {b.nama_bidang}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {/* Show entries - sekarang ini adalah item kedua dalam flex-col */}
+              <div className="flex items-center gap-2 mt-2 md:mt-0">
+                {" "}
+                {/* Tambahkan sedikit margin-top di mobile jika perlu */}
+                <span className="text-gray-600 text-sm">Show</span>
+                <select
+                  value={paginationModel.pageSize}
+                  onChange={handlePageSizeChange}
+                  className="border border-gray-300 rounded px-3 py-1 text-sm"
+                >
+                  {[5, 10, 25, 50, 100].map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+                <span className="text-gray-600 text-sm">entries</span>
+              </div>
             </div>
-            <div className="relative w-full md:w-64">
-              <Search
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                size={16}
-              />
+
+            {/* Kanan: Search - ini akan didorong ke kanan oleh justify-between */}
+            <div className="relative w-full md:w-64 flex items-center gap-2">
+              <Search className="text-gray-400" size={16} />
               <input
                 type="text"
                 placeholder="Search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="pl-4 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
               />
             </div>
           </div>
 
+          {/* DataTable tetap sama */}
           {loading ? (
             <div className="text-center py-8 text-gray-500">Loading...</div>
           ) : (
             <DataTable
-              rows={filteredData}
+              key={`datatable-${paginationModel.page}-${paginationModel.pageSize}-${searchTerm}-${selectedBidang}`}
+              rows={unitData}
               columns={columns}
-              initialPageSize={entriesPerPage}
               pageSizeOptions={[5, 10, 25, 50, 100]}
               height={500}
               emptyRowsMessage="No Unit data available"
-              paginationModel={dataTablePaginationModel}
-              onPaginationModelChange={setDataTablePaginationModel}
+              paginationModel={paginationModel}
+              onPaginationModelChange={handlePaginationModelChange}
+              rowCount={totalRows}
+              paginationMode="server"
+              initialState={{
+                pagination: {
+                  paginationModel: paginationModel,
+                },
+              }}
+              disableRowSelectionOnClick
+              hideFooterSelectedRowCount
             />
           )}
         </div>
