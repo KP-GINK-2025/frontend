@@ -1,178 +1,358 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import api from "../../../../api/axios";
 import Navbar from "../../../../components/Navbar";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import AddSubUnitModal from "./AddSubUnitModal";
 import DataTable from "../../../../components/DataTable";
 
-const SubUnitPage = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [entriesPerPage, setEntriesPerPage] = useState(10);
+// Custom hook untuk mengelola data bidang
+const useBidangData = () => {
+  const [bidangList, setBidangList] = useState([]);
+
+  const fetchBidangList = useCallback(async () => {
+    try {
+      const res = await api.get("/klasifikasi-instansi/bidang", {
+        params: { per_page: 1000 },
+      });
+
+      const sorted = res.data.data
+        .map((b) => ({
+          id: b.id,
+          kode_bidang: b.kode_bidang,
+          nama_bidang: b.nama_bidang,
+          full_name: `${b.kode_bidang} - ${b.nama_bidang}`,
+        }))
+        .sort((a, b) => {
+          const numA = parseInt(a.kode_bidang);
+          const numB = parseInt(b.kode_bidang);
+
+          if (!isNaN(numA) && !isNaN(numB)) {
+            return numA - numB;
+          }
+
+          return a.kode_bidang.localeCompare(b.kode_bidang);
+        });
+
+      setBidangList(sorted);
+    } catch (err) {
+      console.error("Gagal fetch bidang list:", err);
+    }
+  }, []);
+
+  return { bidangList, fetchBidangList };
+};
+
+// Custom hook untuk mengelola data unit
+const useUnitData = () => {
+  const [unitList, setUnitList] = useState([]);
+  const [loadingUnits, setLoadingUnits] = useState(false);
+
+  const fetchUnitList = useCallback(async (bidangId = "") => {
+    if (!bidangId) {
+      setUnitList([]);
+      return;
+    }
+
+    try {
+      setLoadingUnits(true);
+      const params = {
+        per_page: 1000,
+        bidang_id: bidangId,
+      };
+
+      const res = await api.get("/klasifikasi-instansi/unit", { params });
+      const sorted = res.data.data
+        .map((u) => ({
+          id: u.id,
+          kode_unit: u.kode_unit,
+          nama_unit: u.nama_unit,
+          full_name: `${u.kode_unit} - ${u.nama_unit}`,
+        }))
+        .sort((a, b) => {
+          const numA = parseInt(a.kode_unit);
+          const numB = parseInt(b.kode_unit);
+
+          if (!isNaN(numA) && !isNaN(numB)) {
+            return numA - numB;
+          }
+
+          return a.kode_unit.localeCompare(b.kode_unit);
+        });
+
+      setUnitList(sorted);
+    } catch (err) {
+      console.error("Gagal fetch unit list:", err);
+      setUnitList([]);
+    } finally {
+      setLoadingUnits(false);
+    }
+  }, []);
+
+  return { unitList, loadingUnits, fetchUnitList, setUnitList };
+};
+
+// Custom hook untuk mengelola data sub unit
+const useSubUnitData = () => {
   const [subUnitData, setSubUnitData] = useState([]);
-  const [bidangData, setBidangData] = useState([]);
-  const [unitData, setUnitData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [totalRows, setTotalRows] = useState(0);
+
+  const mapSubUnitData = (data) => {
+    return data.map((item) => ({
+      id: item.id,
+      provinsi: item.unit?.bidang?.kabupaten_kota?.provinsi
+        ? `${item.unit.bidang.kabupaten_kota.provinsi.kode_provinsi} - ${item.unit.bidang.kabupaten_kota.provinsi.nama_provinsi}`
+        : "-",
+      kabupaten_kota: item.unit?.bidang?.kabupaten_kota
+        ? `${item.unit.bidang.kabupaten_kota.kode_kabupaten_kota} - ${item.unit.bidang.kabupaten_kota.nama_kabupaten_kota}`
+        : "-",
+      bidang: item.unit?.bidang
+        ? `${item.unit.bidang.kode_bidang} - ${item.unit.bidang.nama_bidang}`
+        : "-",
+      unit: item.unit ? `${item.unit.kode_unit} - ${item.unit.nama_unit}` : "-",
+      kode_sub_unit: item.kode_sub_unit || "-",
+      nama_sub_unit: item.nama_sub_unit || "-",
+      kode: item.kode || "-",
+    }));
+  };
+
+  const fetchSubUnitData = useCallback(async (params = {}) => {
+    setLoading(true);
+    try {
+      const response = await api.get("/klasifikasi-instansi/subunit", {
+        params: {
+          page: params.page || 1,
+          per_page: params.pageSize || 10,
+          search: params.search || "",
+          unit_id: params.unitId || undefined,
+        },
+      });
+
+      const mappedData = mapSubUnitData(response.data.data);
+      setSubUnitData(mappedData);
+      setTotalRows(response.data.meta.total);
+    } catch (error) {
+      console.error("Gagal fetch data sub unit:", error);
+      setSubUnitData([]);
+      setTotalRows(0);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { subUnitData, loading, totalRows, fetchSubUnitData };
+};
+
+// Custom hook untuk debounce
+const useDebounce = (value, delay) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
+
+// Komponen utama
+const SubUnitPage = () => {
+  // State untuk filter dan pencarian
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedBidang, setSelectedBidang] = useState("");
   const [selectedUnit, setSelectedUnit] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [paginationModel, setPaginationModel] = useState({
+    page: 0,
+    pageSize: 10,
+  });
 
+  // State untuk modal
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingSubUnit, setEditingSubUnit] = useState(null);
 
-  const [dataTablePaginationModel, setDataTablePaginationModel] =
-    React.useState({
-      page: 0,
-      pageSize: entriesPerPage,
-    });
+  // Custom hooks
+  const { bidangList, fetchBidangList } = useBidangData();
+  const { unitList, loadingUnits, fetchUnitList, setUnitList } = useUnitData();
+  const { subUnitData, loading, totalRows, fetchSubUnitData } =
+    useSubUnitData();
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  const fetchData = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setBidangData([
-        { id: 1, namaBidang: "1 - Sekwan/DPRD" },
-        { id: 2, namaBidang: "2 - Gubernur/Bupati/Walikota" },
-        { id: 3, namaBidang: "3 - Wakil Gubernur/Bupati/Walikota" },
-      ]);
-      setUnitData([
-        { id: 1, namaUnit: "1 - Sekretariat DPRD" },
-        { id: 2, namaUnit: "1 - Bupati Tanggamus" },
-        { id: 3, namaUnit: "1 - Wakil Bupati Tanggamus" },
-      ]);
-      setSubUnitData([
-        {
-          id: 1,
-          provinsi: "18 - Lampung",
-          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
-          bidang: "1 - Sekwan/DPRD",
-          unit: "1 - Sekretariat DPRD",
-          kodeSubUnit: "1",
-          namaSubUnit: "Sekretariat DPRD",
-          kode: "1",
-        },
-        {
-          id: 2,
-          provinsi: "18 - Lampung",
-          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
-          bidang: "1 - Sekwan/DPRD",
-          unit: "1 - Sekretariat DPRD",
-          kodeSubUnit: "2",
-          namaSubUnit: "Bagian Umum",
-          kode: "2",
-        },
-        {
-          id: 3,
-          provinsi: "18 - Lampung",
-          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
-          bidang: "2 - Gubernur/Bupati/Walikota",
-          unit: "1 - Bupati Tanggamus",
-          kodeSubUnit: "1",
-          namaSubUnit: "Bupati Tanggamus",
-          kode: "1",
-        },
-        {
-          id: 4,
-          provinsi: "18 - Lampung",
-          kabKot: "0 - PEMERINTAH PROVINSI LAMPUNG",
-          bidang: "3 - Wakil Gubernur/Bupati/Walikota",
-          unit: "1 - Wakil Bupati Tanggamus",
-          kodeSubUnit: "1",
-          namaSubUnit: "Wakil Bupati Tanggamus",
-          kode: "1",
-        },
-      ]);
-      setLoading(false);
-    }, 1000);
-  };
+  // Effects
+  useEffect(() => {
+    fetchBidangList();
+  }, [fetchBidangList]);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    setSelectedUnit("");
+    if (selectedBidang) {
+      fetchUnitList(selectedBidang);
+    } else {
+      setUnitList([]);
+    }
+  }, [selectedBidang, fetchUnitList, setUnitList]);
 
-  const filteredData = subUnitData.filter((item) => {
-    const matchesSearch =
-      item.namaSubUnit?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.kodeSubUnit?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.kode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.unit?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.bidang?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.provinsi?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.kabKot?.toLowerCase().includes(searchTerm.toLowerCase());
+  useEffect(() => {
+    fetchSubUnitData({
+      page: paginationModel.page + 1,
+      pageSize: paginationModel.pageSize,
+      search: debouncedSearchTerm,
+      unitId: selectedUnit,
+    });
+  }, [
+    paginationModel.page,
+    paginationModel.pageSize,
+    debouncedSearchTerm,
+    selectedUnit,
+    fetchSubUnitData,
+  ]);
 
-    const matchesBidang =
-      selectedBidang === "" || item.bidang === selectedBidang;
+  // Event handlers
+  const handleBidangChange = (e) => {
+    const newBidangId = e.target.value;
+    setSelectedBidang(newBidangId);
+    setPaginationModel((prev) => ({ ...prev, page: 0 }));
+  };
 
-    const matchesUnit = selectedUnit === "" || item.unit === selectedUnit;
+  const handleUnitChange = (e) => {
+    setSelectedUnit(e.target.value);
+    setPaginationModel((prev) => ({ ...prev, page: 0 }));
+  };
 
-    return matchesSearch && matchesBidang && matchesUnit;
-  });
-
-  const handleExport = () => console.log("Exporting sub unit data...");
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setPaginationModel((prev) => ({ ...prev, page: 0 }));
+  };
 
   const handleRefresh = () => {
-    setLoading(true);
     setSearchTerm("");
     setSelectedBidang("");
     setSelectedUnit("");
-    fetchData(); // Panggil ulang fungsi fetching data
+    setUnitList([]);
+    setPaginationModel((prev) => ({ ...prev, page: 0 }));
   };
 
+  const handleExport = () => {
+    console.log("Exporting sub unit data...");
+    // TODO: Implementasi ekspor data
+  };
+
+  const handlePageSizeChange = (e) => {
+    const newPageSize = Number(e.target.value);
+    setPaginationModel({ page: 0, pageSize: newPageSize });
+  };
+
+  // Modal handlers
   const handleOpenAddModal = () => {
-    setEditingSubUnit(null); // Penting: Reset editing state saat ingin menambah baru
+    setEditingSubUnit(null);
     setIsAddModalOpen(true);
   };
 
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
-    setEditingSubUnit(null); // Reset editing state saat modal ditutup
+    setEditingSubUnit(null);
+    fetchSubUnitData({
+      page: paginationModel.page + 1,
+      pageSize: paginationModel.pageSize,
+      search: debouncedSearchTerm,
+      unitId: selectedUnit,
+    });
   };
 
-  const handleSaveNewSubUnit = (subUnitToSave) => {
-    if (subUnitToSave.id) {
-      // Mode edit
-      setSubUnitData((prevData) =>
-        prevData.map((item) =>
-          item.id === subUnitToSave.id ? subUnitToSave : item
-        )
+  const handleSaveNewSubUnit = async (subUnitToSave) => {
+    try {
+      const payload = {
+        unit_id: subUnitToSave.unit_id,
+        kode_sub_unit: subUnitToSave.kode_sub_unit,
+        nama_sub_unit: subUnitToSave.nama_sub_unit,
+        kode: subUnitToSave.kode,
+      };
+
+      const endpoint = subUnitToSave.id
+        ? `/klasifikasi-instansi/subunit/${subUnitToSave.id}`
+        : "/klasifikasi-instansi/subunit";
+
+      const method = subUnitToSave.id ? "put" : "post";
+      await api[method](endpoint, payload);
+
+      handleCloseAddModal();
+    } catch (error) {
+      console.error(
+        "Gagal menyimpan sub unit:",
+        error.response?.data || error.message
       );
-      console.log("Update Sub Unit:", subUnitToSave);
-    } else {
-      // Mode add
-      setSubUnitData((prevData) => [
-        ...prevData,
-        { id: Date.now(), ...subUnitToSave }, // Buat ID baru
-      ]);
-      console.log("Menyimpan Sub Unit baru:", subUnitToSave);
+      alert("Gagal menyimpan data. Cek konsol untuk detail.");
     }
-    handleCloseAddModal();
   };
 
-  const handleEditClick = (id) => {
-    const subUnitToEdit = subUnitData.find((item) => item.id === id);
-    if (subUnitToEdit) {
-      setEditingSubUnit(subUnitToEdit);
+  const handleEditClick = async (id) => {
+    try {
+      setLoading(true);
+      const response = await api.get(`/klasifikasi-instansi/subunit/${id}`);
+      const dataToEdit = response.data.data;
+
+      const mappedForEdit = {
+        id: dataToEdit.id,
+        unit_id: dataToEdit.unit_id,
+        bidang_id: dataToEdit.unit?.bidang?.id || "",
+        kode_sub_unit: dataToEdit.kode_sub_unit,
+        nama_sub_unit: dataToEdit.nama_sub_unit,
+        kode: dataToEdit.kode,
+      };
+
+      setEditingSubUnit(mappedForEdit);
       setIsAddModalOpen(true);
+    } catch (error) {
+      console.error("Gagal mengambil data sub unit untuk diedit:", error);
+      alert("Gagal memuat data untuk diedit.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleDeleteClick = (id) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus data ini?")) {
-      setSubUnitData((prevData) => prevData.filter((item) => item.id !== id));
-      console.log("Menghapus Sub Unit dengan ID:", id);
+  const handleDeleteClick = async (id) => {
+    if (!window.confirm("Apakah Anda yakin ingin menghapus data ini?")) return;
+
+    try {
+      await api.delete(`/klasifikasi-instansi/subunit/${id}`);
+      fetchSubUnitData({
+        page: paginationModel.page + 1,
+        pageSize: paginationModel.pageSize,
+        search: debouncedSearchTerm,
+        unitId: selectedUnit,
+      });
+    } catch (error) {
+      console.error(
+        "Gagal menghapus sub unit:",
+        error.response?.data || error.message
+      );
+      alert("Gagal menghapus data. Cek konsol untuk detail.");
     }
   };
 
+  // Kolom DataTable
   const columns = [
-    { field: "id", headerName: "ID", width: 90 },
+    {
+      field: "no",
+      headerName: "No",
+      width: 70,
+      sortable: false,
+      renderCell: (params) => {
+        const index = subUnitData.findIndex((row) => row.id === params.row.id);
+        return paginationModel.page * paginationModel.pageSize + index + 1;
+      },
+    },
     { field: "provinsi", headerName: "Provinsi", width: 180 },
-    { field: "kabKot", headerName: "Kabupaten/Kota", width: 250 },
+    { field: "kabupaten_kota", headerName: "Kabupaten/Kota", width: 250 },
     { field: "bidang", headerName: "Bidang", width: 180 },
     { field: "unit", headerName: "Unit", width: 180 },
-    {
-      field: "kodeSubUnit",
-      headerName: "Kode Sub Unit",
-      type: "number",
-      width: 150,
-    },
-    { field: "namaSubUnit", headerName: "Nama Sub Unit", flex: 1 },
+    { field: "kode_sub_unit", headerName: "Kode Sub Unit", width: 150 },
+    { field: "nama_sub_unit", headerName: "Nama Sub Unit", flex: 1 },
     { field: "kode", headerName: "Kode", width: 120 },
     {
       field: "action",
@@ -181,15 +361,14 @@ const SubUnitPage = () => {
       sortable: false,
       renderCell: (params) => (
         <div className="flex gap-2 items-center">
-          {" "}
           <button
-            onClick={() => handleEditClick(params.row.id)} // Panggil handleEditClick
+            onClick={() => handleEditClick(params.row.id)}
             className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
           >
             Edit
           </button>
           <button
-            onClick={() => handleDeleteClick(params.row.id)} // Panggil handleDeleteClick
+            onClick={() => handleDeleteClick(params.row.id)}
             className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
           >
             Delete
@@ -217,22 +396,36 @@ const SubUnitPage = () => {
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold">Daftar Sub Unit</h1>
+            <div className="flex gap-3">
+              <button
+                onClick={handleRefresh}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+              >
+                <RefreshCw size={16} /> Refresh
+              </button>
+              <button
+                onClick={handleOpenAddModal}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+              >
+                <Plus size={16} /> Add Sub Unit
+              </button>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-6 mb-6 justify-between">
-            <div className="flex flex-wrap items-center gap-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-4">
+            <div className="flex flex-col gap-4 md:flex-row md:items-end">
               {/* Filter Bidang */}
               <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-700">Bidang</label>
+                <label className="text-gray-800 font-semibold">Bidang</label>
                 <select
                   value={selectedBidang}
-                  onChange={(e) => setSelectedBidang(e.target.value)}
+                  onChange={handleBidangChange}
                   className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
                 >
                   <option value="">-- Pilih Bidang --</option>
-                  {bidangData.map((b) => (
-                    <option key={b.id} value={b.namaBidang}>
-                      {b.namaBidang}
+                  {bidangList.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.full_name}
                     </option>
                   ))}
                 </select>
@@ -240,52 +433,45 @@ const SubUnitPage = () => {
 
               {/* Filter Unit */}
               <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-700">Unit</label>
+                <label className="text-gray-800 font-semibold">Unit</label>
                 <select
                   value={selectedUnit}
-                  onChange={(e) => setSelectedUnit(e.target.value)}
+                  onChange={handleUnitChange}
                   className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
+                  disabled={!selectedBidang || loadingUnits}
                 >
-                  <option value="">-- Pilih Unit --</option>
-                  {unitData.map((u) => (
-                    <option key={u.id} value={u.namaUnit}>
-                      {u.namaUnit}
+                  <option value="">
+                    {loadingUnits ? "Loading..." : "-- Pilih Unit --"}
+                  </option>
+                  {unitList.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.full_name}
                     </option>
                   ))}
                 </select>
               </div>
             </div>
 
-            {/* Tombol di kanan */}
-            <div className="flex gap-3">
-              <button
-                onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 cursor-pointer"
-              >
-                <RefreshCw size={16} /> Refresh
-              </button>
-              <button
-                onClick={handleOpenAddModal}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 cursor-pointer"
-              >
-                <Plus size={16} /> Add Sub Unit
-              </button>
+            {/* Search Input */}
+            <div className="relative w-full md:w-64 flex items-center gap-2">
+              <Search className="text-gray-400" size={16} />
+              <input
+                type="text"
+                placeholder="Search"
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className="pl-4 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              />
             </div>
           </div>
 
+          {/* Page Size Selector */}
           <div className="flex justify-between items-center mb-6 text-sm text-gray-600">
             <div className="flex items-center gap-2">
               Show
               <select
-                value={entriesPerPage}
-                onChange={(e) => {
-                  setEntriesPerPage(Number(e.target.value));
-                  setDataTablePaginationModel((prev) => ({
-                    ...prev,
-                    pageSize: Number(e.target.value),
-                    page: 0,
-                  }));
-                }}
+                value={paginationModel.pageSize}
+                onChange={handlePageSizeChange}
                 className="border border-gray-300 rounded px-2 py-1"
               >
                 {[5, 10, 25, 50, 100].map((n) => (
@@ -296,42 +482,38 @@ const SubUnitPage = () => {
               </select>
               entries
             </div>
-            <div className="relative w-full md:w-64">
-              <Search
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                size={16}
-              />
-              <input
-                type="text"
-                placeholder="Search"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-              />
-            </div>
           </div>
 
+          {/* Data Table */}
           {loading ? (
             <div className="text-center py-8 text-gray-500">Loading...</div>
           ) : (
             <DataTable
-              rows={filteredData}
+              key={`datatable-${paginationModel.page}-${paginationModel.pageSize}-${debouncedSearchTerm}-${selectedBidang}-${selectedUnit}`}
+              rows={subUnitData}
               columns={columns}
-              initialPageSize={entriesPerPage}
               pageSizeOptions={[5, 10, 25, 50, 100]}
               height={500}
               emptyRowsMessage="No Sub Unit data available"
-              paginationModel={dataTablePaginationModel}
-              onPaginationModelChange={setDataTablePaginationModel}
+              paginationModel={paginationModel}
+              onPaginationModelChange={setPaginationModel}
+              rowCount={totalRows}
+              paginationMode="server"
+              disableRowSelectionOnClick
+              hideFooterSelectedRowCount
             />
           )}
         </div>
       </div>
+
+      {/* Modal */}
       <AddSubUnitModal
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
         onSave={handleSaveNewSubUnit}
         initialData={editingSubUnit}
+        bidangList={bidangList}
+        unitList={unitList}
       />
     </div>
   );
