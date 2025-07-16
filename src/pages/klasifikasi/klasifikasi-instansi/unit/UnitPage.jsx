@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react"; // Import useCallback
+import React, { useState, useEffect } from "react";
 import api from "../../../../api/axios";
 import Navbar from "../../../../components/Navbar";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
@@ -7,88 +7,108 @@ import DataTable from "../../../../components/DataTable";
 import AddUnitModal from "./AddUnitModal";
 
 const UnitPage = () => {
-  const [searchTerm, setSearchTerm] = useState("");
+  // State untuk data dan UI
   const [unitData, setUnitData] = useState([]);
-  const [bidangList, setBidangList] = useState([]);
-  const [selectedBidang, setSelectedBidang] = useState("");
   const [loading, setLoading] = useState(true);
   const [totalRows, setTotalRows] = useState(0);
+
+  // State untuk filter dan pencarian
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedBidang, setSelectedBidang] = useState("");
+  const [bidangList, setBidangList] = useState([]);
+
+  // State untuk modal
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingUnit, setEditingUnit] = useState(null);
 
+  // State untuk paginasi dan refresh
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
     pageSize: 10,
   });
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
 
-  const fetchBidangList = async () => {
-    try {
-      const res = await api.get("/klasifikasi-instansi/bidang", {
-        params: { per_page: 100 },
-      });
-      const sorted = res.data.data
-        .map((b) => ({
-          id: b.id,
-          kode_bidang: b.kode_bidang,
-          nama_bidang: b.nama_bidang,
-        }))
-        .sort((a, b) => a.kode_bidang - b.kode_bidang);
-      setBidangList(sorted);
-    } catch (err) {
-      console.error("Gagal fetch bidang list:", err);
+  // EFEK 1: Debounce input pencarian
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // EFEK 2: Reset halaman ke 0 jika ada filter atau pencarian baru
+  useEffect(() => {
+    // Cek jika ada search term atau filter bidang yang aktif, reset paginasi
+    if (debouncedSearchTerm || selectedBidang) {
+      setPaginationModel((prev) => ({ ...prev, page: 0 }));
     }
-  };
+  }, [debouncedSearchTerm, selectedBidang]);
 
-  // Gunakan useCallback untuk fetchData agar tidak membuat fungsi baru setiap render
-  const fetchData = useCallback(
-    async (
-      currentPaginationModel = paginationModel,
-      currentSearchTerm = searchTerm,
-      bidangFilter = selectedBidang
-    ) => {
-      setLoading(true);
+  // EFEK 3: Fetch data statis (seperti daftar bidang) HANYA SEKALI
+  useEffect(() => {
+    const fetchBidangList = async () => {
       try {
-        const response = await api.get("/klasifikasi-instansi/unit", {
-          params: {
-            page: currentPaginationModel.page + 1,
-            per_page: currentPaginationModel.pageSize,
-            search: currentSearchTerm,
-            bidang_id: bidangFilter || undefined,
-          },
+        const res = await api.get("/klasifikasi-instansi/bidang", {
+          params: { per_page: 1000 },
         });
 
-        const mappedData = response.data.data.map((item) => ({
-          ...item,
-          nama_unit: item.nama_unit || item.namaUnit,
-          kode_unit: item.kode_unit || item.kodeUnit,
-          bidang:
-            item.bidang?.kode_bidang && item.bidang?.nama_bidang
-              ? `${item.bidang.kode_bidang} - ${item.bidang.nama_bidang}`
-              : "-",
-        }));
+        const sorted = res.data.data
+          .map((b) => ({
+            id: b.id,
+            kode_bidang: b.kode_bidang,
+            nama_bidang: b.nama_bidang,
+          }))
+          .sort((a, b) =>
+            a.kode_bidang.localeCompare(b.kode_bidang, undefined, {
+              numeric: true,
+            })
+          );
+        setBidangList(sorted);
+      } catch (err) {
+        console.error("Gagal fetch bidang list:", err);
+      }
+    };
+    fetchBidangList();
+  }, []); // <-- Dependency kosong, hanya berjalan sekali saat mount
 
-        setUnitData(mappedData);
+  // EFEK 4: Fetch data utama (unit) setiap kali ada perubahan
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams({
+          page: paginationModel.page + 1,
+          per_page: paginationModel.pageSize,
+        });
+        if (debouncedSearchTerm) {
+          params.append("search", debouncedSearchTerm);
+        }
+        if (selectedBidang) {
+          params.append("bidang_id", selectedBidang);
+        }
+
+        const response = await api.get(
+          `/klasifikasi-instansi/unit?${params.toString()}`
+        );
+
+        // Mapping data tetap di sini jika diperlukan
+        setUnitData(response.data.data);
         setTotalRows(response.data.meta.total);
       } catch (error) {
         console.error("Gagal fetch data unit:", error);
+        setUnitData([]);
+        setTotalRows(0);
       } finally {
         setLoading(false);
       }
-    },
-    [paginationModel, searchTerm, selectedBidang] // Tambahkan semua dependensi di sini
-  );
+    };
 
-  useEffect(() => {
-    fetchBidangList();
-    fetchData(); // Panggil fetchData tanpa parameter untuk menggunakan state terbaru
-  }, [fetchData]); // Hanya panggil ulang jika fetchData itu sendiri berubah (karena useCallback)
+    fetchData();
+  }, [paginationModel, debouncedSearchTerm, selectedBidang, refreshTrigger]);
 
   const handleRefresh = () => {
-    setSearchTerm("");
-    setSelectedBidang("");
-    // Saat refresh, reset pagination ke halaman pertama
-    setPaginationModel({ page: 0, pageSize: paginationModel.pageSize });
-    // fetchData akan terpanggil otomatis karena perubahan state di atas akan memicu useEffect
+    setRefreshTrigger((c) => c + 1);
   };
 
   const handleExport = () => {
@@ -106,18 +126,27 @@ const UnitPage = () => {
   };
 
   const handleSaveNewUnit = async (unitToSave) => {
+    const payload = {
+      bidang_id: unitToSave.bidang_id,
+      kode_unit: unitToSave.kode_unit,
+      nama_unit: unitToSave.nama_unit,
+      kode: unitToSave.kode,
+    };
     try {
       if (unitToSave.id) {
-        await api.put(
-          `/klasifikasi-instansi/unit/${unitToSave.id}`,
-          unitToSave
-        );
+        await api.patch(`/klasifikasi-instansi/unit/${unitToSave.id}`, payload);
+        alert("Data unit berhasil diperbarui!");
       } else {
-        await api.post("/klasifikasi-instansi/unit", unitToSave);
+        await api.post("/klasifikasi-instansi/unit", payload);
+        alert("Data unit berhasil ditambahkan!");
       }
-      fetchData(); // Panggil fetchData setelah menyimpan untuk merefresh data
+      handleRefresh();
     } catch (error) {
-      console.error("Gagal menyimpan unit:", error);
+      console.error(
+        "Gagal menyimpan unit:",
+        error.response?.data || error.message
+      );
+      alert("Gagal menyimpan unit. Cek console untuk detail.");
     } finally {
       handleCloseAddModal();
     }
@@ -135,46 +164,30 @@ const UnitPage = () => {
     if (!window.confirm("Apakah Anda yakin ingin menghapus data ini?")) return;
     try {
       await api.delete(`/klasifikasi-instansi/unit/${id}`);
-      fetchData(); // Panggil fetchData setelah menghapus untuk merefresh data
+      handleRefresh(); // <-- Panggil handleRefresh agar konsisten
     } catch (error) {
       console.error("Gagal menghapus unit:", error);
     }
   };
 
-  const handlePaginationModelChange = (newModel) => {
-    setPaginationModel(newModel);
-    // fetchData akan terpanggil otomatis karena perubahan paginationModel memicu useEffect
-  };
-
-  const handlePageSizeChange = (e) => {
-    const newPageSize = Number(e.target.value);
-    setPaginationModel({ page: 0, pageSize: newPageSize }); // Reset ke halaman 0 saat mengubah page size
-    // fetchData akan terpanggil otomatis karena perubahan paginationModel memicu useEffect
-  };
-
-  // Tambahkan useEffect terpisah untuk searchTerm agar tidak memicu pagination reset saat mencari
-  useEffect(() => {
-    // Reset halaman ke 0 saat searchTerm berubah untuk memulai pencarian dari awal
-    setPaginationModel((prev) =>
-      prev.page === 0 ? prev : { ...prev, page: 0 }
-    );
-    // fetchData akan terpanggil otomatis karena perubahan paginationModel atau searchTerm
-  }, [searchTerm]);
-
-  // Tambahkan useEffect terpisah untuk selectedBidang
-  useEffect(() => {
-    // Reset halaman ke 0 saat selectedBidang berubah untuk memulai filter dari awal
-    setPaginationModel((prev) =>
-      prev.page === 0 ? prev : { ...prev, page: 0 }
-    );
-    // fetchData akan terpanggil otomatis karena perubahan paginationModel atau selectedBidang
-  }, [selectedBidang]);
-
   const columns = [
-    // { field: "id", headerName: "ID", width: 90 },
-    { field: "bidang", headerName: "Bidang", flex: 1 },
+    {
+      field: "bidang",
+      headerName: "Bidang",
+      flex: 1,
+      minWidth: 250,
+      // Ganti valueGetter dengan renderCell untuk pengecekan yang lebih aman
+      renderCell: (params) => {
+        // Cek dulu apakah objek 'bidang' ada di dalam baris data
+        if (params.row && params.row.bidang) {
+          return `${params.row.bidang.kode_bidang} - ${params.row.bidang.nama_bidang}`;
+        }
+        // Jika tidak ada, tampilkan fallback text
+        return "N/A";
+      },
+    },
     { field: "kode_unit", headerName: "Kode Unit", width: 120 },
-    { field: "nama_unit", headerName: "Nama Unit", flex: 1 },
+    { field: "nama_unit", headerName: "Nama Unit", flex: 1, minWidth: 250 },
     { field: "kode", headerName: "Kode", width: 100 },
     {
       field: "action",
@@ -185,13 +198,13 @@ const UnitPage = () => {
         <div className="flex gap-2 items-center">
           <button
             onClick={() => handleEditClick(params.row.id)}
-            className="text-blue-600 hover:text-blue-800 text-sm"
+            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
           >
             Edit
           </button>
           <button
             onClick={() => handleDeleteClick(params.row.id)}
-            className="text-red-600 hover:text-red-800 text-sm"
+            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
           >
             Delete
           </button>
@@ -213,7 +226,6 @@ const UnitPage = () => {
             <Download size={16} /> Export
           </button>
         </div>
-
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-gray-800">Daftar Unit</h1>
@@ -232,16 +244,10 @@ const UnitPage = () => {
               </button>
             </div>
           </div>
-
-          {/* Ini adalah div utama untuk filter dan pencarian */}
-          {/* Gunakan flex-row dan justify-between untuk layout dasar */}
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-4">
-            {/* Kiri: Grouping Bidang dan Show entries */}
-            {/* Gunakan flex-col di sini agar "Show entries" di bawah "Bidang" */}
+            {/* Kiri: Filter */}
             <div className="flex flex-col gap-4 md:flex-row md:items-end">
-              {" "}
-              {/* Tambahkan md:flex-row md:items-end untuk alignment di desktop */}
-              {/* Bidang */}
+              {/* Filter Bidang */}
               <div className="flex items-center gap-2">
                 <span className="text-gray-800 font-semibold">Bidang</span>
                 <select
@@ -249,7 +255,7 @@ const UnitPage = () => {
                   onChange={(e) => setSelectedBidang(e.target.value)}
                   className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto"
                 >
-                  <option value="">-- Pilih Bidang --</option>
+                  <option value="">-- Semua Bidang --</option>
                   {bidangList.map((b) => (
                     <option key={b.id} value={b.id}>
                       {b.kode_bidang} - {b.nama_bidang}
@@ -257,17 +263,20 @@ const UnitPage = () => {
                   ))}
                 </select>
               </div>
-              {/* Show entries - sekarang ini adalah item kedua dalam flex-col */}
+              {/* Show entries */}
               <div className="flex items-center gap-2 mt-2 md:mt-0">
-                {" "}
-                {/* Tambahkan sedikit margin-top di mobile jika perlu */}
                 <span className="text-gray-600 text-sm">Show</span>
                 <select
                   value={paginationModel.pageSize}
-                  onChange={handlePageSizeChange}
+                  onChange={(e) =>
+                    setPaginationModel({
+                      page: 0,
+                      pageSize: Number(e.target.value),
+                    })
+                  }
                   className="border border-gray-300 rounded px-3 py-1 text-sm"
                 >
-                  {[5, 10, 25, 50, 100].map((n) => (
+                  {[5, 10, 25, 50, 75, 100].map((n) => (
                     <option key={n} value={n}>
                       {n}
                     </option>
@@ -276,47 +285,39 @@ const UnitPage = () => {
                 <span className="text-gray-600 text-sm">entries</span>
               </div>
             </div>
-
-            {/* Kanan: Search - ini akan didorong ke kanan oleh justify-between */}
-            <div className="relative w-full md:w-64 flex items-center gap-2">
-              <Search className="text-gray-400" size={16} />
+            {/* Kanan: Search */}
+            <div className="relative w-full md:w-64">
+              <Search
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={16}
+              />
               <input
                 type="text"
                 placeholder="Search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-4 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
               />
             </div>
           </div>
 
-          {/* DataTable tetap sama */}
-          {loading ? (
-            <div className="text-center py-8 text-gray-500">Loading...</div>
-          ) : (
-            <DataTable
-              key={`datatable-${paginationModel.page}-${paginationModel.pageSize}-${searchTerm}-${selectedBidang}`}
-              rows={unitData}
-              columns={columns}
-              pageSizeOptions={[5, 10, 25, 50, 100]}
-              height={500}
-              emptyRowsMessage="No Unit data available"
-              paginationModel={paginationModel}
-              onPaginationModelChange={handlePaginationModelChange}
-              rowCount={totalRows}
-              paginationMode="server"
-              initialState={{
-                pagination: {
-                  paginationModel: paginationModel,
-                },
-              }}
-              disableRowSelectionOnClick
-              hideFooterSelectedRowCount
-            />
-          )}
+          <DataTable
+            rows={unitData}
+            columns={columns}
+            rowCount={totalRows}
+            loading={loading}
+            paginationMode="server"
+            filterMode="server"
+            pageSizeOptions={[5, 10, 25, 50, 75, 100]}
+            paginationModel={paginationModel}
+            onPaginationModelChange={setPaginationModel}
+            disableRowSelectionOnClick
+            hideFooterSelectedRowCount
+            height={500}
+            emptyRowsMessage="Tidak ada data unit yang tersedia"
+          />
         </div>
       </div>
-
       <AddUnitModal
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
