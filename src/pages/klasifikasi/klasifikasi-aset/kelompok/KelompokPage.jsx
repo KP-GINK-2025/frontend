@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import api from "../../../../api/axios";
 import Navbar from "../../../../components/Navbar";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
@@ -10,76 +11,71 @@ const KelompokPage = () => {
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [kelompokData, setKelompokData] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const [asetSatuData, setAsetSatuData] = useState([]);
-  const [selectedAsetSatu, setSelectedAsetSatu] = useState("");
-
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingKelompok, setEditingKelompok] = useState(null);
 
-  const [dataTablePaginationModel, setDataTablePaginationModel] =
-    React.useState({
-      page: 0,
-      pageSize: entriesPerPage,
-    });
+  const [dataTablePaginationModel, setDataTablePaginationModel] = useState({
+    page: 0,
+    pageSize: entriesPerPage,
+  });
 
-  const fetchData = () => {
+  const fetchData = async () => {
     setLoading(true);
-    setTimeout(() => {
-      setAsetSatuData([{ id: 1, namaAset: "Aset" }]);
+    try {
+      const response = await api.get("/klasifikasi-aset/kelompok-aset", {
+        params: {
+          search: searchTerm,
+          per_page: entriesPerPage,
+        },
+      });
 
-      setKelompokData([
-        {
-          id: 1,
-          aset1: "Aset",
-          kodeAset2: "1",
-          namaAset2: "Aset Lancar",
-          kode: "1",
-        },
-        {
-          id: 2,
-          aset1: "Aset",
-          kodeAset2: "3",
-          namaAset2: "Aset Tetap",
-          kode: "3",
-        },
-        {
-          id: 3,
-          aset1: "Aset",
-          kodeAset2: "5",
-          namaAset2: "Aset Lainnya",
-          kode: "5",
-        },
-      ]);
+      // For now, let's use mock data structure to test the columns
+      const data = response.data.data.map((item) => ({
+        id: item.id,
+        aset1: item.akun_aset
+          ? `${item.akun_aset.kode_akun_aset} - ${item.akun_aset.nama_akun_aset}`
+          : "-",
+        kodeAset2: item.kode_kelompok_aset,
+        namaAset2: item.nama_kelompok_aset,
+        kode: item.kode,
+        kodeKelompok: item.kode_kelompok_aset,
+        namaKelompok: item.nama_kelompok_aset,
+      }));
+
+      setKelompokData(data);
+    } catch (error) {
+      console.error("Gagal mengambil data kelompok aset:", error);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [searchTerm, entriesPerPage]);
 
   const filteredData = kelompokData.filter((item) => {
-    const matchesSearch =
-      item.aset1?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.kodeAset2?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.namaAset2?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.kode?.toLowerCase().includes(searchTerm.toLowerCase());
+    const namaAset2 = String(item.namaAset2 || "").toLowerCase();
+    const kodeAset2 = String(item.kodeAset2 || "").toLowerCase();
+    const kode = String(item.kode || "").toLowerCase();
+    const aset1 = String(item.aset1 || "").toLowerCase();
+    const search = searchTerm.toLowerCase();
 
-    const matchesAsetSatu =
-      selectedAsetSatu === "" || item.aset1 === selectedAsetSatu;
-
-    return matchesSearch && matchesAsetSatu;
+    return (
+      namaAset2.includes(search) ||
+      kodeAset2.includes(search) ||
+      kode.includes(search) ||
+      aset1.includes(search)
+    );
   });
 
   const handleExport = () => {
-    console.log("Exporting kelompok data...");
+    console.log("Exporting data...");
   };
 
   const handleRefresh = () => {
     setLoading(true);
     setSearchTerm("");
-    setSelectedAsetSatu("");
     fetchData();
   };
 
@@ -93,22 +89,42 @@ const KelompokPage = () => {
     setEditingKelompok(null);
   };
 
-  const handleSaveNewKelompok = (kelompokToSave) => {
-    if (kelompokToSave.id) {
-      setKelompokData((prevData) =>
-        prevData.map((item) =>
-          item.id === kelompokToSave.id ? kelompokToSave : item
-        )
-      );
-      console.log("Update Kelompok:", kelompokToSave);
-    } else {
-      setKelompokData((prevData) => [
-        ...prevData,
-        { id: Date.now(), ...kelompokToSave },
-      ]);
-      console.log("Menyimpan Kelompok baru:", kelompokToSave);
+  const handleSaveKelompok = async (kelompokToSave) => {
+    try {
+      if (kelompokToSave.id) {
+        // UPDATE
+        const response = await api.put(
+          `/klasifikasi-aset/kelompok-aset/${kelompokToSave.id}`,
+          {
+            kode_kelompok_aset:
+              kelompokToSave.kodeKelompok || kelompokToSave.kodeAset2,
+            nama_kelompok_aset:
+              kelompokToSave.namaKelompok || kelompokToSave.namaAset2,
+            kode: kelompokToSave.kode,
+          }
+        );
+        console.log("Update sukses:", response.data);
+      } else {
+        // CREATE
+        const response = await api.post("/klasifikasi-aset/kelompok-aset", {
+          kode_kelompok_aset:
+            kelompokToSave.kodeKelompok || kelompokToSave.kodeAset2,
+          nama_kelompok_aset:
+            kelompokToSave.namaKelompok || kelompokToSave.namaAset2,
+          kode: kelompokToSave.kode,
+        });
+        console.log("Tambah sukses:", response.data);
+      }
+
+      fetchData(); // refresh table setelah simpan
+      handleCloseAddModal();
+    } catch (error) {
+      if (error.response && error.response.data.errors) {
+        console.error("Validasi gagal:", error.response.data.errors);
+      } else {
+        console.error("Terjadi kesalahan:", error);
+      }
     }
-    handleCloseAddModal();
   };
 
   const handleEditClick = (id) => {
@@ -119,24 +135,58 @@ const KelompokPage = () => {
     }
   };
 
-  const handleDeleteClick = (id) => {
+  const handleDeleteClick = async (id) => {
     if (window.confirm("Apakah Anda yakin ingin menghapus data ini?")) {
-      setKelompokData((prevData) => prevData.filter((item) => item.id !== id));
-      console.log("Menghapus Kelompok dengan ID:", id);
+      try {
+        await api.delete(`/klasifikasi-aset/kelompok-aset/${id}`);
+        console.log("Kelompok aset berhasil dihapus:", id);
+        fetchData(); // refresh data
+      } catch (error) {
+        console.error("Gagal menghapus data:", error);
+      }
     }
   };
 
+  // Data kolom untuk MUI DataGrid
   const columns = [
-    { field: "id", headerName: "ID", width: 90 },
-    { field: "aset1", headerName: "Aset 1", width: 250 },
+    {
+      field: "no",
+      headerName: "No",
+      width: 70,
+      sortable: false,
+      renderCell: (params) => {
+        const index = kelompokData.findIndex((row) => row.id === params.row.id);
+        return (
+          dataTablePaginationModel.page * dataTablePaginationModel.pageSize +
+          index +
+          1
+        );
+      },
+    },
+    {
+      field: "aset1",
+      headerName: "Aset 1",
+      width: 200,
+      renderCell: (params) => <div>{params.row.aset1}</div>,
+    },
     {
       field: "kodeAset2",
       headerName: "Kode Aset 2",
-      type: "number",
       width: 150,
+      renderCell: (params) => <div>{params.row.kodeAset2}</div>,
     },
-    { field: "namaAset2", headerName: "Nama Aset 2", flex: 1 },
-    { field: "kode", headerName: "Kode", width: 120 },
+    {
+      field: "namaAset2",
+      headerName: "Nama Aset 2",
+      flex: 1,
+      renderCell: (params) => <div>{params.row.namaAset2}</div>,
+    },
+    {
+      field: "kode",
+      headerName: "Kode",
+      width: 150,
+      renderCell: (params) => <div>{params.row.kode}</div>,
+    },
     {
       field: "action",
       headerName: "Action",
@@ -179,49 +229,28 @@ const KelompokPage = () => {
 
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold">Daftar Unit</h1>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-6 mb-6 justify-between">
-            <div className="flex flex-wrap items-center gap-6">
-              {/* Filter Aset 1 */}
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-700">Aset 1</label>
-                <select
-                  value={selectedAsetSatu}
-                  onChange={(e) => setSelectedAsetSatu(e.target.value)}
-                  className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-                >
-                  <option value=""> -- Pilih Aset 1 -- </option>
-                  {asetSatuData.map((b) => (
-                    <option key={b.id} value={b.namaAset}>
-                      {b.namaAset}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Tombol di kanan */}
+            <h1 className="text-2xl font-bold text-gray-800">
+              Daftar Klasifikasi Aset 2
+            </h1>
             <div className="flex gap-3">
               <button
                 onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 cursor-pointer"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
                 <RefreshCw size={16} /> Refresh
               </button>
               <button
                 onClick={handleOpenAddModal}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 cursor-pointer"
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
-                <Plus size={16} /> Add Aset 2
+                <Plus size={16} /> Add Kelompok
               </button>
             </div>
           </div>
 
-          <div className="flex justify-between items-center mb-6 text-sm text-gray-600">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
             <div className="flex items-center gap-2">
-              Show
+              <span className="text-gray-600 text-sm">Show</span>
               <select
                 value={entriesPerPage}
                 onChange={(e) => {
@@ -232,7 +261,7 @@ const KelompokPage = () => {
                     page: 0,
                   }));
                 }}
-                className="border border-gray-300 rounded px-2 py-1"
+                className="border border-gray-300 rounded px-3 py-1 text-sm"
               >
                 {[5, 10, 25, 50, 100].map((n) => (
                   <option key={n} value={n}>
@@ -240,8 +269,9 @@ const KelompokPage = () => {
                   </option>
                 ))}
               </select>
-              entries
+              <span className="text-gray-600 text-sm">entries</span>
             </div>
+
             <div className="relative w-full md:w-64">
               <Search
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
@@ -266,7 +296,7 @@ const KelompokPage = () => {
               initialPageSize={entriesPerPage}
               pageSizeOptions={[5, 10, 25, 50, 100]}
               height={500}
-              emptyRowsMessage="No Aset 2 data available"
+              emptyRowsMessage="No Kelompok Aset data available"
               paginationModel={dataTablePaginationModel}
               onPaginationModelChange={setDataTablePaginationModel}
             />
@@ -277,7 +307,7 @@ const KelompokPage = () => {
       <AddKelompokModal
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
-        onSave={handleSaveNewKelompok}
+        onSave={handleSaveKelompok}
         initialData={editingKelompok}
       />
     </div>
