@@ -110,7 +110,7 @@ const BidangPage = () => {
       if (bidangToSave.id) {
         // Mode Edit
         const { id, ...payload } = bidangToSave;
-        await api.put(`/klasifikasi-instansi/bidang/${id}`, payload);
+        await api.patch(`/klasifikasi-instansi/bidang/${id}`, payload);
       } else {
         // Mode Add
         await api.post("/klasifikasi-instansi/bidang", bidangToSave);
@@ -170,8 +170,20 @@ const BidangPage = () => {
       },
     },
     {
+      field: "provinsi",
+      headerName: "KODE - NAMA Provinsi",
+      flex: 1,
+      minWidth: 250,
+      renderCell: (params) => {
+        if (params.row.kabupaten_kota.provinsi) {
+          return `${params.row.kabupaten_kota.provinsi.kode_provinsi} - ${params.row.kabupaten_kota.provinsi.nama_provinsi}`;
+        }
+        return "N/A";
+      },
+    },
+    {
       field: "kabupaten_kota",
-      headerName: "Kabupaten/Kota",
+      headerName: "KODE - NAMA Kabupaten/Kota",
       flex: 1,
       minWidth: 250,
       renderCell: (params) => {
