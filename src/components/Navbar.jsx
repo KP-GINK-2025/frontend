@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import "./Navbar.css";
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -103,81 +104,6 @@ const Navbar = () => {
         onChange={handleFileChange}
         style={{ display: "none" }}
       />
-
-      <style jsx>{`
-        .avatar-container {
-          cursor: pointer;
-        }
-        .photo-action-btn {
-          background: rgba(255, 255, 255, 0.2);
-          border: 1px solid rgba(255, 255, 255, 0.3);
-          color: white;
-          padding: 4px 8px;
-          border-radius: 4px;
-          font-size: 11px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-        .photo-action-btn:hover {
-          background: rgba(255, 255, 255, 0.3);
-          border-color: rgba(255, 255, 255, 0.5);
-        }
-        .photo-action-btn.delete {
-          background: rgba(220, 38, 38, 0.2);
-          border-color: rgba(220, 38, 38, 0.3);
-        }
-        .photo-action-btn.delete:hover {
-          background: rgba(220, 38, 38, 0.3);
-          border-color: rgba(220, 38, 38, 0.5);
-        }
-        .image-preview-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.8);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 10000;
-        }
-        .image-preview-content {
-          position: relative;
-          max-width: 90vw;
-          max-height: 90vh;
-          background: white;
-          border-radius: 8px;
-          overflow: hidden;
-        }
-        .image-preview-img {
-          width: 100%;
-          height: 100%;
-          object-fit: contain;
-          max-width: 80vw;
-          max-height: 80vh;
-        }
-        .image-preview-close {
-          position: absolute;
-          top: 10px;
-          right: 10px;
-          background: rgba(0, 0, 0, 0.5);
-          color: white;
-          border: none;
-          border-radius: 50%;
-          width: 40px;
-          height: 40px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          font-size: 18px;
-          transition: background 0.2s ease;
-        }
-        .image-preview-close:hover {
-          background: rgba(0, 0, 0, 0.7);
-        }
-      `}</style>
 
       <div className="bg-[#B53C3C] text-white flex items-center justify-between px-4 md:px-6 py-4 shadow select-none">
         <div

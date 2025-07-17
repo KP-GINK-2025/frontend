@@ -7,21 +7,26 @@ import AddBidangModal from "./AddBidangModal";
 import DataTable from "../../../../components/DataTable";
 
 const BidangPage = () => {
+  // --- State untuk Data dan Filter ---
   const [searchTerm, setSearchTerm] = useState("");
   const [bidangData, setBidangData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [rowCount, setRowCount] = useState(0);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [editingBidang, setEditingBidang] = useState(null);
+  const [rowCount, setRowCount] = useState(0); // Total jumlah baris dari API
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
+  // --- State untuk Modal Add/Edit ---
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingBidang, setEditingBidang] = useState(null);
+
+  // --- State untuk Paginasi DataTable ---
   const [dataTablePaginationModel, setDataTablePaginationModel] = useState({
-    page: 0,
-    pageSize: 10,
+    page: 0, // Halaman saat ini (0-indexed)
+    pageSize: 10, // Jumlah baris per halaman
   });
 
   // --- OPTIMISASI: Debounce search term ---
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
+  // State untuk menyimpan search term yang di-debounce
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -29,15 +34,18 @@ const BidangPage = () => {
     }, 300); // Tunggu 300ms setelah user berhenti mengetik
 
     return () => {
-      clearTimeout(timer);
+      clearTimeout(timer); // Bersihkan timer jika searchTerm berubah sebelum 300ms
     };
   }, [searchTerm]);
 
+  // Reset halaman ke 0 ketika debouncedSearchTerm berubah
   useEffect(() => {
-    if (debouncedSearchTerm) {
+    // Pastikan ini hanya memicu reset halaman jika debouncedSearchTerm benar-benar berubah
+    // dan bukan saat inisialisasi awal jika searchTerm kosong
+    if (debouncedSearchTerm !== searchTerm) {
       setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
     }
-  }, [debouncedSearchTerm]);
+  }, [debouncedSearchTerm, searchTerm]);
 
   // --- EFEK UTAMA UNTUK FETCH DATA ---
   useEffect(() => {
@@ -45,10 +53,9 @@ const BidangPage = () => {
       setLoading(true);
       try {
         const params = new URLSearchParams();
-        params.append("page", dataTablePaginationModel.page + 1);
+        params.append("page", dataTablePaginationModel.page + 1); // API biasanya 1-indexed
         params.append("per_page", dataTablePaginationModel.pageSize);
         if (debouncedSearchTerm) {
-          // Gunakan debounced search term
           params.append("search", debouncedSearchTerm);
         }
 
@@ -67,33 +74,45 @@ const BidangPage = () => {
     };
 
     fetchData();
-  }, [dataTablePaginationModel, debouncedSearchTerm, refreshTrigger]); // Trigger oleh paginasi atau search term yang sudah di-debounce
+  }, [dataTablePaginationModel, debouncedSearchTerm, refreshTrigger]); // Dependencies yang memicu re-fetch
+
+  // --- Handler Fungsi ---
 
   const handleExport = () => {
     console.log("Exporting data...");
+    // Implementasi logika ekspor data di sini
   };
 
   const handleRefresh = () => {
-    // setSearchTerm("");
-    setRefreshTrigger((c) => c + 1);
+    setSearchTerm(""); // Reset search term input field
+    setDebouncedSearchTerm(""); // Pastikan debounced search term juga direset
+    setDataTablePaginationModel({
+      // Reset paginasi ke default
+      page: 0,
+      pageSize: 10,
+    });
+    setRefreshTrigger((c) => c + 1); // Picu re-fetch data
   };
 
   const handleOpenAddModal = () => {
-    setEditingBidang(null);
+    setEditingBidang(null); // Pastikan modal dalam mode 'add'
     setIsAddModalOpen(true);
   };
 
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
-    setEditingBidang(null);
+    setEditingBidang(null); // Reset editing state
+    // Tidak perlu memanggil handleRefresh di sini, karena onSave akan memanggilnya
   };
 
   const handleSaveNewBidang = async (bidangToSave) => {
     try {
       if (bidangToSave.id) {
+        // Mode Edit
         const { id, ...payload } = bidangToSave;
         await api.patch(`/klasifikasi-instansi/bidang/${id}`, payload);
       } else {
+        // Mode Add
         await api.post("/klasifikasi-instansi/bidang", bidangToSave);
       }
       alert("Data berhasil disimpan!");
@@ -104,7 +123,7 @@ const BidangPage = () => {
       );
       alert("Gagal menyimpan data bidang. Cek console untuk detail.");
     } finally {
-      handleCloseAddModal();
+      handleCloseAddModal(); // Tutup modal
       handleRefresh(); // Panggil refresh untuk mengambil data terbaru
     }
   };
@@ -133,8 +152,23 @@ const BidangPage = () => {
     }
   };
 
+  // --- Konfigurasi Kolom DataTable ---
   const columns = [
-    // { field: "id", headerName: "ID", width: 90 },
+    {
+      field: "no",
+      headerName: "No",
+      width: 70,
+      sortable: false,
+      renderCell: (params) => {
+        // Menggunakan dataTablePaginationModel untuk perhitungan nomor
+        const index = bidangData.findIndex((row) => row.id === params.row.id);
+        return (
+          dataTablePaginationModel.page * dataTablePaginationModel.pageSize +
+          index +
+          1
+        );
+      },
+    },
     {
       field: "provinsi",
       headerName: "KODE - NAMA Provinsi",
@@ -190,6 +224,7 @@ const BidangPage = () => {
     },
   ];
 
+  // --- Render UI ---
   return (
     <div className="min-h-screen bg-[#f7f7f7]">
       <Navbar />
@@ -208,7 +243,7 @@ const BidangPage = () => {
 
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-800">Data Bidang</h1>
+            <h1 className="text-2xl font-bold text-gray-800">Daftar Bidang</h1>
             <div className="flex gap-3">
               <button
                 onClick={handleRefresh}
@@ -269,12 +304,14 @@ const BidangPage = () => {
             rowCount={rowCount}
             loading={loading}
             paginationMode="server"
-            filterMode="server"
+            filterMode="server" // Ini sebenarnya dikontrol oleh cara Anda mem-fetch data dengan 'search' param
             pageSizeOptions={[5, 10, 25, 50, 75, 100]}
             paginationModel={dataTablePaginationModel}
             onPaginationModelChange={setDataTablePaginationModel}
             height={500}
             emptyRowsMessage="Tidak ada data bidang yang tersedia"
+            disableRowSelectionOnClick // Menambahkan ini agar baris tidak terpilih saat diklik
+            hideFooterSelectedRowCount // Menambahkan ini untuk menyembunyikan hitungan baris yang dipilih di footer
           />
         </div>
       </div>

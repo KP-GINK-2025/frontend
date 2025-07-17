@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import api from "../../../../api/axios";
 import Navbar from "../../../../components/Navbar";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
@@ -8,6 +8,8 @@ import AddUnitModal from "./AddUnitModal";
 
 const UnitPage = () => {
   // State untuk data dan UI
+  // State declarations
+  const [searchTerm, setSearchTerm] = useState("");
   const [unitData, setUnitData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [totalRows, setTotalRows] = useState(0);
@@ -20,7 +22,6 @@ const UnitPage = () => {
   // State untuk modal
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingUnit, setEditingUnit] = useState(null);
-
   // State untuk paginasi dan refresh
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
@@ -76,6 +77,7 @@ const UnitPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+
       try {
         const params = new URLSearchParams({
           page: paginationModel.page + 1,
@@ -107,6 +109,7 @@ const UnitPage = () => {
     fetchData();
   }, [paginationModel, debouncedSearchTerm, selectedBidang, refreshTrigger]);
 
+  // Event handlers
   const handleRefresh = () => {
     setRefreshTrigger((c) => c + 1);
   };
@@ -162,6 +165,7 @@ const UnitPage = () => {
 
   const handleDeleteClick = async (id) => {
     if (!window.confirm("Apakah Anda yakin ingin menghapus data ini?")) return;
+
     try {
       await api.delete(`/klasifikasi-instansi/unit/${id}`);
       handleRefresh(); // <-- Panggil handleRefresh agar konsisten
@@ -171,6 +175,16 @@ const UnitPage = () => {
   };
 
   const columns = [
+    {
+      field: "no",
+      headerName: "No",
+      width: 70,
+      sortable: false,
+      renderCell: (params) => {
+        const index = unitData.findIndex((row) => row.id === params.row.id);
+        return paginationModel.page * paginationModel.pageSize + index + 1;
+      },
+    },
     {
       field: "bidang",
       headerName: "Bidang",
@@ -189,35 +203,15 @@ const UnitPage = () => {
     { field: "kode_unit", headerName: "Kode Unit", width: 120 },
     { field: "nama_unit", headerName: "Nama Unit", flex: 1, minWidth: 250 },
     { field: "kode", headerName: "Kode", width: 100 },
-    {
-      field: "action",
-      headerName: "Action",
-      width: 150,
-      sortable: false,
-      renderCell: (params) => (
-        <div className="flex gap-2 items-center">
-          <button
-            onClick={() => handleEditClick(params.row.id)}
-            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => handleDeleteClick(params.row.id)}
-            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
-          >
-            Delete
-          </button>
-        </div>
-      ),
-    },
-  ];
-
+    
   return (
     <div className="min-h-screen bg-[#f7f7f7]">
       <Navbar />
+
       <div className="px-8 py-8">
         <Breadcrumbs />
+
+        {/* Export Button */}
         <div className="flex justify-end mt-4 mb-4">
           <button
             onClick={handleExport}
@@ -226,7 +220,10 @@ const UnitPage = () => {
             <Download size={16} /> Export
           </button>
         </div>
+
+        {/* Main Content */}
         <div className="bg-white rounded-lg shadow-sm p-6">
+          {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-gray-800">Daftar Unit</h1>
             <div className="flex gap-3">
@@ -244,6 +241,7 @@ const UnitPage = () => {
               </button>
             </div>
           </div>
+
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-4">
             {/* Kiri: Filter */}
             <div className="flex flex-col gap-4 md:flex-row md:items-end">
@@ -263,6 +261,7 @@ const UnitPage = () => {
                   ))}
                 </select>
               </div>
+
               {/* Show entries */}
               <div className="flex items-center gap-2 mt-2 md:mt-0">
                 <span className="text-gray-600 text-sm">Show</span>
@@ -285,6 +284,7 @@ const UnitPage = () => {
                 <span className="text-gray-600 text-sm">entries</span>
               </div>
             </div>
+
             {/* Kanan: Search */}
             <div className="relative w-full md:w-64">
               <Search
@@ -318,6 +318,7 @@ const UnitPage = () => {
           />
         </div>
       </div>
+
       <AddUnitModal
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
