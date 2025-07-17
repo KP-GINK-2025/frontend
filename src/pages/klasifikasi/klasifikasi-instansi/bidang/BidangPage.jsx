@@ -84,14 +84,7 @@ const BidangPage = () => {
   };
 
   const handleRefresh = () => {
-    setSearchTerm(""); // Reset search term input field
-    setDebouncedSearchTerm(""); // Pastikan debounced search term juga direset
-    setDataTablePaginationModel({
-      // Reset paginasi ke default
-      page: 0,
-      pageSize: 10,
-    });
-    setRefreshTrigger((c) => c + 1); // Picu re-fetch data
+    setRefreshTrigger((c) => c + 1);
   };
 
   const handleOpenAddModal = () => {
@@ -171,26 +164,28 @@ const BidangPage = () => {
     },
     {
       field: "provinsi",
-      headerName: "KODE - NAMA Provinsi",
+      headerName: "Provinsi",
       flex: 1,
       minWidth: 250,
       renderCell: (params) => {
-        if (params.row.kabupaten_kota.provinsi) {
-          return `${params.row.kabupaten_kota.provinsi.kode_provinsi} - ${params.row.kabupaten_kota.provinsi.nama_provinsi}`;
-        }
-        return "N/A";
+        // === PERBAIKAN DI SINI ===
+        const provinsi = params.row.kabupaten_kota?.provinsi;
+        return provinsi
+          ? `${provinsi.kode_provinsi} - ${provinsi.nama_provinsi}`
+          : "N/A";
       },
     },
     {
       field: "kabupaten_kota",
-      headerName: "KODE - NAMA Kabupaten/Kota",
+      headerName: "Kabupaten/Kota",
       flex: 1,
       minWidth: 250,
       renderCell: (params) => {
-        if (params.row.kabupaten_kota) {
-          return `${params.row.kabupaten_kota.kode_kabupaten_kota} - ${params.row.kabupaten_kota.nama_kabupaten_kota}`;
-        }
-        return "N/A";
+        // === PERBAIKAN DI SINI ===
+        const kabKot = params.row.kabupaten_kota;
+        return kabKot
+          ? `${kabKot.kode_kabupaten_kota} - ${kabKot.nama_kabupaten_kota}`
+          : "N/A";
       },
     },
     {
@@ -272,7 +267,7 @@ const BidangPage = () => {
                     page: 0, // Reset ke halaman pertama saat jumlah entri berubah
                   }));
                 }}
-                className="border border-gray-300 rounded px-3 py-1 text-sm"
+                className="border border-gray-300 rounded px-3 py-1 text-sm cursor-pointer"
               >
                 {[5, 10, 25, 50, 75, 100].map((n) => (
                   <option key={n} value={n}>

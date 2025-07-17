@@ -9,6 +9,7 @@ const AddBidangModal = ({ isOpen, onClose, onSave, initialData }) => {
   const [selectedKabupaten, setSelectedKabupaten] = useState(null);
   const [kabupatenOptions, setKabupatenOptions] = useState([]);
   const [isLoadingKabupaten, setIsLoadingKabupaten] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -24,7 +25,7 @@ const AddBidangModal = ({ isOpen, onClose, onSave, initialData }) => {
           const kab = initialData.kabupaten_kota;
           const option = {
             value: kab.id,
-            label: `${kab.id} - ${kab.nama_kabupaten_kota}`,
+            label: `${kab.kode_kabupaten_kota} - ${kab.nama_kabupaten_kota}`,
           };
           setSelectedKabupaten(option);
           setKabupatenOptions([option]); // Set opsi awal
@@ -39,7 +40,7 @@ const AddBidangModal = ({ isOpen, onClose, onSave, initialData }) => {
               const data = response.data;
               const option = {
                 value: data.id,
-                label: `${data.id} - ${data.nama_kabupaten_kota}`,
+                label: `${data.kode_kabupaten_kota} - ${data.nama_kabupaten_kota}`,
               };
               setSelectedKabupaten(option);
               setKabupatenOptions([option]);
@@ -74,7 +75,7 @@ const AddBidangModal = ({ isOpen, onClose, onSave, initialData }) => {
         // Langsung map dari response.data karena API mengembalikan array
         const formattedOptions = response.data.map((item) => ({
           value: item.id,
-          label: `${item.id} - ${item.nama_kabupaten_kota}`,
+          label: `${item.kode_kabupaten_kota} - ${item.nama_kabupaten_kota}`,
         }));
         setKabupatenOptions(formattedOptions);
       })
@@ -87,9 +88,14 @@ const AddBidangModal = ({ isOpen, onClose, onSave, initialData }) => {
       });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedKabupaten || !kodeBidang || !namaBidang || !kode) {
+    if (
+      !selectedKabupaten ||
+      !kodeBidang.trim() ||
+      !namaBidang.trim() ||
+      !kode.trim()
+    ) {
       alert("Harap lengkapi semua field yang wajib diisi (*).");
       return;
     }
@@ -99,10 +105,19 @@ const AddBidangModal = ({ isOpen, onClose, onSave, initialData }) => {
       nama_bidang: namaBidang,
       kode,
     };
-    if (initialData && initialData.id) {
-      onSave({ ...dataToSave, id: initialData.id });
-    } else {
-      onSave(dataToSave);
+
+    try {
+      setIsSaving(true); // Mulai state loading
+      if (initialData && initialData.id) {
+        await onSave({ ...dataToSave, id: initialData.id });
+      } else {
+        await onSave(dataToSave);
+      }
+    } catch (err) {
+      alert("Terjadi kesalahan saat menyimpan data.");
+      console.error("Gagal menyimpan: ", err);
+    } finally {
+      setIsSaving(false); // Selesai loading
     }
   };
 
@@ -119,22 +134,14 @@ const AddBidangModal = ({ isOpen, onClose, onSave, initialData }) => {
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer"
+            disabled={isSaving}
+            className={`text-2xl cursor-pointer ${
+              isSaving
+                ? "text-gray-300 cursor-not-allowed"
+                : "text-gray-500 hover:text-red-700"
+            }`}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-6 h-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            &times;
           </button>
         </div>
 
@@ -212,16 +219,33 @@ const AddBidangModal = ({ isOpen, onClose, onSave, initialData }) => {
           <button
             type="button"
             onClick={onClose}
-            className="px-6 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 cursor-pointer"
+            disabled={isSaving}
+            className={`px-6 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400 cursor-pointer ${
+              isSaving
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
           >
             Batal
           </button>
+
           <button
             type="submit"
             onClick={handleSubmit}
-            className="px-6 py-2 text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-[#B53C3C] cursor-pointer"
+            disabled={isSaving}
+            className={`px-6 py-2 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-[#B53C3C] cursor-pointer ${
+              isSaving
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-red-600 hover:bg-red-700"
+            }`}
           >
-            {initialData ? "Simpan Perubahan" : "Simpan"}
+            {isSaving
+              ? initialData
+                ? "Menyimpan Perubahan..."
+                : "Menyimpan..."
+              : initialData
+              ? "Simpan Perubahan"
+              : "Simpan"}
           </button>
         </div>
       </div>
