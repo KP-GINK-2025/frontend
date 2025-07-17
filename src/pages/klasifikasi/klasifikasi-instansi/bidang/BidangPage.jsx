@@ -171,7 +171,7 @@ const BidangPage = () => {
     },
     {
       field: "provinsi",
-      headerName: "KODE - NAMA Provinsi",
+      headerName: "Provinsi",
       flex: 1,
       minWidth: 250,
       renderCell: (params) => {
@@ -183,7 +183,7 @@ const BidangPage = () => {
     },
     {
       field: "kabupaten_kota",
-      headerName: "KODE - NAMA Kabupaten/Kota",
+      headerName: "Kabupaten/Kota",
       flex: 1,
       minWidth: 250,
       renderCell: (params) => {

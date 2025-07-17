@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import api from "../../../../api/axios";
 import Navbar from "../../../../components/Navbar";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
@@ -19,31 +20,47 @@ const AkunPage = () => {
       pageSize: entriesPerPage,
     });
 
-  const fetchData = () => {
+  const fetchData = async () => {
     setLoading(true);
-    setTimeout(() => {
-      setAsetSatuData([
-        {
-          id: 1,
-          kodeAset: "1",
-          namaAset: "Aset",
-          kode: "1",
+    try {
+      const response = await api.get("/klasifikasi-aset/akun-aset", {
+        params: {
+          search: searchTerm,
+          per_page: entriesPerPage,
         },
-      ]);
+      });
+
+      const data = response.data.data.map((item) => ({
+        id: item.id,
+        kodeAset: item.kode_akun_aset,
+        namaAset: item.nama_akun_aset,
+        kode: item.kode,
+      }));
+
+      setAsetSatuData(data);
+    } catch (error) {
+      console.error("Gagal mengambil data akun aset:", error);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [searchTerm, entriesPerPage]);
 
-  const filteredData = asetSatuData.filter(
-    (item) =>
-      item.namaAset?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.kodeAset?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.kode?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredData = asetSatuData.filter((item) => {
+    const nama = String(item.namaAset || "").toLowerCase();
+    const kodeAset = String(item.kodeAset || "").toLowerCase();
+    const kode = String(item.kode || "").toLowerCase();
+    const search = searchTerm.toLowerCase();
+
+    return (
+      nama.includes(search) ||
+      kodeAset.includes(search) ||
+      kode.includes(search)
+    );
+  });
 
   const handleExport = () => {
     console.log("Exporting data...");
@@ -65,20 +82,38 @@ const AkunPage = () => {
     setEditingAset(null);
   };
 
-  const handleSaveNewAset = (asetToSave) => {
-    if (asetToSave.id) {
-      setAsetSatuData((prevData) =>
-        prevData.map((item) => (item.id === asetToSave.id ? asetToSave : item))
-      );
-      console.log("Update Aset:", asetToSave);
-    } else {
-      setAsetSatuData((prevData) => [
-        ...prevData,
-        { id: Date.now(), ...asetToSave },
-      ]);
-      console.log("Menyimpan Aset baru:", asetToSave);
+  const handleSaveNewAset = async (asetToSave) => {
+    try {
+      if (asetToSave.id) {
+        // UPDATE
+        const response = await api.put(
+          `/klasifikasi-aset/akun-aset/${asetToSave.id}`,
+          {
+            kode_akun_aset: asetToSave.kodeAset,
+            nama_akun_aset: asetToSave.namaAset,
+            kode: asetToSave.kode,
+          }
+        );
+        console.log("Update sukses:", response.data);
+      } else {
+        // CREATE
+        const response = await api.post("/klasifikasi-aset/akun-aset", {
+          kode_akun_aset: asetToSave.kodeAset,
+          nama_akun_aset: asetToSave.namaAset,
+          kode: asetToSave.kode,
+        });
+        console.log("Tambah sukses:", response.data);
+      }
+
+      fetchData(); // refresh table setelah simpan
+      handleCloseAddModal();
+    } catch (error) {
+      if (error.response && error.response.data.errors) {
+        console.error("Validasi gagal:", error.response.data.errors);
+      } else {
+        console.error("Terjadi kesalahan:", error);
+      }
     }
-    handleCloseAddModal();
   };
 
   const handleEditClick = (id) => {
@@ -89,24 +124,49 @@ const AkunPage = () => {
     }
   };
 
-  const handleDeleteClick = (id) => {
+  const handleDeleteClick = async (id) => {
     if (window.confirm("Apakah Anda yakin ingin menghapus data ini?")) {
-      setAsetSatuData((prevData) => prevData.filter((item) => item.id !== id));
-      console.log("Menghapus Aset dengan ID:", id);
+      try {
+        await api.delete(`/klasifikasi-aset/akun-aset/${id}`);
+        console.log("Akun aset berhasil dihapus:", id);
+        fetchData(); // refresh data
+      } catch (error) {
+        console.error("Gagal menghapus data:", error);
+      }
     }
   };
 
   // Data kolom untuk MUI DataGrid
   const columns = [
-    { field: "id", headerName: "ID", width: 90 },
     {
-      field: "kodeAset", // Tetap 'kodeAset' karena ini adalah properti di objek data
-      headerName: "Kode Aset",
-      type: "number",
+      field: "no",
+      headerName: "No",
+      width: 70,
+      sortable: false,
+      renderCell: (params) => {
+        const index = asetSatuData.findIndex((row) => row.id === params.row.id);
+        return (
+          dataTablePaginationModel.page * dataTablePaginationModel.pageSize +
+          index +
+          1
+        );
+      },
+    },
+    {
+      field: "kodeAset",
+      headerName: "Kode Aset 1",
       width: 150,
     },
-    { field: "namaAset", headerName: "Nama Aset", flex: 1 },
-    { field: "kode", headerName: "Kode", width: 120 },
+    {
+      field: "namaAset",
+      headerName: "Nama Aset 1",
+      flex: 1,
+    },
+    {
+      field: "kode",
+      headerName: "Kode",
+      width: 150,
+    },
     {
       field: "action",
       headerName: "Action",
@@ -209,6 +269,10 @@ const AkunPage = () => {
 
           {loading ? (
             <div className="text-center py-8 text-gray-500">Loading...</div>
+          ) : filteredData.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              No Aset 1 data available
+            </div>
           ) : (
             <DataTable
               rows={filteredData}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import api from "../../../../api/axios";
 import Navbar from "../../../../components/Navbar";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
@@ -27,48 +28,46 @@ const JenisPage = () => {
       pageSize: entriesPerPage,
     });
 
-  const fetchData = () => {
-    setLoading(true);
-    setTimeout(() => {
-      // Dummy data untuk Aset 1 (untuk dropdown filter)
-      setAsetSatuData([{ id: 1, namaAset: "Aset" }]);
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("/klasifikasi-aset/jenis-aset");
 
-      // Dummy data untuk Aset 2 (untuk dropdown filter)
-      setAsetDuaData([
-        { id: 1, namaAset2: "Aset Lancar" },
-        { id: 2, namaAset2: "Aset Tetap" },
-        { id: 3, namaAset2: "Aset Lainnya" },
-      ]);
+      const mappedJenis = response.data.data.map((item) => ({
+        id: item.id,
+        aset1: item.kelompok_aset?.akun_aset
+          ? `${item.kelompok_aset.akun_aset.kode_akun_aset} - ${item.kelompok_aset.akun_aset.nama_akun_aset}`
+          : "-",
+        aset2: item.kelompok_aset
+          ? `${item.kelompok_aset.kode_kelompok_aset} - ${item.kelompok_aset.nama_kelompok_aset}`
+          : "-",
+        kodeAset3: item.kode_jenis_aset,
+        namaAset3: item.nama_jenis_aset,
+        kode: item.kode,
+      }));
 
-      // Dummy data untuk Jenis (Aset 3)
-      setJenisData([
-        {
-          id: 1,
-          aset1: "Aset",
-          aset2: "Aset Tetap",
-          kodeAset3: "1",
-          namaAset3: "Tanah",
-          kode: "1",
-        },
-        {
-          id: 2,
-          aset1: "Aset",
-          aset2: "Aset Tetap",
-          kodeAset3: "2",
-          namaAset3: "Peralatan dan Mesin",
-          kode: "2",
-        },
-        {
-          id: 3,
-          aset1: "Aset",
-          aset2: "Aset Tetap",
-          kodeAset3: "3",
-          namaAset3: "Gedung dan Bangunan",
-          kode: "3",
-        },
-      ]);
+      setJenisData(mappedJenis);
+
+      // Isi filter aset 1 & 2
+      const asetSatuSet = new Set();
+      const asetDuaSet = new Set();
+
+      mappedJenis.forEach((item) => {
+        asetSatuSet.add(item.aset1);
+        asetDuaSet.add(item.aset2);
+      });
+
+      setAsetSatuData(
+        [...asetSatuSet].map((v, i) => ({ id: i + 1, namaAset: v }))
+      );
+      setAsetDuaData(
+        [...asetDuaSet].map((v, i) => ({ id: i + 1, namaAset2: v }))
+      );
+    } catch (error) {
+      console.error("Gagal fetch data jenis:", error);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   useEffect(() => {
@@ -148,17 +147,29 @@ const JenisPage = () => {
 
   // Data kolom untuk MUI DataGrid
   const columns = [
-    { field: "id", headerName: "ID", width: 90 },
+    {
+      field: "no",
+      headerName: "No",
+      width: 70,
+      sortable: false,
+      renderCell: (params) => {
+        const index = jenisData.findIndex((row) => row.id === params.row.id);
+        return (
+          dataTablePaginationModel.page * dataTablePaginationModel.pageSize +
+          index +
+          1
+        );
+      },
+    },
     { field: "aset1", headerName: "Aset 1", width: 200 },
     { field: "aset2", headerName: "Aset 2", width: 200 },
     {
       field: "kodeAset3",
       headerName: "Kode Aset 3",
-      type: "number",
       width: 150,
     },
     { field: "namaAset3", headerName: "Nama Aset 3", flex: 1 },
-    { field: "kode", headerName: "Kode", width: 120 },
+    { field: "kode", headerName: "Kode", width: 150 },
     {
       field: "action",
       headerName: "Action",
@@ -200,48 +211,13 @@ const JenisPage = () => {
         </div>
 
         <div className="bg-white rounded-lg shadow-sm p-6">
-          {/* Header */}
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-800">
-              Daftar Klasifikasi Aset 3
-            </h1>
-          </div>
-
-          {/* Baris Filter (Aset 1, Aset 2) */}
           <div className="flex flex-wrap items-center gap-6 mb-6 justify-between">
-            <div className="flex flex-wrap items-center gap-6">
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-700">Aset 1</label>
-                <select
-                  value={selectedAsetSatu}
-                  onChange={(e) => setSelectedAsetSatu(e.target.value)}
-                  className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-                >
-                  <option value=""> -- Pilih Aset 1 -- </option>
-                  {asetSatuData.map((b) => (
-                    <option key={b.id} value={b.namaAset}>
-                      {b.namaAset}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-700">Aset 2</label>
-                <select
-                  value={selectedAsetDua}
-                  onChange={(e) => setSelectedAsetDua(e.target.value)}
-                  className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-                >
-                  <option value=""> -- Pilih Aset 2 -- </option>
-                  {asetDuaData.map((b) => (
-                    <option key={b.id} value={b.namaAset2}>
-                      {b.namaAset2}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            {/* Header */}
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-2xl font-bold text-gray-800">
+                Daftar Klasifikasi Aset 3
+              </h1>
             </div>
-
             {/* Tombol di kanan */}
             <div className="flex gap-3">
               <button
@@ -254,7 +230,7 @@ const JenisPage = () => {
                 onClick={handleOpenAddModal}
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 cursor-pointer"
               >
-                <Plus size={16} /> Add Aset 3
+                <Plus size={16} /> Add Jenis
               </button>
             </div>
           </div>
