@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import api from "../../../../api/axios";
 import Navbar from "../../../../components/Navbar";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
@@ -9,7 +9,6 @@ import AddUnitModal from "./AddUnitModal";
 const UnitPage = () => {
   // State untuk data dan UI
   // State declarations
-  const [searchTerm, setSearchTerm] = useState("");
   const [unitData, setUnitData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [totalRows, setTotalRows] = useState(0);
@@ -186,6 +185,30 @@ const UnitPage = () => {
       },
     },
     {
+      field: "provinsi",
+      headerName: "Provinsi",
+      flex: 1,
+      minWidth: 250,
+      renderCell: (params) => {
+        const provinsi = params.row.bidang?.kabupaten_kota?.provinsi;
+        return provinsi
+          ? `${provinsi.kode_provinsi} - ${provinsi.nama_provinsi}`
+          : "N/A";
+      },
+    },
+    {
+      field: "kabupaten_kota",
+      headerName: "Kabupaten/Kota",
+      flex: 1,
+      minWidth: 250,
+      renderCell: (params) => {
+        const kabKot = params.row.bidang?.kabupaten_kota;
+        return kabKot
+          ? `${kabKot.kode_kabupaten_kota} - ${kabKot.nama_kabupaten_kota}`
+          : "N/A";
+      },
+    },
+    {
       field: "bidang",
       headerName: "Bidang",
       flex: 1,
@@ -203,7 +226,30 @@ const UnitPage = () => {
     { field: "kode_unit", headerName: "Kode Unit", width: 120 },
     { field: "nama_unit", headerName: "Nama Unit", flex: 1, minWidth: 250 },
     { field: "kode", headerName: "Kode", width: 100 },
-    
+    {
+      field: "action",
+      headerName: "Action",
+      width: 150,
+      sortable: false,
+      renderCell: (params) => (
+        <div className="flex gap-2 items-center">
+          <button
+            onClick={() => handleEditClick(params.row.id)}
+            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => handleDeleteClick(params.row.id)}
+            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
+          >
+            Delete
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-[#f7f7f7]">
       <Navbar />
@@ -247,11 +293,10 @@ const UnitPage = () => {
             <div className="flex flex-col gap-4 md:flex-row md:items-end">
               {/* Filter Bidang */}
               <div className="flex items-center gap-2">
-                <span className="text-gray-800 font-semibold">Bidang</span>
                 <select
                   value={selectedBidang}
                   onChange={(e) => setSelectedBidang(e.target.value)}
-                  className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto"
+                  className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto cursor-pointer"
                 >
                   <option value="">-- Semua Bidang --</option>
                   {bidangList.map((b) => (
@@ -273,7 +318,7 @@ const UnitPage = () => {
                       pageSize: Number(e.target.value),
                     })
                   }
-                  className="border border-gray-300 rounded px-3 py-1 text-sm"
+                  className="border border-gray-300 rounded px-3 py-1 text-sm cursor-pointer"
                 >
                   {[5, 10, 25, 50, 75, 100].map((n) => (
                     <option key={n} value={n}>
