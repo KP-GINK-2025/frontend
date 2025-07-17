@@ -7,7 +7,6 @@ import DataTable from "../../../../components/DataTable";
 import AddUnitModal from "./AddUnitModal";
 
 const UnitPage = () => {
-  // Data state
   const [unitData, setUnitData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [totalRows, setTotalRows] = useState(0);
@@ -207,9 +206,9 @@ const UnitPage = () => {
       flex: 1,
       minWidth: 250,
       renderCell: (params) => {
-        const kabupatenKota = params.row.bidang?.kabupaten_kota;
-        return kabupatenKota
-          ? `${kabupatenKota.kode_kabupaten_kota} - ${kabupatenKota.nama_kabupaten_kota}`
+        const kabKot = params.row.bidang?.kabupaten_kota;
+        return kabKot
+          ? `${kabKot.kode_kabupaten_kota} - ${kabKot.nama_kabupaten_kota}`
           : "N/A";
       },
     },
@@ -307,11 +306,10 @@ const UnitPage = () => {
             <div className="flex flex-col gap-4 md:flex-row md:items-end">
               {/* Bidang Filter */}
               <div className="flex items-center gap-2">
-                <span className="text-gray-800 font-semibold">Bidang</span>
                 <select
                   value={selectedBidang}
                   onChange={(e) => setSelectedBidang(e.target.value)}
-                  className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto"
+                  className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto cursor-pointer"
                 >
                   <option value="">-- Semua Bidang --</option>
                   {bidangList.map((bidang) => (
@@ -333,7 +331,7 @@ const UnitPage = () => {
                       pageSize: Number(e.target.value),
                     })
                   }
-                  className="border border-gray-300 rounded px-3 py-1 text-sm"
+                  className="border border-gray-300 rounded px-3 py-1 text-sm cursor-pointer"
                 >
                   {[5, 10, 25, 50, 75, 100].map((size) => (
                     <option key={size} value={size}>
