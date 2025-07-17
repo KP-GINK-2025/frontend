@@ -7,106 +7,111 @@ import DataTable from "../../../../components/DataTable";
 import AddUnitModal from "./AddUnitModal";
 
 const UnitPage = () => {
+  // State untuk data dan UI
   // State declarations
   const [searchTerm, setSearchTerm] = useState("");
   const [unitData, setUnitData] = useState([]);
-  const [bidangList, setBidangList] = useState([]);
-  const [selectedBidang, setSelectedBidang] = useState("");
   const [loading, setLoading] = useState(true);
   const [totalRows, setTotalRows] = useState(0);
+
+  // State untuk filter dan pencarian
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedBidang, setSelectedBidang] = useState("");
+  const [bidangList, setBidangList] = useState([]);
+
+  // State untuk modal
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingUnit, setEditingUnit] = useState(null);
+  // State untuk paginasi dan refresh
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
     pageSize: 10,
   });
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
 
-  // Fetch bidang list
-  const fetchBidangList = async () => {
-    try {
-      const res = await api.get("/klasifikasi-instansi/bidang", {
-        params: { per_page: 100 },
-      });
+  // EFEK 1: Debounce input pencarian
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
-      const sorted = res.data.data
-        .map((b) => ({
-          id: b.id,
-          kode_bidang: b.kode_bidang,
-          nama_bidang: b.nama_bidang,
-        }))
-        .sort((a, b) => a.kode_bidang - b.kode_bidang);
-
-      setBidangList(sorted);
-    } catch (err) {
-      console.error("Gagal fetch bidang list:", err);
+  // EFEK 2: Reset halaman ke 0 jika ada filter atau pencarian baru
+  useEffect(() => {
+    // Cek jika ada search term atau filter bidang yang aktif, reset paginasi
+    if (debouncedSearchTerm || selectedBidang) {
+      setPaginationModel((prev) => ({ ...prev, page: 0 }));
     }
-  };
+  }, [debouncedSearchTerm, selectedBidang]);
 
-  // Fetch unit data with memoization
-  const fetchData = useCallback(
-    async (
-      currentPaginationModel = paginationModel,
-      currentSearchTerm = searchTerm,
-      bidangFilter = selectedBidang
-    ) => {
+  // EFEK 3: Fetch data statis (seperti daftar bidang) HANYA SEKALI
+  useEffect(() => {
+    const fetchBidangList = async () => {
+      try {
+        const res = await api.get("/klasifikasi-instansi/bidang", {
+          params: { per_page: 1000 },
+        });
+
+        const sorted = res.data.data
+          .map((b) => ({
+            id: b.id,
+            kode_bidang: b.kode_bidang,
+            nama_bidang: b.nama_bidang,
+          }))
+          .sort((a, b) =>
+            a.kode_bidang.localeCompare(b.kode_bidang, undefined, {
+              numeric: true,
+            })
+          );
+        setBidangList(sorted);
+      } catch (err) {
+        console.error("Gagal fetch bidang list:", err);
+      }
+    };
+    fetchBidangList();
+  }, []); // <-- Dependency kosong, hanya berjalan sekali saat mount
+
+  // EFEK 4: Fetch data utama (unit) setiap kali ada perubahan
+  useEffect(() => {
+    const fetchData = async () => {
       setLoading(true);
 
       try {
-        const response = await api.get("/klasifikasi-instansi/unit", {
-          params: {
-            page: currentPaginationModel.page + 1,
-            per_page: currentPaginationModel.pageSize,
-            search: currentSearchTerm,
-            bidang_id: bidangFilter || undefined,
-          },
+        const params = new URLSearchParams({
+          page: paginationModel.page + 1,
+          per_page: paginationModel.pageSize,
         });
+        if (debouncedSearchTerm) {
+          params.append("search", debouncedSearchTerm);
+        }
+        if (selectedBidang) {
+          params.append("bidang_id", selectedBidang);
+        }
 
-        const mappedData = response.data.data.map((item) => ({
-          ...item,
-          nama_unit: item.nama_unit || item.namaUnit,
-          kode_unit: item.kode_unit || item.kodeUnit,
-          bidang:
-            item.bidang?.kode_bidang && item.bidang?.nama_bidang
-              ? `${item.bidang.kode_bidang} - ${item.bidang.nama_bidang}`
-              : "-",
-        }));
+        const response = await api.get(
+          `/klasifikasi-instansi/unit?${params.toString()}`
+        );
 
-        setUnitData(mappedData);
+        // Mapping data tetap di sini jika diperlukan
+        setUnitData(response.data.data);
         setTotalRows(response.data.meta.total);
       } catch (error) {
         console.error("Gagal fetch data unit:", error);
+        setUnitData([]);
+        setTotalRows(0);
       } finally {
         setLoading(false);
       }
-    },
-    [paginationModel, searchTerm, selectedBidang]
-  );
+    };
 
-  // Initial data fetch
-  useEffect(() => {
-    fetchBidangList();
     fetchData();
-  }, [fetchData]);
-
-  // Reset pagination when search term changes
-  useEffect(() => {
-    setPaginationModel((prev) =>
-      prev.page === 0 ? prev : { ...prev, page: 0 }
-    );
-  }, [searchTerm]);
-
-  // Reset pagination when bidang filter changes
-  useEffect(() => {
-    setPaginationModel((prev) =>
-      prev.page === 0 ? prev : { ...prev, page: 0 }
-    );
-  }, [selectedBidang]);
+  }, [paginationModel, debouncedSearchTerm, selectedBidang, refreshTrigger]);
 
   // Event handlers
   const handleRefresh = () => {
-    setSearchTerm("");
-    setSelectedBidang("");
-    setPaginationModel({ page: 0, pageSize: paginationModel.pageSize });
+    setRefreshTrigger((c) => c + 1);
   };
 
   const handleExport = () => {
@@ -124,18 +129,27 @@ const UnitPage = () => {
   };
 
   const handleSaveNewUnit = async (unitToSave) => {
+    const payload = {
+      bidang_id: unitToSave.bidang_id,
+      kode_unit: unitToSave.kode_unit,
+      nama_unit: unitToSave.nama_unit,
+      kode: unitToSave.kode,
+    };
     try {
       if (unitToSave.id) {
-        await api.put(
-          `/klasifikasi-instansi/unit/${unitToSave.id}`,
-          unitToSave
-        );
+        await api.patch(`/klasifikasi-instansi/unit/${unitToSave.id}`, payload);
+        alert("Data unit berhasil diperbarui!");
       } else {
-        await api.post("/klasifikasi-instansi/unit", unitToSave);
+        await api.post("/klasifikasi-instansi/unit", payload);
+        alert("Data unit berhasil ditambahkan!");
       }
-      fetchData();
+      handleRefresh();
     } catch (error) {
-      console.error("Gagal menyimpan unit:", error);
+      console.error(
+        "Gagal menyimpan unit:",
+        error.response?.data || error.message
+      );
+      alert("Gagal menyimpan unit. Cek console untuk detail.");
     } finally {
       handleCloseAddModal();
     }
@@ -154,22 +168,12 @@ const UnitPage = () => {
 
     try {
       await api.delete(`/klasifikasi-instansi/unit/${id}`);
-      fetchData();
+      handleRefresh(); // <-- Panggil handleRefresh agar konsisten
     } catch (error) {
       console.error("Gagal menghapus unit:", error);
     }
   };
 
-  const handlePaginationModelChange = (newModel) => {
-    setPaginationModel(newModel);
-  };
-
-  const handlePageSizeChange = (e) => {
-    const newPageSize = Number(e.target.value);
-    setPaginationModel({ page: 0, pageSize: newPageSize });
-  };
-
-  // Column definitions
   const columns = [
     {
       field: "no",
@@ -185,46 +189,21 @@ const UnitPage = () => {
       field: "bidang",
       headerName: "Bidang",
       flex: 1,
+      minWidth: 250,
+      // Ganti valueGetter dengan renderCell untuk pengecekan yang lebih aman
+      renderCell: (params) => {
+        // Cek dulu apakah objek 'bidang' ada di dalam baris data
+        if (params.row && params.row.bidang) {
+          return `${params.row.bidang.kode_bidang} - ${params.row.bidang.nama_bidang}`;
+        }
+        // Jika tidak ada, tampilkan fallback text
+        return "N/A";
+      },
     },
-    {
-      field: "kode_unit",
-      headerName: "Kode Unit",
-      width: 120,
-    },
-    {
-      field: "nama_unit",
-      headerName: "Nama Unit",
-      flex: 1,
-    },
-    {
-      field: "kode",
-      headerName: "Kode",
-      width: 100,
-    },
-    {
-      field: "action",
-      headerName: "Action",
-      width: 150,
-      sortable: false,
-      renderCell: (params) => (
-        <div className="flex gap-2 items-center">
-          <button
-            onClick={() => handleEditClick(params.row.id)}
-            className="text-blue-600 hover:text-blue-800 text-sm"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => handleDeleteClick(params.row.id)}
-            className="text-red-600 hover:text-red-800 text-sm"
-          >
-            Delete
-          </button>
-        </div>
-      ),
-    },
-  ];
-
+    { field: "kode_unit", headerName: "Kode Unit", width: 120 },
+    { field: "nama_unit", headerName: "Nama Unit", flex: 1, minWidth: 250 },
+    { field: "kode", headerName: "Kode", width: 100 },
+    
   return (
     <div className="min-h-screen bg-[#f7f7f7]">
       <Navbar />
@@ -263,10 +242,10 @@ const UnitPage = () => {
             </div>
           </div>
 
-          {/* Filters and Search */}
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-4">
+            {/* Kiri: Filter */}
             <div className="flex flex-col gap-4 md:flex-row md:items-end">
-              {/* Bidang Filter */}
+              {/* Filter Bidang */}
               <div className="flex items-center gap-2">
                 <span className="text-gray-800 font-semibold">Bidang</span>
                 <select
@@ -274,7 +253,7 @@ const UnitPage = () => {
                   onChange={(e) => setSelectedBidang(e.target.value)}
                   className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto"
                 >
-                  <option value="">-- Pilih Bidang --</option>
+                  <option value="">-- Semua Bidang --</option>
                   {bidangList.map((b) => (
                     <option key={b.id} value={b.id}>
                       {b.kode_bidang} - {b.nama_bidang}
@@ -283,15 +262,20 @@ const UnitPage = () => {
                 </select>
               </div>
 
-              {/* Show Entries */}
+              {/* Show entries */}
               <div className="flex items-center gap-2 mt-2 md:mt-0">
                 <span className="text-gray-600 text-sm">Show</span>
                 <select
                   value={paginationModel.pageSize}
-                  onChange={handlePageSizeChange}
+                  onChange={(e) =>
+                    setPaginationModel({
+                      page: 0,
+                      pageSize: Number(e.target.value),
+                    })
+                  }
                   className="border border-gray-300 rounded px-3 py-1 text-sm"
                 >
-                  {[5, 10, 25, 50, 100].map((n) => (
+                  {[5, 10, 25, 50, 75, 100].map((n) => (
                     <option key={n} value={n}>
                       {n}
                     </option>
@@ -301,47 +285,40 @@ const UnitPage = () => {
               </div>
             </div>
 
-            {/* Search Input */}
-            <div className="relative w-full md:w-64 flex items-center gap-2">
-              <Search className="text-gray-400" size={16} />
+            {/* Kanan: Search */}
+            <div className="relative w-full md:w-64">
+              <Search
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={16}
+              />
               <input
                 type="text"
                 placeholder="Search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-4 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
               />
             </div>
           </div>
 
-          {/* Data Table */}
-          {loading ? (
-            <div className="text-center py-8 text-gray-500">Loading...</div>
-          ) : (
-            <DataTable
-              key={`datatable-${paginationModel.page}-${paginationModel.pageSize}-${searchTerm}-${selectedBidang}`}
-              rows={unitData}
-              columns={columns}
-              pageSizeOptions={[5, 10, 25, 50, 100]}
-              height={500}
-              emptyRowsMessage="No Unit data available"
-              paginationModel={paginationModel}
-              onPaginationModelChange={handlePaginationModelChange}
-              rowCount={totalRows}
-              paginationMode="server"
-              initialState={{
-                pagination: {
-                  paginationModel: paginationModel,
-                },
-              }}
-              disableRowSelectionOnClick
-              hideFooterSelectedRowCount
-            />
-          )}
+          <DataTable
+            rows={unitData}
+            columns={columns}
+            rowCount={totalRows}
+            loading={loading}
+            paginationMode="server"
+            filterMode="server"
+            pageSizeOptions={[5, 10, 25, 50, 75, 100]}
+            paginationModel={paginationModel}
+            onPaginationModelChange={setPaginationModel}
+            disableRowSelectionOnClick
+            hideFooterSelectedRowCount
+            height={500}
+            emptyRowsMessage="Tidak ada data unit yang tersedia"
+          />
         </div>
       </div>
 
-      {/* Add/Edit Modal */}
       <AddUnitModal
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
