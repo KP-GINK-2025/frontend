@@ -52,11 +52,11 @@ const useMenuNavigation = () => {
         break;
       // Klasifikasi End
 
-      // Data Ruang Start
-      case "Data Ruang":
-        navigate("/data-ruang");
+      // Data Ruangan Start
+      case "Data Ruangan":
+        navigate("/data-ruangan");
         break;
-      // Data Ruang End
+      // Data Ruangan End
 
       // Saldo Awal Start
       case "Saldo Awal":
