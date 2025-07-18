@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import api from "../../../../api/axios";
 import Navbar from "../../../../components/Navbar";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
@@ -30,55 +31,55 @@ const ObjekPage = () => {
       pageSize: entriesPerPage,
     });
 
-  const fetchData = () => {
+  const fetchData = async () => {
     setLoading(true);
-    setTimeout(() => {
-      setAsetSatuData([{ id: 1, namaAset: "Aset" }]);
+    try {
+      const response = await api.get("/klasifikasi-aset/objek-aset");
+      console.log("API Response:", response.data);
 
-      setAsetDuaData([
-        { id: 1, namaAset2: "Aset Lancar" },
-        { id: 2, namaAset2: "Aset Tetap" },
-        { id: 3, namaAset2: "Aset Lainnya" },
-      ]);
+      const mappedObjek = response.data.data.map((item) => ({
+        id: item.id,
+        aset1: item.jenis_aset?.kelompok_aset?.akun_aset
+          ? `${item.jenis_aset.kelompok_aset.akun_aset.kode_akun_aset} - ${item.jenis_aset.kelompok_aset.akun_aset.nama_akun_aset}`
+          : "-",
+        aset2: item.jenis_aset?.kelompok_aset
+          ? `${item.jenis_aset.kelompok_aset.kode_kelompok_aset} - ${item.jenis_aset.kelompok_aset.nama_kelompok_aset}`
+          : "-",
+        aset3: item.jenis_aset
+          ? `${item.jenis_aset.kode_jenis_aset} - ${item.jenis_aset.nama_jenis_aset}`
+          : "-",
+        kodeAset4: item.kode_objek_aset,
+        namaAset4: item.nama_objek_aset,
+        kode: item.kode,
+      }));
 
-      setAsetTigaData([
-        { id: 1, namaAset3: "Tanah" },
-        { id: 2, namaAset3: "Peralatan dan Mesin" },
-        { id: 3, namaAset3: "Gedung dan Bangunan" },
-      ]);
+      setObjekData(mappedObjek); // <- penting agar datanya muncul di tabel
 
-      // Dummy data untuk Objek (Aset 4)
-      setObjekData([
-        {
-          id: 1,
-          aset1: "Aset",
-          aset2: "Aset Tetap",
-          aset3: "Tanah",
-          kodeAset4: "1",
-          namaAset4: "Tanah",
-          kode: "1",
-        },
-        {
-          id: 2,
-          aset1: "Aset",
-          aset2: "Aset Tetap",
-          aset3: "Peralatan dan Mesin",
-          kodeAset4: "2",
-          namaAset4: "Alat Berat",
-          kode: "2",
-        },
-        {
-          id: 3,
-          aset1: "Aset",
-          aset2: "Aset Tetap",
-          aset3: "Peralatan dan Mesin",
-          kodeAset4: "3",
-          namaAset4: "Alat Angkutan",
-          kode: "3",
-        },
-      ]);
+      // Dropdown filter
+      const asetSatuSet = new Set();
+      const asetDuaSet = new Set();
+      const asetTigaSet = new Set();
+
+      mappedObjek.forEach((item) => {
+        asetSatuSet.add(item.aset1);
+        asetDuaSet.add(item.aset2);
+        asetTigaSet.add(item.aset3);
+      });
+
+      setAsetSatuData(
+        [...asetSatuSet].map((v, i) => ({ id: i + 1, namaAset: v }))
+      );
+      setAsetDuaData(
+        [...asetDuaSet].map((v, i) => ({ id: i + 1, namaAset2: v }))
+      );
+      setAsetTigaData(
+        [...asetTigaSet].map((v, i) => ({ id: i + 1, namaAset3: v }))
+      );
+    } catch (error) {
+      console.error("Gagal fetch data aset 4:", error);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   useEffect(() => {
@@ -164,18 +165,30 @@ const ObjekPage = () => {
 
   // Data kolom untuk MUI DataGrid
   const columns = [
-    { field: "id", headerName: "ID", width: 90 },
+    {
+      field: "no",
+      headerName: "No",
+      width: 70,
+      sortable: false,
+      renderCell: (params) => {
+        const index = objekData.findIndex((row) => row.id === params.row.id);
+        return (
+          dataTablePaginationModel.page * dataTablePaginationModel.pageSize +
+          index +
+          1
+        );
+      },
+    },
     { field: "aset1", headerName: "Aset 1", width: 200 },
     { field: "aset2", headerName: "Aset 2", width: 200 },
     { field: "aset3", headerName: "Aset 3", width: 200 },
     {
       field: "kodeAset4",
       headerName: "Kode Aset 4",
-      type: "number",
       width: 150,
     },
     { field: "namaAset4", headerName: "Nama Aset 4", flex: 1 },
-    { field: "kode", headerName: "Kode", width: 120 },
+    { field: "kode", headerName: "Kode", width: 150 },
     {
       field: "action",
       headerName: "Action",
@@ -222,59 +235,6 @@ const ObjekPage = () => {
             <h1 className="text-2xl font-bold text-gray-800">
               Daftar Klasifikasi Aset 4
             </h1>
-          </div>
-
-          {/* Baris Filter (Aset 1, Aset 2) */}
-          <div className="flex flex-wrap items-center gap-6 mb-6 justify-between">
-            <div className="flex flex-wrap items-center gap-6">
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-700">Aset 1</label>
-                <select
-                  value={selectedAsetSatu}
-                  onChange={(e) => setSelectedAsetSatu(e.target.value)}
-                  className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-                >
-                  <option value=""> -- Pilih Aset 1 -- </option>
-                  {asetSatuData.map((b) => (
-                    <option key={b.id} value={b.namaAset}>
-                      {b.namaAset}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-700">Aset 2</label>
-                <select
-                  value={selectedAsetDua}
-                  onChange={(e) => setSelectedAsetDua(e.target.value)}
-                  className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-                >
-                  <option value=""> -- Pilih Aset 2 -- </option>
-                  {asetDuaData.map((b) => (
-                    <option key={b.id} value={b.namaAset2}>
-                      {b.namaAset2}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-700">Aset 3</label>
-                <select
-                  value={selectedAsetTiga}
-                  onChange={(e) => setSelectedAsetTiga(e.target.value)}
-                  className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-                >
-                  <option value=""> -- Pilih Aset 3 -- </option>
-                  {asetTigaData.map((b) => (
-                    <option key={b.id} value={b.namaAset3}>
-                      {b.namaAset3}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Tombol di kanan */}
             <div className="flex gap-3">
               <button
                 onClick={handleRefresh}
@@ -286,12 +246,12 @@ const ObjekPage = () => {
                 onClick={handleOpenAddModal}
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 cursor-pointer"
               >
-                <Plus size={16} /> Add Aset 4
+                <Plus size={16} /> Add Objek
               </button>
             </div>
           </div>
 
-          {/* Baris Show entries + Search Box */}
+          {/* Show entries + Search Box */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
             {/* Show entries */}
             <div className="flex items-center gap-2">
