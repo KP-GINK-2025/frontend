@@ -1,6 +1,8 @@
-import React, { useState, useRef } from "react";
-import { User, Lock } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import { User, Lock, Eye, EyeOff } from "lucide-react"; // Import Eye and EyeOff icons
 import { useNavigate } from "react-router-dom";
+import api from "../api/axios";
+import Swal from "sweetalert2";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -8,17 +10,45 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [usernameError, setUsernameError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // New state for password visibility
 
   const passwordInputRef = useRef(null);
   const usernameInputRef = useRef(null);
 
-  const handleSubmit = (e) => {
+  // Load saved credentials on component mount
+  useEffect(() => {
+    const savedUsername = localStorage.getItem("savedUsername");
+    const savedPassword = localStorage.getItem("savedPassword");
+    const savedRemember = localStorage.getItem("rememberMe") === "true";
+
+    if (savedRemember) {
+      setUsername(savedUsername || "");
+      setPassword(savedPassword || "");
+      setRememberMe(true);
+    }
+  }, []);
+
+  // Handle "Remember Me" logic whenever rememberMe state changes
+  useEffect(() => {
+    if (rememberMe) {
+      localStorage.setItem("savedUsername", username);
+      localStorage.setItem("savedPassword", password);
+      localStorage.setItem("rememberMe", "true");
+    } else {
+      localStorage.removeItem("savedUsername");
+      localStorage.removeItem("savedPassword");
+      localStorage.removeItem("rememberMe");
+    }
+  }, [rememberMe, username, password]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setUsernameError("");
     setPasswordError("");
 
     let valid = true;
-    if (!username) {
+    if (!username.trim()) {
       setUsernameError("Username tidak boleh kosong.");
       valid = false;
     }
@@ -28,30 +58,46 @@ const LoginPage = () => {
     }
     if (!valid) return;
 
-    console.log("Login attempt:", { username, password });
-    navigate("/dashboard");
+    try {
+      const response = await api.post("/login", { username, password });
+      const { access_token, user } = response.data;
+
+      localStorage.setItem("token", access_token);
+      localStorage.setItem("user", JSON.stringify(user));
+
+      Swal.fire({
+        icon: "success",
+        title: "Login berhasil!",
+        showConfirmButton: false,
+        timer: 1200,
+      });
+
+      navigate("/dashboard");
+    } catch (error) {
+      const msg =
+        error?.response?.data?.message || "Terjadi kesalahan saat login.";
+      Swal.fire({
+        icon: "error",
+        title: "Login gagal",
+        text: msg,
+      });
+    }
   };
 
   const handleUsernameKeyDown = (e) => {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" || e.key === "ArrowDown") {
       e.preventDefault();
-      if (passwordInputRef.current) {
-        passwordInputRef.current.focus();
-      }
-    } else if (e.key === "ArrowDown") {
-      e.preventDefault();
-      if (passwordInputRef.current) {
-        passwordInputRef.current.focus();
-      }
+      passwordInputRef.current?.focus();
     }
   };
 
   const handlePasswordKeyDown = (e) => {
     if (e.key === "ArrowUp") {
       e.preventDefault();
-      if (usernameInputRef.current) {
-        usernameInputRef.current.focus();
-      }
+      usernameInputRef.current?.focus();
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      handleSubmit(e);
     }
   };
 
@@ -129,21 +175,43 @@ const LoginPage = () => {
                 <Lock size={20} className="text-gray-400" />
               </div>
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyDown={handlePasswordKeyDown}
                 ref={passwordInputRef}
-                className={`w-full pl-12 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B53C3C] focus:border-transparent ${
+                className={`w-full pl-12 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B53C3C] focus:border-transparent ${
                   passwordError ? "border-[#B53C3C]" : "border-gray-300"
                 }`}
               />
+              <div
+                className="absolute right-3 top-3.5 cursor-pointer"
+                onClick={() => setShowPassword(!showPassword)} // Toggle password visibility on click
+              >
+                {showPassword ? (
+                  <EyeOff size={20} className="text-gray-400" />
+                ) : (
+                  <Eye size={20} className="text-gray-400" />
+                )}
+              </div>
               {passwordError && (
                 <p className="text-sm text-[#B53C3C] mt-1">{passwordError}</p>
               )}
             </div>
 
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="remember"
+                className="mr-2"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              />
+              <label htmlFor="remember" className="text-sm text-gray-700">
+                Ingat saya
+              </label>
+            </div>
             {/* Login Button */}
             <button
               type="submit"

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import "./Navbar.css";
+import Swal from "sweetalert2";
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -22,11 +22,33 @@ const Navbar = () => {
     `https://ui-avatars.com/api/?name=${storedUser.name}&background=B53C3C&color=fff&size=128`;
 
   const handleLogout = () => {
-    localStorage.setItem(
-      "user",
-      JSON.stringify({ ...storedUser, isLoggedIn: false })
-    );
-    navigate("/");
+    Swal.fire({
+      title: "Apakah Anda yakin?",
+      text: "Anda akan keluar dari sistem!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#B53C3C",
+      cancelButtonColor: "#6c757d",
+      confirmButtonText: "Ya, Logout",
+      cancelButtonText: "Batal",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        localStorage.setItem(
+          "user",
+          JSON.stringify({ ...storedUser, isLoggedIn: false })
+        );
+        navigate("/");
+
+        // Toast notification setelah logout
+        Swal.fire({
+          position: "center",
+          icon: "success",
+          title: "Logout berhasil",
+          showConfirmButton: false,
+          timer: 1500,
+        });
+      }
+    });
   };
 
   const handleGoToDashboard = () => {
@@ -39,14 +61,34 @@ const Navbar = () => {
   };
 
   const handleDeletePhoto = () => {
-    if (window.confirm("Are you sure you want to delete your profile photo?")) {
-      setAvatarPreview("");
-      localStorage.setItem(
-        "user",
-        JSON.stringify({ ...storedUser, avatar: null })
-      );
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
+    Swal.fire({
+      title: "Hapus Foto Profil?",
+      text: "Apakah Anda yakin ingin menghapus foto profil Anda?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc3545",
+      cancelButtonColor: "#6c757d",
+      confirmButtonText: "Ya, Hapus",
+      cancelButtonText: "Batal",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setAvatarPreview("");
+        localStorage.setItem(
+          "user",
+          JSON.stringify({ ...storedUser, avatar: null })
+        );
+        if (fileInputRef.current) fileInputRef.current.value = "";
+
+        // Success notification
+        Swal.fire({
+          position: "center",
+          icon: "success",
+          title: "Foto profil berhasil dihapus",
+          showConfirmButton: false,
+          timer: 1500,
+        });
+      }
+    });
   };
 
   const handleFileChange = (event) => {
@@ -54,12 +96,22 @@ const Navbar = () => {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      alert("Please select a valid image file.");
+      Swal.fire({
+        icon: "error",
+        title: "Format File Tidak Valid",
+        text: "Silakan pilih file gambar yang valid.",
+        confirmButtonColor: "#B53C3C",
+      });
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      alert("File size should be less than 5MB.");
+      Swal.fire({
+        icon: "error",
+        title: "Ukuran File Terlalu Besar",
+        text: "Ukuran file harus kurang dari 5MB.",
+        confirmButtonColor: "#B53C3C",
+      });
       return;
     }
 
@@ -72,6 +124,15 @@ const Navbar = () => {
         JSON.stringify({ ...storedUser, avatar: newAvatarUrl })
       );
       if (fileInputRef.current) fileInputRef.current.value = "";
+
+      // Success notification
+      Swal.fire({
+        position: "center",
+        icon: "success",
+        title: "Foto profil berhasil diubah",
+        showConfirmButton: false,
+        timer: 1500,
+      });
     };
     reader.readAsDataURL(file);
   };
@@ -140,7 +201,7 @@ const Navbar = () => {
             <div className="absolute top-full right-0 z-50 min-w-64 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden">
               <div className="bg-[#B53C3C] flex flex-col items-center py-4 gap-2">
                 <div
-                  className="avatar-container"
+                  className="cursor-pointer"
                   onClick={() => setShowImagePreview(true)}
                 >
                   <img
@@ -153,14 +214,14 @@ const Navbar = () => {
                 <div className="flex gap-2 mt-2">
                   <button
                     onClick={handleChangePhoto}
-                    className="photo-action-btn"
+                    className="bg-red bg-opacity-20 border border-white border-opacity-30 text-white px-2 py-1 rounded text-xs cursor-pointer transition-all duration-200 hover:bg-opacity-30 hover:border-opacity-50"
                   >
                     Change Photo
                   </button>
                   {(avatarPreview || storedUser.avatar) && (
                     <button
                       onClick={handleDeletePhoto}
-                      className="photo-action-btn"
+                      className="bg-red bg-opacity-20 border border-white border-opacity-30 text-white px-2 py-1 rounded text-xs cursor-pointer transition-all duration-200 hover:bg-opacity-30 hover:border-opacity-50"
                     >
                       Delete Photo
                     </button>
@@ -192,20 +253,20 @@ const Navbar = () => {
 
       {showImagePreview && (
         <div
-          className="image-preview-overlay"
+          className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[10000]"
           onClick={() => setShowImagePreview(false)}
         >
           <div
-            className="image-preview-content"
+            className="relative max-w-[90vw] max-h-[90vh] bg-white rounded-lg overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <img
               src={avatarSrc}
               alt="Profile Preview"
-              className="image-preview-img"
+              className="w-full h-full object-contain max-w-[80vw] max-h-[80vh]"
             />
             <button
-              className="image-preview-close"
+              className="absolute top-2.5 right-2.5 bg-black bg-opacity-50 text-white border-none rounded-full w-10 h-10 flex items-center justify-center cursor-pointer text-lg transition-all duration-200 hover:bg-opacity-70"
               onClick={() => setShowImagePreview(false)}
             >
               ×

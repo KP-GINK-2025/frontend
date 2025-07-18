@@ -24,7 +24,7 @@ import SubRincianPage from "./pages/klasifikasi/klasifikasi-aset/sub-rincian/Sub
 import SubSubRincianPage from "./pages/klasifikasi/klasifikasi-aset/sub-sub-rincian/SubSubRincianPage";
 // Klasifikasi End
 
-import DataRuangPage from "./pages/data-ruang/DataRuangPage";
+import DataRuanganPage from "./pages/data-ruang/DataRuanganPage";
 import SaldoAwalPage from "./pages/saldo-awal/SaldoAwalPage";
 import LraPage from "./pages/lra/LraPage";
 
@@ -145,8 +145,8 @@ function App() {
         />
         {/* Klasifikasi End */}
 
-        {/* Data Ruang */}
-        <Route path="/data-ruang" element={<DataRuangPage />} />
+        {/* Data Ruangan */}
+        <Route path="/data-ruangan" element={<DataRuanganPage />} />
         {/* Saldo Awal */}
         <Route path="/saldo-awal" element={<SaldoAwalPage />} />
         {/* LRA */}

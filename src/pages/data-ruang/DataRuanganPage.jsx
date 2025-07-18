@@ -5,7 +5,7 @@ import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import AddRuanganModal from "./AddRuanganModal";
 import DataTable from "../../components/DataTable";
 
-const DataRuangPage = () => {
+const DataRuanganPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   // const [currentPage, setCurrentPage] = useState(1);
@@ -112,7 +112,7 @@ const DataRuangPage = () => {
     );
   });
 
-  const handleExport = () => console.log("Exporting Data Ruang...");
+  const handleExport = () => console.log("Exporting Data Ruangan...");
   const handleRefresh = () => {
     setLoading(true);
     setSearchTerm("");
@@ -171,7 +171,20 @@ const DataRuangPage = () => {
 
   // Data kolom untuk MUI DataGrid
   const columns = [
-    { field: "id", headerName: "ID", width: 70 }, // ID karena DataTable memerlukannya
+    {
+      field: "no",
+      headerName: "No",
+      width: 70,
+      sortable: false,
+      renderCell: (params) => {
+        const index = ruanganData.findIndex((row) => row.id === params.row.id);
+        return (
+          dataTablePaginationModel.page * dataTablePaginationModel.pageSize +
+          index +
+          1
+        );
+      },
+    },
     { field: "tahun", headerName: "Tahun", width: 100 },
     { field: "bidang", headerName: "Bidang", width: 180 },
     { field: "unit", headerName: "Unit", width: 180 },
@@ -371,4 +384,4 @@ const DataRuangPage = () => {
   );
 };
 
-export default DataRuangPage;
+export default DataRuanganPage;
