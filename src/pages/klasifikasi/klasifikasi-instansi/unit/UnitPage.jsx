@@ -146,14 +146,13 @@ const UnitPage = () => {
         alert("Unit data successfully added!");
       }
       handleRefresh();
+      handleCloseAddModal();
     } catch (error) {
       console.error(
         "Failed to save unit:",
         error.response?.data || error.message
       );
       alert("Failed to save unit. Check console for details.");
-    } finally {
-      handleCloseAddModal();
     }
   };
 
