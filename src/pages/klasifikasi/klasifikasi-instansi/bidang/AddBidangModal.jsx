@@ -159,7 +159,10 @@ const AddBidangModal = ({ isOpen, onClose, onSave, initialData }) => {
               options={kabupatenOptions}
               value={selectedKabupaten}
               onChange={setSelectedKabupaten}
-              onInputChange={loadKabupatenOptions}
+              onInputChange={(newValue) => {
+                loadKabupatenOptions(newValue);
+                return newValue;
+              }}
               isLoading={isLoadingKabupaten}
               placeholder="Ketik untuk mencari ID atau Nama..."
               isClearable

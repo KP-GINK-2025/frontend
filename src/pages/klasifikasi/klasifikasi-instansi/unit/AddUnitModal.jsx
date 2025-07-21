@@ -155,7 +155,10 @@ const AddUnitModal = ({ isOpen, onClose, onSave, initialData }) => {
               options={bidangOptions}
               value={selectedBidang}
               onChange={setSelectedBidang}
-              onInputChange={loadBidangOptions}
+              onInputChange={(newValue) => {
+                loadBidangOptions(newValue);
+                return newValue;
+              }}
               isLoading={isLoadingBidang}
               placeholder="Ketik untuk mencari ID atau Nama..."
               isClearable
