@@ -158,93 +158,59 @@ const AddUnitModal = ({ isOpen, onClose, onSave, initialData }) => {
               </button>
             </div>
 
-            <form
-              onSubmit={handleSubmit}
-              className="max-h-[calc(100vh-220px)] overflow-y-auto pr-2 pb-4"
-            >
-              {/* --- Isi Form --- */}
-              <div className="mb-4">
-                <label htmlFor="provinsi" className="block mb-2 text-gray-700">
-                  Provinsi: <span className="text-[#B53C3C]">*</span>
-                </label>
-                <Select
-                  id="provinsi"
-                  options={provinsiOptions}
-                  value={selectedProvinsi}
-                  onChange={setSelectedProvinsi}
-                  isLoading={isLoading && provinsiOptions.length === 0}
-                  isDisabled={isLoading}
-                  placeholder="- Pilih Provinsi -"
-                />
-              </div>
-              <div className="mb-4">
-                <label htmlFor="kabKot" className="block mb-2 text-gray-700">
-                  Kabupaten/Kota: <span className="text-[#B53C3C]">*</span>
-                </label>
-                <Select
-                  id="kabKot"
-                  options={kabupatenOptions}
-                  value={selectedKabupaten}
-                  onChange={setSelectedKabupaten}
-                  isLoading={isLoading && !!selectedProvinsi}
-                  isDisabled={!selectedProvinsi || isLoading}
-                  placeholder="- Pilih Kabupaten/Kota -"
-                />
-              </div>
-              <div className="mb-4">
-                <label htmlFor="bidang" className="block mb-2 text-gray-700">
-                  Bidang: <span className="text-[#B53C3C]">*</span>
-                </label>
-                <Select
-                  id="bidang"
-                  options={bidangOptions}
-                  value={selectedBidang}
-                  onChange={setSelectedBidang}
-                  isLoading={isLoading && !!selectedKabupaten}
-                  isDisabled={!selectedKabupaten || isLoading}
-                  placeholder="- Pilih Bidang -"
-                />
-              </div>
-              <div className="mb-4">
-                <label htmlFor="kodeUnit" className="block mb-2 text-gray-700">
-                  Kode Unit: <span className="text-[#B53C3C]">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="kodeUnit"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#B53C3C]"
-                  value={kodeUnit}
-                  onChange={(e) => setKodeUnit(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label htmlFor="namaUnit" className="block mb-2 text-gray-700">
-                  Nama Unit: <span className="text-[#B53C3C]">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="namaUnit"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#B53C3C]"
-                  value={namaUnit}
-                  onChange={(e) => setNamaUnit(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="mb-6">
-                <label htmlFor="kode" className="block mb-2 text-gray-700">
-                  Kode: <span className="text-[#B53C3C]">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="kode"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#B53C3C]"
-                  value={kode}
-                  onChange={(e) => setKode(e.target.value)}
-                  required
-                />
-              </div>
-            </form>
+          <div className="mb-4">
+            <label htmlFor="bidang" className="block mb-2 text-gray-700">
+              Bidang: <span className="text-[#B53C3C]">*</span>
+            </label>
+            <Select
+              id="bidang"
+              className="rounded-md focus:outline-none focus:ring-2 focus:ring-[#B53C3C]"
+              options={bidangOptions}
+              value={selectedBidang}
+              onChange={setSelectedBidang}
+              onInputChange={(newValue) => {
+                loadBidangOptions(newValue);
+                return newValue;
+              }}
+              isLoading={isLoadingBidang}
+              placeholder="Ketik untuk mencari ID atau Nama..."
+              isClearable
+              noOptionsMessage={({ inputValue }) =>
+                !inputValue
+                  ? "Ketik sesuatu untuk mencari"
+                  : "Data tidak ditemukan"
+              }
+            />
+          </div>
+
+          <div className="mb-4">
+            <label htmlFor="kodeUnit" className="block mb-2 text-gray-700">
+              Kode Unit: <span className="text-[#B53C3C]">*</span>
+            </label>
+            <input
+              type="number"
+              id="kodeUnit"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#B53C3C]"
+              value={kodeUnit}
+              onChange={(e) => setKodeUnit(e.target.value)}
+              required
+              min="0"
+            />
+          </div>
+
+          <div className="mb-4">
+            <label htmlFor="namaUnit" className="block mb-2 text-gray-700">
+              Nama Unit: <span className="text-[#B53C3C]">*</span>
+            </label>
+            <input
+              type="text"
+              id="namaUnit"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#B53C3C]"
+              value={namaUnit}
+              onChange={(e) => setNamaUnit(e.target.value)}
+              required
+            />
+          </div>
 
             <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200 mt-4">
               <button

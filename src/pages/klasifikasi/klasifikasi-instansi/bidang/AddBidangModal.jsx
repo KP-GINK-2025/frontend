@@ -162,6 +162,7 @@ const AddBidangModal = ({ isOpen, onClose, onSave, initialData }) => {
               </button>
             </div>
 
+
             <form
               onSubmit={handleSubmit}
               className="max-h-[calc(100vh-220px)] overflow-y-auto pr-2 pb-4"
@@ -180,7 +181,10 @@ const AddBidangModal = ({ isOpen, onClose, onSave, initialData }) => {
                   options={kabupatenOptions}
                   value={selectedKabupaten}
                   onChange={setSelectedKabupaten}
-                  onInputChange={loadKabupatenOptions}
+                onInputChange={(newValue) => {
+                loadKabupatenOptions(newValue);
+                return newValue;
+              }}
                   isLoading={isLoadingKabupaten}
                   placeholder="Ketik untuk mencari ID atau Nama..."
                   isClearable
@@ -191,6 +195,7 @@ const AddBidangModal = ({ isOpen, onClose, onSave, initialData }) => {
                   }
                 />
               </div>
+
 
               <div className="mb-4">
                 <label

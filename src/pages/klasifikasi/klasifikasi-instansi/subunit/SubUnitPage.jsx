@@ -1,148 +1,114 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import api from "../../../../api/axios";
 import Navbar from "../../../../components/Navbar";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
-import AddSubUnitModal from "./AddSubUnitModal"; // Pastikan nama modal sudah diganti
 import DataTable from "../../../../components/DataTable";
 import Swal from "sweetalert2";
+import AddSubUnitModal from "./AddSubUnitModal";
 
-// Custom hook untuk mengelola data bidang
-const useBidangData = () => {
-  const [bidangList, setBidangList] = useState([]);
-
-  const fetchBidangList = useCallback(async () => {
-    try {
-      const res = await api.get("/klasifikasi-instansi/bidang", {
-        params: { per_page: 1000 }, // Ambil semua data bidang
-      });
-
-      const sorted = res.data.data
-        .map((b) => ({
-          id: b.id,
-          kode_bidang: b.kode_bidang,
-          nama_bidang: b.nama_bidang,
-          full_name: `${b.kode_bidang} - ${b.nama_bidang}`,
-        }))
-        .sort((a, b) =>
-          a.kode_bidang.localeCompare(b.kode_bidang, undefined, {
-            numeric: true,
-          })
-        );
-      setBidangList(sorted);
-    } catch (err) {
-      console.error("Gagal fetch bidang list:", err);
-    }
-  }, []);
-
-  return { bidangList, fetchBidangList };
-};
-
-// Custom hook untuk mengelola data unit (untuk filter)
-const useUnitData = () => {
-  const [unitList, setUnitList] = useState([]);
-  const [loadingUnits, setLoadingUnits] = useState(false);
-
-  const fetchUnitList = useCallback(async (bidangId = "") => {
-    if (!bidangId) {
-      setUnitList([]);
-      return;
-    }
-    setLoadingUnits(true);
-    try {
-      const params = {
-        per_page: 1000, // Ambil semua data unit di bawah bidang terpilih
-        bidang_id: bidangId,
-      };
-
-      const res = await api.get("/klasifikasi-instansi/unit", { params });
-      const sorted = res.data.data
-        .map((u) => ({
-          id: u.id,
-          kode_unit: u.kode_unit,
-          nama_unit: u.nama_unit,
-          full_name: `${u.kode_unit} - ${u.nama_unit}`,
-        }))
-        .sort((a, b) =>
-          a.kode_unit.localeCompare(b.kode_unit, undefined, { numeric: true })
-        );
-      setUnitList(sorted);
-    } catch (err) {
-      console.error("Gagal fetch unit list:", err);
-      setUnitList([]);
-    } finally {
-      setLoadingUnits(false);
-    }
-  }, []);
-
-  return { unitList, loadingUnits, fetchUnitList, setUnitList };
-};
-
-// Custom hook untuk debounce
-const useDebounce = (value, delay) => {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-};
-
-// Komponen utama SubUnitPage
 const SubUnitPage = () => {
-  // State utama
   const [subUnitData, setSubUnitData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [totalRows, setTotalRows] = useState(0);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // State untuk filter dan pencarian
+  // Filter and search state
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [selectedBidang, setSelectedBidang] = useState("");
+  const [bidangList, setBidangList] = useState([]);
   const [selectedUnit, setSelectedUnit] = useState("");
+  const [unitList, setUnitList] = useState([]);
 
-  // State untuk modal
+  // Modal state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingSubUnit, setEditingSubUnit] = useState(null);
 
-  // State untuk pagination
+  // Pagination state
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
     pageSize: 10,
   });
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // Menggunakan custom hooks
-  const debouncedSearchTerm = useDebounce(searchTerm, 300);
-  const { bidangList, fetchBidangList } = useBidangData();
-  const { unitList, loadingUnits, fetchUnitList } = useUnitData();
-
-  // Effect untuk mengambil daftar bidang saat komponen dimuat
+  // Debounce search input
   useEffect(() => {
-    fetchBidangList();
-  }, [fetchBidangList]);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
 
-  // Effect untuk mengambil daftar unit ketika bidang berubah
-  useEffect(() => {
-    fetchUnitList(selectedBidang);
-    setSelectedUnit(""); // Reset pilihan unit ketika bidang berubah
-  }, [selectedBidang, fetchUnitList]);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
-  // Effect untuk mereset paginasi ketika filter berubah
+  // Reset pagination when filters change
   useEffect(() => {
-    setPaginationModel((prev) => ({ ...prev, page: 0 }));
+    if (debouncedSearchTerm || selectedBidang || selectedUnit) {
+      setPaginationModel((prev) => ({ ...prev, page: 0 }));
+    }
   }, [debouncedSearchTerm, selectedBidang, selectedUnit]);
 
-  // Effect untuk mengambil data sub unit utama
+  // Fetch bidang list (static data)
+  useEffect(() => {
+    const fetchBidangList = async () => {
+      try {
+        const response = await api.get("/klasifikasi-instansi/bidang", {
+          params: { per_page: 1000 },
+        });
+
+        const sortedBidang = response.data.data
+          .map((bidang) => ({
+            id: bidang.id,
+            kode_bidang: bidang.kode_bidang,
+            nama_bidang: bidang.nama_bidang,
+          }))
+          .sort((a, b) =>
+            a.kode_bidang.localeCompare(b.kode_bidang, undefined, {
+              numeric: true,
+            })
+          );
+
+        setBidangList(sortedBidang);
+      } catch (error) {
+        console.error("Failed to fetch bidang list:", error);
+      }
+    };
+
+    fetchBidangList();
+  }, []);
+
+  useEffect(() => {
+    const fetchUnitList = async () => {
+      try {
+        const response = await api.get("/klasifikasi-instansi/unit", {
+          params: { per_page: 1000 },
+        });
+
+        const sortedUnit = response.data.data
+          .map((unit) => ({
+            id: unit.id,
+            kode_unit: unit.kode_unit,
+            nama_unit: unit.nama_unit,
+          }))
+          .sort((a, b) =>
+            a.kode_unit.localeCompare(b.kode_unit, undefined, {
+              numeric: true,
+            })
+          );
+
+        setUnitList(sortedUnit);
+      } catch (error) {
+        console.error("Failed to fetch unit list:", error);
+      }
+    };
+
+    fetchUnitList();
+  }, []);
+
+  // Fetch unit data
   useEffect(() => {
     const fetchSubUnitData = async () => {
       setLoading(true);
+
       try {
         const params = new URLSearchParams({
           page: paginationModel.page + 1,
@@ -152,11 +118,13 @@ const SubUnitPage = () => {
         if (debouncedSearchTerm) {
           params.append("search", debouncedSearchTerm);
         }
+
+        if (selectedBidang) {
+          params.append("bidang_id", selectedBidang);
+        }
+
         if (selectedUnit) {
           params.append("unit_id", selectedUnit);
-        } else if (selectedBidang) {
-          // Jika hanya bidang dipilih, kirim bidang_id untuk filter di backend
-          params.append("bidang_id", selectedBidang);
         }
 
         const response = await api.get(
@@ -166,7 +134,7 @@ const SubUnitPage = () => {
         setSubUnitData(response.data.data);
         setTotalRows(response.data.meta.total);
       } catch (error) {
-        console.error("Gagal fetch data sub unit:", error);
+        console.error("Failed to fetch subunit data:", error);
         setSubUnitData([]);
         setTotalRows(0);
       } finally {
@@ -178,19 +146,18 @@ const SubUnitPage = () => {
   }, [
     paginationModel,
     debouncedSearchTerm,
-    selectedUnit,
     selectedBidang,
+    selectedUnit,
     refreshTrigger,
   ]);
 
-  // Event Handlers
+  // Event handlers
   const handleRefresh = () => {
     setRefreshTrigger((prev) => prev + 1);
   };
 
   const handleExport = () => {
-    console.log("Exporting sub unit data...");
-    // Implementasi ekspor data
+    console.log("Exporting subunit data...");
   };
 
   const handleOpenAddModal = () => {
@@ -203,7 +170,7 @@ const SubUnitPage = () => {
     setEditingSubUnit(null);
   };
 
-  const handleSaveSubUnit = async (subUnitToSave) => {
+  const handleSaveUnit = async (subUnitToSave) => {
     const payload = {
       unit_id: subUnitToSave.unit_id,
       kode_sub_unit: subUnitToSave.kode_sub_unit,
@@ -217,43 +184,27 @@ const SubUnitPage = () => {
           `/klasifikasi-instansi/subunit/${subUnitToSave.id}`,
           payload
         );
-        alert("Data Sub Unit berhasil diperbarui!");
+        alert("Unit data successfully updated!");
       } else {
         await api.post("/klasifikasi-instansi/subunit", payload);
-        alert("Data Sub Unit berhasil ditambahkan!");
+        alert("Unit data successfully added!");
       }
       handleRefresh();
       handleCloseAddModal();
     } catch (error) {
       console.error(
-        "Gagal menyimpan sub unit:",
+        "Failed to save unit:",
         error.response?.data || error.message
       );
-      alert("Gagal menyimpan data. Cek konsol untuk detail.");
+      alert("Failed to save unit. Check console for details.");
     }
   };
 
-  const handleEditClick = async (id) => {
-    try {
-      // Ambil data terbaru dari server untuk memastikan data akurat
-      const response = await api.get(`/klasifikasi-instansi/subunit/${id}`);
-      const dataToEdit = response.data.data;
-
-      // Siapkan data untuk modal, termasuk ID induknya
-      const mappedForEdit = {
-        id: dataToEdit.id,
-        unit_id: dataToEdit.unit_id,
-        bidang_id: dataToEdit.unit?.bidang_id || "",
-        kode_sub_unit: dataToEdit.kode_sub_unit,
-        nama_sub_unit: dataToEdit.nama_sub_unit,
-        kode: dataToEdit.kode,
-      };
-
-      setEditingSubUnit(mappedForEdit);
+  const handleEditClick = (id) => {
+    const subUnitToEdit = subUnitData.find((item) => item.id === id);
+    if (subUnitToEdit) {
+      setEditingSubUnit(subUnitToEdit);
       setIsAddModalOpen(true);
-    } catch (error) {
-      console.error("Gagal mengambil data sub unit untuk diedit:", error);
-      alert("Gagal memuat data untuk diedit.");
     }
   };
 
@@ -295,7 +246,7 @@ const SubUnitPage = () => {
     }
   };
 
-  // Konfigurasi Kolom DataTable
+  // Table columns configuration
   const columns = [
     {
       field: "no",
@@ -311,7 +262,7 @@ const SubUnitPage = () => {
       field: "provinsi",
       headerName: "Provinsi",
       flex: 1,
-      minWidth: 200,
+      minWidth: 250,
       renderCell: (params) => {
         const provinsi = params.row.unit?.bidang?.kabupaten_kota?.provinsi;
         return provinsi
@@ -323,7 +274,7 @@ const SubUnitPage = () => {
       field: "kabupaten_kota",
       headerName: "Kabupaten/Kota",
       flex: 1,
-      minWidth: 200,
+      minWidth: 250,
       renderCell: (params) => {
         const kabKot = params.row.unit?.bidang?.kabupaten_kota;
         return kabKot
@@ -335,7 +286,7 @@ const SubUnitPage = () => {
       field: "bidang",
       headerName: "Bidang",
       flex: 1,
-      minWidth: 200,
+      minWidth: 250,
       renderCell: (params) => {
         const bidang = params.row.unit?.bidang;
         return bidang ? `${bidang.kode_bidang} - ${bidang.nama_bidang}` : "N/A";
@@ -345,7 +296,7 @@ const SubUnitPage = () => {
       field: "unit",
       headerName: "Unit",
       flex: 1,
-      minWidth: 200,
+      minWidth: 250,
       renderCell: (params) => {
         const unit = params.row.unit;
         return unit ? `${unit.kode_unit} - ${unit.nama_unit}` : "N/A";
@@ -367,6 +318,7 @@ const SubUnitPage = () => {
       headerName: "Kode",
       width: 100,
     },
+
     {
       field: "action",
       headerName: "Action",
@@ -394,9 +346,11 @@ const SubUnitPage = () => {
   return (
     <div className="min-h-screen bg-[#f7f7f7]">
       <Navbar />
+
       <div className="px-8 py-8">
         <Breadcrumbs />
 
+        {/* Export Button */}
         <div className="flex justify-end mt-4 mb-4">
           <button
             onClick={handleExport}
@@ -406,7 +360,9 @@ const SubUnitPage = () => {
           </button>
         </div>
 
+        {/* Main Content */}
         <div className="bg-white rounded-lg shadow-sm p-6">
+          {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-gray-800">
               Daftar Sub Unit
@@ -427,9 +383,11 @@ const SubUnitPage = () => {
             </div>
           </div>
 
+          {/* Filters and Search */}
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-4">
+            {/* Left: Filters */}
             <div className="flex flex-col gap-4 md:flex-row md:items-end">
-              {/* Filter Bidang */}
+              {/* Bidang Filter */}
               <div className="flex items-center gap-2">
                 <select
                   value={selectedBidang}
@@ -437,32 +395,25 @@ const SubUnitPage = () => {
                   className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto cursor-pointer"
                 >
                   <option value="">-- Semua Bidang --</option>
-                  {bidangList.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.full_name}
+                  {bidangList.map((bidang) => (
+                    <option key={bidang.id} value={bidang.id}>
+                      {bidang.kode_bidang} - {bidang.nama_bidang}
                     </option>
                   ))}
                 </select>
               </div>
-
-              {/* Filter Unit */}
-              <div className="flex items-center gap-2">
-                <select
-                  value={selectedUnit}
-                  onChange={(e) => setSelectedUnit(e.target.value)}
-                  className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto cursor-pointer"
-                  disabled={!selectedBidang || loadingUnits}
-                >
-                  <option value="">
-                    {loadingUnits ? "Memuat..." : "-- Semua Unit --"}
+              <select
+                value={selectedUnit}
+                onChange={(e) => setSelectedUnit(e.target.value)}
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto cursor-pointer"
+              >
+                <option value="">-- Semua Unit --</option>
+                {unitList.map((unit) => (
+                  <option key={unit.id} value={unit.id}>
+                    {unit.kode_unit} - {unit.nama_unit}
                   </option>
-                  {unitList.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.full_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                ))}
+              </select>
 
               {/* Page Size Selector */}
               <div className="flex items-center gap-2 mt-2 md:mt-0">
@@ -487,7 +438,7 @@ const SubUnitPage = () => {
               </div>
             </div>
 
-            {/* Search Input */}
+            {/* Right: Search */}
             <div className="relative w-full md:w-64">
               <Search
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
@@ -503,6 +454,7 @@ const SubUnitPage = () => {
             </div>
           </div>
 
+          {/* Data Table */}
           <DataTable
             rows={subUnitData}
             columns={columns}
@@ -516,16 +468,16 @@ const SubUnitPage = () => {
             disableRowSelectionOnClick
             hideFooterSelectedRowCount
             height={500}
-            emptyRowsMessage="Tidak ada data sub unit yang tersedia"
+            emptyRowsMessage="Tidak ada data unit yang tersedia"
           />
         </div>
       </div>
 
-      {/* Pastikan nama modal dan props sesuai */}
+      {/* Add/Edit Modal */}
       <AddSubUnitModal
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
-        onSave={handleSaveSubUnit}
+        onSave={handleSaveUnit}
         initialData={editingSubUnit}
       />
     </div>
