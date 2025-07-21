@@ -15,7 +15,7 @@ import useMenuNavigation from "../hooks/useMenuNavigation";
 
 const menuItems = [
   { name: "Klasifikasi", icon: FileText },
-  { name: "Data Ruang", icon: FileStack },
+  { name: "Data Ruangan", icon: FileStack },
   { name: "Saldo Awal", icon: Wallet },
   { name: "LRA", icon: ListOrdered },
   { name: "Keuangan", icon: ChartNoAxesCombined },

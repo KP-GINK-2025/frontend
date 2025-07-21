@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Check } from "lucide-react";
+import Swal from "sweetalert2";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ const ProfilePage = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: "" }));
+    setErrors((prev) => ({ ...prev, [name]: "" })); // clear error as user types
   };
 
   const handleUpdate = () => {
@@ -41,28 +42,65 @@ const ProfilePage = () => {
       newErrors.name = "Nama lengkap wajib diisi.";
       hasError = true;
     }
+
     if (!formData.username.trim()) {
       newErrors.username = "Username wajib diisi.";
       hasError = true;
     }
+
     if (!formData.email.trim()) {
       newErrors.email = "Email wajib diisi.";
       hasError = true;
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (formData.email.trim() && !emailRegex.test(formData.email)) {
+      newErrors.email = "Format email tidak valid.";
+      hasError = true;
+    }
+
     setErrors(newErrors);
-    if (hasError) return;
 
-    // Ambil avatar lama
-    const oldUser = JSON.parse(localStorage.getItem("user")) || {};
-    const updatedUser = {
-      ...oldUser, // Ambil avatar dan lainnya
-      ...formData, // Timpa dengan data baru (name, username, email)
-    };
+    if (hasError) {
+      Swal.fire({
+        icon: "error",
+        title: "Data Tidak Valid",
+        text: "Silakan lengkapi semua field yang wajib diisi dengan benar.",
+        confirmButtonColor: "#B53C3C",
+      });
+      return;
+    }
 
-    localStorage.setItem("user", JSON.stringify(updatedUser));
-    alert("Profil berhasil diperbarui!");
-    navigate(-1); // Kembali ke halaman sebelumnya
+    Swal.fire({
+      title: "Konfirmasi Perubahan",
+      text: "Apakah Anda yakin ingin memperbarui profil?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#B53C3C",
+      cancelButtonColor: "#6c757d",
+      confirmButtonText: "Ya, Perbarui",
+      cancelButtonText: "Batal",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const oldUser = JSON.parse(localStorage.getItem("user")) || {};
+        const updatedUser = {
+          ...oldUser,
+          ...formData,
+        };
+
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+
+        Swal.fire({
+          position: "center",
+          icon: "success",
+          title: "Profil berhasil diperbarui!",
+          showConfirmButton: false,
+          timer: 1500,
+        }).then(() => {
+          navigate(-1);
+        });
+      }
+    });
   };
 
   return (
@@ -73,12 +111,12 @@ const ProfilePage = () => {
 
       <div className="p-4 space-y-4">
         {/* Nama Lengkap */}
-        <div>
-          <div className="flex items-center">
-            <label className="w-40 text-sm font-medium">
-              Nama Lengkap <span className="text-red-500">*</span>
-            </label>
-            <span className="mr-2">:</span>
+        <div className="grid grid-cols-[160px_10px_1fr] items-start gap-2">
+          <label className="text-sm font-medium">
+            Nama Lengkap <span className="text-red-500">*</span>
+          </label>
+          <span>:</span>
+          <div>
             <input
               type="text"
               name="name"
@@ -86,21 +124,19 @@ const ProfilePage = () => {
               onChange={handleChange}
               className="border rounded px-3 py-1 w-full text-sm"
             />
+            {errors.name && (
+              <p className="text-red-600 text-sm mt-1">{errors.name}</p>
+            )}
           </div>
-          {errors.name && (
-            <p className="text-red-600 text-sm mt-1 ml-[165px]">
-              {errors.name}
-            </p>
-          )}
         </div>
 
         {/* Username */}
-        <div>
-          <div className="flex items-center">
-            <label className="w-40 text-sm font-medium">
-              Username <span className="text-red-500">*</span>
-            </label>
-            <span className="mr-2">:</span>
+        <div className="grid grid-cols-[160px_10px_1fr] items-start gap-2">
+          <label className="text-sm font-medium">
+            Username <span className="text-red-500">*</span>
+          </label>
+          <span>:</span>
+          <div>
             <input
               type="text"
               name="username"
@@ -108,34 +144,30 @@ const ProfilePage = () => {
               onChange={handleChange}
               className="border rounded px-3 py-1 w-full text-sm"
             />
+            {errors.username && (
+              <p className="text-red-600 text-sm mt-1">{errors.username}</p>
+            )}
           </div>
-          {errors.username && (
-            <p className="text-red-600 text-sm mt-1 ml-[165px]">
-              {errors.username}
-            </p>
-          )}
         </div>
 
         {/* Email */}
-        <div>
-          <div className="flex items-center">
-            <label className="w-40 text-sm font-medium">
-              Email <span className="text-red-500">*</span>
-            </label>
-            <span className="mr-2">:</span>
+        <div className="grid grid-cols-[160px_10px_1fr] items-start gap-2">
+          <label className="text-sm font-medium">
+            Email <span className="text-red-500">*</span>
+          </label>
+          <span>:</span>
+          <div>
             <input
-              type="email"
+              type="text"
               name="email"
               value={formData.email}
               onChange={handleChange}
               className="border rounded px-3 py-1 w-full text-sm"
             />
+            {errors.email && (
+              <p className="text-red-600 text-sm mt-1">{errors.email}</p>
+            )}
           </div>
-          {errors.email && (
-            <p className="text-red-600 text-sm mt-1 ml-[165px]">
-              {errors.email}
-            </p>
-          )}
         </div>
       </div>
 
