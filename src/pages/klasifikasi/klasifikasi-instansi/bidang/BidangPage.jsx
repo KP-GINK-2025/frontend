@@ -110,15 +110,14 @@ const BidangPage = () => {
         await api.post("/klasifikasi-instansi/bidang", bidangToSave);
       }
       alert("Data berhasil disimpan!");
+      handleCloseAddModal(); // Tutup modal
+      handleRefresh(); // Panggil refresh untuk mengambil data terbaru
     } catch (error) {
       console.error(
         "Gagal simpan bidang:",
         error.response?.data || error.message
       );
       alert("Gagal menyimpan data bidang. Cek console untuk detail.");
-    } finally {
-      handleCloseAddModal(); // Tutup modal
-      handleRefresh(); // Panggil refresh untuk mengambil data terbaru
     }
   };
 
