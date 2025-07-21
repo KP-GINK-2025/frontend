@@ -5,6 +5,7 @@ import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import AddBidangModal from "./AddBidangModal";
 import DataTable from "../../../../components/DataTable";
+import Swal from "sweetalert2";
 
 const BidangPage = () => {
   // --- State untuk Data dan Filter ---
@@ -130,18 +131,40 @@ const BidangPage = () => {
   };
 
   const handleDeleteClick = async (id) => {
-    const konfirmasi = window.confirm(
-      "Apakah Anda yakin ingin menghapus data ini?"
-    );
-    if (!konfirmasi) return;
+    const result = await Swal.fire({
+      title: "Yakin ingin menghapus data ini?",
+      text: "Data yang dihapus tidak dapat dikembalikan.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#aaa",
+      confirmButtonText: "Ya, hapus",
+      cancelButtonText: "Batal",
+    });
+
+    if (!result.isConfirmed) return;
 
     try {
       await api.delete(`/klasifikasi-instansi/bidang/${id}`);
       console.log("Berhasil menghapus bidang dengan ID:", id);
-      handleRefresh(); // Refresh data setelah hapus
+
+      Swal.fire({
+        title: "Berhasil!",
+        text: "Data berhasil dihapus.",
+        icon: "success",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+
+      handleRefresh(); // Refresh data
     } catch (error) {
       console.error("Gagal menghapus bidang:", error);
-      alert("Gagal menghapus bidang. Cek console untuk detail.");
+
+      Swal.fire({
+        title: "Gagal!",
+        text: "Terjadi kesalahan saat menghapus data.",
+        icon: "error",
+      });
     }
   };
 

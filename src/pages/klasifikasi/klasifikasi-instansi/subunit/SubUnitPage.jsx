@@ -5,6 +5,7 @@ import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import AddSubUnitModal from "./AddSubUnitModal";
 import DataTable from "../../../../components/DataTable";
+import Swal from "sweetalert2";
 
 // Custom hook untuk mengelola data bidang
 const useBidangData = () => {
@@ -316,22 +317,40 @@ const SubUnitPage = () => {
   };
 
   const handleDeleteClick = async (id) => {
-    if (!window.confirm("Apakah Anda yakin ingin menghapus data ini?")) return;
+    const result = await Swal.fire({
+      title: "Yakin ingin menghapus data ini?",
+      text: "Data yang dihapus tidak dapat dikembalikan.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#aaa",
+      confirmButtonText: "Ya, hapus",
+      cancelButtonText: "Batal",
+    });
+
+    if (!result.isConfirmed) return;
 
     try {
       await api.delete(`/klasifikasi-instansi/subunit/${id}`);
-      fetchSubUnitData({
-        page: paginationModel.page + 1,
-        pageSize: paginationModel.pageSize,
-        search: debouncedSearchTerm,
-        unitId: selectedUnit,
+      console.log("Berhasil menghapus sub unit dengan ID:", id);
+
+      Swal.fire({
+        title: "Berhasil!",
+        text: "Data berhasil dihapus.",
+        icon: "success",
+        timer: 1500,
+        showConfirmButton: false,
       });
+
+      handleRefresh(); // Refresh data
     } catch (error) {
-      console.error(
-        "Gagal menghapus sub unit:",
-        error.response?.data || error.message
-      );
-      alert("Gagal menghapus data. Cek konsol untuk detail.");
+      console.error("Gagal menghapus sub unit:", error);
+
+      Swal.fire({
+        title: "Gagal!",
+        text: "Terjadi kesalahan saat menghapus data.",
+        icon: "error",
+      });
     }
   };
 

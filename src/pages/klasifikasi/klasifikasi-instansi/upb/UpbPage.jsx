@@ -5,6 +5,7 @@ import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import AddUpbModal from "./AddUpbModal";
 import DataTable from "../../../../components/DataTable";
+import Swal from "sweetalert2";
 
 const UpbPage = () => {
   // --- State untuk Data dan Filter ---
@@ -274,16 +275,40 @@ const UpbPage = () => {
   };
 
   const handleDeleteClick = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this data?")) return;
+    const result = await Swal.fire({
+      title: "Yakin ingin menghapus data ini?",
+      text: "Data yang dihapus tidak dapat dikembalikan.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#aaa",
+      confirmButtonText: "Ya, hapus",
+      cancelButtonText: "Batal",
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
       await api.delete(`/klasifikasi-instansi/upb/${id}`);
-      fetchUpbData(); // Refresh table data after deletion
+      console.log("Berhasil menghapus UPB dengan ID:", id);
+
+      Swal.fire({
+        title: "Berhasil!",
+        text: "Data berhasil dihapus.",
+        icon: "success",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+
+      handleRefresh(); // Refresh data
     } catch (error) {
-      console.error(
-        "Failed to delete UPB:",
-        error.response?.data || error.message
-      );
-      alert("Failed to delete data. Check console for details.");
+      console.error("Gagal menghapus UPB:", error);
+
+      Swal.fire({
+        title: "Gagal!",
+        text: "Terjadi kesalahan saat menghapus data.",
+        icon: "error",
+      });
     }
   };
 
