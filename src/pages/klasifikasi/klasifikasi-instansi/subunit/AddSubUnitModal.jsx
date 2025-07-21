@@ -155,7 +155,10 @@ const AddSubUnitModal = ({ isOpen, onClose, onSave, initialData }) => {
               options={unitOptions}
               value={selectedUnit}
               onChange={setSelectedUnit}
-              onInputChange={loadUnitOptions}
+              onInputChange={(newValue) => {
+                loadUnitOptions(newValue);
+                return newValue;
+              }}
               isLoading={isLoadingUnit}
               placeholder="Ketik untuk mencari ID atau Nama..."
               isClearable
