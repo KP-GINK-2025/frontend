@@ -1,7 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import AuthButton from "./AuthButton"; // Import AuthButton
 
 const UserDropdown = ({
   storedUser,
@@ -13,7 +12,36 @@ const UserDropdown = ({
 }) => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
-  const dropdownRef = useRef(null); // Ref for the dropdown container
+  const dropdownRef = useRef(null);
+
+  const handleLogout = () => {
+    Swal.fire({
+      title: "Apakah Anda yakin?",
+      text: "Anda akan keluar dari sistem!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#B53C3C",
+      cancelButtonColor: "#6c757d",
+      confirmButtonText: "Ya, Logout",
+      cancelButtonText: "Batal",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        localStorage.setItem(
+          "user",
+          JSON.stringify({ ...storedUser, isLoggedIn: false })
+        );
+        navigate("/");
+
+        Swal.fire({
+          position: "center",
+          icon: "success",
+          title: "Logout berhasil",
+          showConfirmButton: false,
+          timer: 1500,
+        });
+      }
+    });
+  };
 
   const handleChangePhoto = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -95,7 +123,6 @@ const UserDropdown = ({
     reader.readAsDataURL(file);
   };
 
-  // Handle click outside to close dropdown
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -123,13 +150,7 @@ const UserDropdown = ({
       {isDropdownOpen && (
         <div className="absolute top-full right-0 z-50 min-w-64 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden">
           <div className="bg-[#B53C3C] flex flex-col items-center py-4 gap-2">
-            <div
-              className="cursor-pointer"
-              onClick={() => {
-                // Trigger image preview from parent (Navbar)
-                // You'll pass a prop down from Navbar to handle this
-              }}
-            >
+            <div className="cursor-pointer">
               <img
                 src={avatarSrc}
                 alt="User Avatar"
@@ -140,14 +161,16 @@ const UserDropdown = ({
             <div className="flex gap-2 mt-2">
               <button
                 onClick={handleChangePhoto}
-                className="bg-red bg-opacity-20 border border-white border-opacity-30 text-white px-2 py-1 rounded text-xs cursor-pointer transition-all duration-200 hover:bg-opacity-30 hover:border-opacity-50"
+                className="bg-red bg-opacity-20 border border-white border-opacity-30 text-white px-2 py-1 rounded text-xs cursor-pointer transition-all duration-200 hover:bg-white hover:text-[#B53C3C] hover:border-[#B53C3C]"
+
               >
                 Change Photo
               </button>
               {(avatarPreview || storedUser.avatar) && (
                 <button
                   onClick={handleDeletePhoto}
-                  className="bg-red bg-opacity-20 border border-white border-opacity-30 text-white px-2 py-1 rounded text-xs cursor-pointer transition-all duration-200 hover:bg-opacity-30 hover:border-opacity-50"
+                  className="bg-red bg-opacity-20 border border-white border-opacity-30 text-white px-2 py-1 rounded text-xs cursor-pointer transition-all duration-200 hover:bg-white hover:text-[#B53C3C] hover:border-[#B53C3C]"
+
                 >
                   Delete Photo
                 </button>
@@ -165,8 +188,12 @@ const UserDropdown = ({
             >
               Profile
             </button>
-            <AuthButton storedUser={storedUser} />{" "}
-            {/* Menggunakan komponen AuthButton */}
+            <button
+              onClick={handleLogout}
+              className="flex-1 px-3 py-2 border border-[#B53C3C] text-[#B53C3C] rounded hover:bg-[#B53C3C] hover:text-white transition-all duration-200 text-sm cursor-pointer"
+            >
+              Logout
+            </button>
           </div>
         </div>
       )}

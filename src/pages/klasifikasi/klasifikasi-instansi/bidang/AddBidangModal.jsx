@@ -191,6 +191,7 @@ const AddBidangModal = ({ isOpen, onClose, onSave, initialData }) => {
                   options={kabupatenOptions}
                   value={selectedKabupaten}
                   onChange={setSelectedKabupaten}
+
                   onInputChange={(newValue) => {
                     loadKabupatenOptions(newValue);
                     return newValue;
