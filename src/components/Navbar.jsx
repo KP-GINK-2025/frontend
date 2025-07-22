@@ -42,10 +42,14 @@ const Navbar = () => {
             className="w-12 h-auto"
             draggable="false"
           />
-          <h1 className="text-xs md:text-md lg:text-lg font-semibold">
+          <h1 className="text-xs md:text-md lg:text-lg font-semibold leading-snug">
             E-REKON
             <br />
-            KABUPATEN TANGGAMUS
+            <span className="block sm:inline">
+              KABUPATEN<span className="sm:inline hidden">&nbsp;</span>
+              <br className="sm:hidden" />
+              TANGGAMUS
+            </span>
           </h1>
         </div>
 
@@ -58,6 +62,7 @@ const Navbar = () => {
           isDropdownOpen={isDropdownOpen}
         />
       </div>
+
     </>
   );
 };

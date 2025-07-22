@@ -19,6 +19,7 @@
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.6",
     "lucide-react": "^0.522.0",
+    "motion": "^12.23.6",
     "prop-types": "^15.8.1",
     "react": "^19.1.0",
     "react-datepicker": "^8.4.0",

@@ -162,6 +162,7 @@ const UserDropdown = ({
               <button
                 onClick={handleChangePhoto}
                 className="bg-red bg-opacity-20 border border-white border-opacity-30 text-white px-2 py-1 rounded text-xs cursor-pointer transition-all duration-200 hover:bg-white hover:text-[#B53C3C] hover:border-[#B53C3C]"
+
               >
                 Change Photo
               </button>
@@ -169,6 +170,7 @@ const UserDropdown = ({
                 <button
                   onClick={handleDeletePhoto}
                   className="bg-red bg-opacity-20 border border-white border-opacity-30 text-white px-2 py-1 rounded text-xs cursor-pointer transition-all duration-200 hover:bg-white hover:text-[#B53C3C] hover:border-[#B53C3C]"
+
                 >
                   Delete Photo
                 </button>

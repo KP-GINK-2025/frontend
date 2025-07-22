@@ -141,19 +141,37 @@ const UnitPage = () => {
     try {
       if (unitToSave.id) {
         await api.patch(`/klasifikasi-instansi/unit/${unitToSave.id}`, payload);
-        alert("Unit data successfully updated!");
+        Swal.fire({
+          title: "Berhasil Edit",
+          text: "Data berhasil diubah.",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
+        });
       } else {
         await api.post("/klasifikasi-instansi/unit", payload);
-        alert("Unit data successfully added!");
+        Swal.fire({
+          title: "Berhasil Add",
+          text: "Data berhasil ditambah.",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
+        });
       }
       handleRefresh();
       handleCloseAddModal();
     } catch (error) {
       console.error(
-        "Failed to save unit:",
+        "Gagal simpan unit:",
         error.response?.data || error.message
       );
-      alert("Failed to save unit. Check console for details.");
+      Swal.fire({
+        title: "Gagal",
+        text: "Data tidak dapat disimpan.",
+        icon: "error",
+        timer: 1500,
+        showConfirmButton: false,
+      });
     }
   };
 
@@ -171,7 +189,7 @@ const UnitPage = () => {
       text: "Data yang dihapus tidak dapat dikembalikan.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#d33",
+      confirmButtonColor: "#e53935",
       cancelButtonColor: "#aaa",
       confirmButtonText: "Ya, hapus",
       cancelButtonText: "Batal",
@@ -182,21 +200,18 @@ const UnitPage = () => {
     try {
       await api.delete(`/klasifikasi-instansi/unit/${id}`);
       console.log("Berhasil menghapus unit dengan ID:", id);
-
       Swal.fire({
-        title: "Berhasil!",
+        title: "Berhasil Delete",
         text: "Data berhasil dihapus.",
         icon: "success",
         timer: 1500,
         showConfirmButton: false,
       });
-
-      handleRefresh(); // Refresh data
+      handleRefresh();
     } catch (error) {
       console.error("Gagal menghapus unit:", error);
-
       Swal.fire({
-        title: "Gagal!",
+        title: "Gagal",
         text: "Terjadi kesalahan saat menghapus data.",
         icon: "error",
       });

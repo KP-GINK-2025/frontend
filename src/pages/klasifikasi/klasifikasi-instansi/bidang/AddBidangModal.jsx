@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Select from "react-select";
 import api from "../../../../api/axios";
 import { motion, AnimatePresence } from "framer-motion";
+import Swal from "sweetalert2";
 
 const AddBidangModal = ({ isOpen, onClose, onSave, initialData }) => {
   const [kodeBidang, setKodeBidang] = useState("");
@@ -97,7 +98,12 @@ const AddBidangModal = ({ isOpen, onClose, onSave, initialData }) => {
       !namaBidang.trim() ||
       !kode.trim()
     ) {
-      alert("Harap lengkapi semua field yang wajib diisi (*).");
+      Swal.fire({
+        text: "Harap lengkapi semua field yang wajib diisi (*)",
+        icon: "info",
+        timer: 2500,
+        showConfirmButton: false,
+      });
       return;
     }
     const dataToSave = {
@@ -115,7 +121,12 @@ const AddBidangModal = ({ isOpen, onClose, onSave, initialData }) => {
         await onSave(dataToSave);
       }
     } catch (err) {
-      alert("Terjadi kesalahan saat menyimpan data.");
+      // alert("Terjadi kesalahan saat menyimpan data.");
+      Swal.fire({
+        title: "Gagal",
+        text: "Terjadi kesalahan saat menyimpan data.",
+        icon: "error",
+      });
       console.error("Gagal menyimpan: ", err);
     } finally {
       setIsSaving(false); // Selesai loading
@@ -162,7 +173,6 @@ const AddBidangModal = ({ isOpen, onClose, onSave, initialData }) => {
               </button>
             </div>
 
-
             <form
               onSubmit={handleSubmit}
               className="max-h-[calc(100vh-220px)] overflow-y-auto pr-2 pb-4"
@@ -181,10 +191,11 @@ const AddBidangModal = ({ isOpen, onClose, onSave, initialData }) => {
                   options={kabupatenOptions}
                   value={selectedKabupaten}
                   onChange={setSelectedKabupaten}
-                onInputChange={(newValue) => {
-                loadKabupatenOptions(newValue);
-                return newValue;
-              }}
+
+                  onInputChange={(newValue) => {
+                    loadKabupatenOptions(newValue);
+                    return newValue;
+                  }}
                   isLoading={isLoadingKabupaten}
                   placeholder="Ketik untuk mencari ID atau Nama..."
                   isClearable
@@ -195,7 +206,6 @@ const AddBidangModal = ({ isOpen, onClose, onSave, initialData }) => {
                   }
                 />
               </div>
-
 
               <div className="mb-4">
                 <label
