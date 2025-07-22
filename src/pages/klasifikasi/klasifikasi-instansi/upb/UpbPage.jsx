@@ -1,301 +1,301 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import api from "../../../../api/axios";
 import Navbar from "../../../../components/Navbar";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
-import AddUpbModal from "./AddUpbModal";
 import DataTable from "../../../../components/DataTable";
+import AddUpbModal from "./AddUpbModal";
+import Swal from "sweetalert2";
 
 const UpbPage = () => {
-  // --- State untuk Data dan Filter ---
-  const [searchTerm, setSearchTerm] = useState("");
   const [upbData, setUpbData] = useState([]);
-  const [bidangList, setBidangList] = useState([]);
-  const [unitList, setUnitList] = useState([]);
-  const [subUnitList, setSubUnitList] = useState([]);
-
-  const [selectedBidang, setSelectedBidang] = useState("");
-  const [selectedUnit, setSelectedUnit] = useState("");
-  const [selectedSubUnit, setSelectedSubUnit] = useState("");
-
-  // --- State untuk UI dan Paginasi ---
   const [loading, setLoading] = useState(true);
   const [totalRows, setTotalRows] = useState(0);
+
+  // Filter and search state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [selectedBidang, setSelectedBidang] = useState("");
+  const [bidangList, setBidangList] = useState([]);
+  const [selectedUnit, setSelectedUnit] = useState("");
+  const [unitList, setUnitList] = useState([]);
+  const [selectedSubUnit, setSelectedSubUnit] = useState("");
+  const [subUnitList, setSubUnitList] = useState([]);
+
+  // Modal state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingUpb, setEditingUpb] = useState(null);
 
+  // Pagination state
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
     pageSize: 10,
   });
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // --- Fungsi Fetching Data Dropdown (memoized dengan useCallback) ---
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
 
-  const fetchBidangList = useCallback(async () => {
-    try {
-      const params = { per_page: 1000 };
-      const res = await api.get("/klasifikasi-instansi/bidang", { params });
-      const sorted = (res.data.data || [])
-        .map((b) => ({
-          id: b.id,
-          kode_bidang: b.kode_bidang,
-          nama_bidang: b.nama_bidang,
-          full_name: `${b.kode_bidang} - ${b.nama_bidang}`,
-        }))
-        .sort((a, b) => parseFloat(a.kode_bidang) - parseFloat(b.kode_bidang));
-      setBidangList(sorted);
-    } catch (err) {
-      console.error("Error fetching bidang list:", err);
-      setBidangList([]);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    if (
+      debouncedSearchTerm ||
+      selectedBidang ||
+      selectedUnit ||
+      selectedSubUnit
+    ) {
+      setPaginationModel((prev) => ({ ...prev, page: 0 }));
     }
+  }, [debouncedSearchTerm, selectedBidang, selectedUnit, selectedSubUnit]);
+
+  // Fetch bidang list (static data)
+  useEffect(() => {
+    const fetchBidangList = async () => {
+      try {
+        const response = await api.get("/klasifikasi-instansi/bidang", {
+          params: { per_page: 1000 },
+        });
+
+        const sortedBidang = response.data.data
+          .map((bidang) => ({
+            id: bidang.id,
+            kode_bidang: bidang.kode_bidang,
+            nama_bidang: bidang.nama_bidang,
+          }))
+          .sort((a, b) =>
+            a.kode_bidang.localeCompare(b.kode_bidang, undefined, {
+              numeric: true,
+            })
+          );
+
+        setBidangList(sortedBidang);
+      } catch (error) {
+        console.error("Gagal mendapatkan bidang list:", error);
+      }
+    };
+
+    fetchBidangList();
   }, []);
 
-  const fetchUnitList = useCallback(async (bidangId = "") => {
-    try {
-      const params = { per_page: 1000 };
-      if (bidangId) {
-        params.bidang_id = bidangId;
+  useEffect(() => {
+    const fetchUnitList = async () => {
+      try {
+        const response = await api.get("/klasifikasi-instansi/unit", {
+          params: { per_page: 1000 },
+        });
+
+        const sortedUnit = response.data.data
+          .map((unit) => ({
+            id: unit.id,
+            kode_unit: unit.kode_unit,
+            nama_unit: unit.nama_unit,
+          }))
+          .sort((a, b) =>
+            a.kode_unit.localeCompare(b.kode_unit, undefined, {
+              numeric: true,
+            })
+          );
+
+        setUnitList(sortedUnit);
+      } catch (error) {
+        console.error("Gagal mendapatkan unit list:", error);
       }
-      const res = await api.get("/klasifikasi-instansi/unit", { params });
-      const sorted = (res.data.data || [])
-        .map((u) => ({
-          id: u.id,
-          kode_unit: u.kode_unit,
-          nama_unit: u.nama_unit,
-          full_name: `${u.kode_unit} - ${u.nama_unit}`,
-        }))
-        .sort((a, b) => parseFloat(a.kode_unit) - parseFloat(b.kode_unit));
-      setUnitList(sorted);
-    } catch (err) {
-      console.error("Error fetching unit list:", err);
-      setUnitList([]);
-    }
+    };
+
+    fetchUnitList();
   }, []);
 
-  const fetchSubUnitList = useCallback(async (unitId = "") => {
-    try {
-      const params = { per_page: 1000 };
-      if (unitId) {
-        params.unit_id = unitId;
+  useEffect(() => {
+    const fetchSubUnitList = async () => {
+      try {
+        const response = await api.get("/klasifikasi-instansi/subunit", {
+          params: { per_page: 1000 },
+        });
+
+        const sortedSubUnit = response.data.data
+          .map((subUnit) => ({
+            id: subUnit.id,
+            kode_sub_unit: subUnit.kode_sub_unit,
+            nama_sub_unit: subUnit.nama_sub_unit,
+          }))
+          .sort((a, b) =>
+            a.kode_sub_unit.localeCompare(b.kode_sub_unit, undefined, {
+              numeric: true,
+            })
+          );
+
+        setSubUnitList(sortedSubUnit);
+      } catch (error) {
+        console.error("Gagal mendapatkan subunit list:", error);
       }
-      const res = await api.get("/klasifikasi-instansi/subunit", { params });
-      const sorted = (res.data.data || [])
-        .map((s) => ({
-          id: s.id,
-          kode_sub_unit: s.kode_sub_unit,
-          nama_sub_unit: s.nama_sub_unit,
-          full_name: `${s.kode_sub_unit} - ${s.nama_sub_unit}`,
-        }))
-        .sort(
-          (a, b) => parseFloat(a.kode_sub_unit) - parseFloat(b.kode_sub_unit)
+    };
+
+    fetchSubUnitList();
+  }, []);
+
+  // Fetch upb data
+  useEffect(() => {
+    const fetchUpbData = async () => {
+      setLoading(true);
+
+      try {
+        const params = new URLSearchParams({
+          page: paginationModel.page + 1,
+          per_page: paginationModel.pageSize,
+        });
+
+        if (debouncedSearchTerm) {
+          params.append("search", debouncedSearchTerm);
+        }
+
+        if (selectedBidang) {
+          params.append("bidang_id", selectedBidang);
+        }
+
+        if (selectedUnit) {
+          params.append("unit_id", selectedUnit);
+        }
+
+        if (selectedSubUnit) {
+          params.append("sub_unit_id", selectedSubUnit);
+        }
+
+        const response = await api.get(
+          `/klasifikasi-instansi/upb?${params.toString()}`
         );
-      setSubUnitList(sorted);
-    } catch (err) {
-      console.error("Error fetching sub unit list:", err);
-      setSubUnitList([]);
-    }
-  }, []);
 
-  // --- Fungsi Fetching Data UPB Utama (memoized dengan useCallback) ---
-  const fetchUpbData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = {
-        page: paginationModel.page + 1,
-        per_page: paginationModel.pageSize,
-        search: searchTerm,
-        bidang_id: selectedBidang || undefined,
-        unit_id: selectedUnit || undefined,
-        sub_unit_id: selectedSubUnit || undefined,
-      };
+        setUpbData(response.data.data);
+        setTotalRows(response.data.meta.total);
+      } catch (error) {
+        console.error("Gagal mendapatkan upb data:", error);
+        setUpbData([]);
+        setTotalRows(0);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      const response = await api.get("/klasifikasi-instansi/upb", { params });
-
-      // Mapping data untuk tampilan tabel
-      const mappedData = (response.data.data || []).map((item) => ({
-        id: item.id,
-        // Pastikan path akses ke properti nested sesuai dengan struktur API Anda
-        bidang: item.sub_unit?.unit?.bidang
-          ? `${item.sub_unit.unit.bidang.kode_bidang} - ${item.sub_unit.unit.bidang.nama_bidang}`
-          : "-",
-        unit: item.sub_unit?.unit
-          ? `${item.sub_unit.unit.kode_unit} - ${item.sub_unit.unit.nama_unit}`
-          : "-",
-        subUnit: item.sub_unit
-          ? `${item.sub_unit.kode_sub_unit} - ${item.sub_unit.nama_sub_unit}`
-          : "-",
-        kodeUpb: item.kode_upb || "-",
-        namaUpb: item.nama_upb || "-",
-        kode: item.kode || "-",
-      }));
-
-      setUpbData(mappedData);
-      setTotalRows(response.data.meta.total);
-    } catch (error) {
-      console.error("Error fetching UPB data:", error);
-      setUpbData([]);
-      setTotalRows(0);
-    } finally {
-      setLoading(false);
-    }
+    fetchUpbData();
   }, [
-    paginationModel.page,
-    paginationModel.pageSize,
-    searchTerm,
+    paginationModel,
+    debouncedSearchTerm,
     selectedBidang,
     selectedUnit,
     selectedSubUnit,
+    refreshTrigger,
   ]);
 
-  // --- useEffect Hooks untuk Kontrol Lifecycle dan Data Fetching ---
-
-  // Initial data load for Bidang dropdown
-  useEffect(() => {
-    fetchBidangList();
-  }, [fetchBidangList]);
-
-  // Handle Bidang selection change: fetch Unit list and reset dependent selections
-  useEffect(() => {
-    if (selectedBidang) {
-      fetchUnitList(selectedBidang);
-    } else {
-      setUnitList([]);
-    }
-    // Always reset dependent dropdowns when parent changes
-    setSelectedUnit("");
-    setSelectedSubUnit("");
-    setSubUnitList([]); // Clear SubUnit list when Bidang changes
-  }, [selectedBidang, fetchUnitList]);
-
-  // Handle Unit selection change: fetch Sub Unit list and reset dependent selection
-  useEffect(() => {
-    if (selectedUnit) {
-      fetchSubUnitList(selectedUnit);
-    } else {
-      setSubUnitList([]);
-    }
-    // Always reset dependent dropdown when parent changes
-    setSelectedSubUnit("");
-  }, [selectedUnit, fetchSubUnitList]);
-
-  // Fetch UPB data whenever filters or pagination model changes
-  useEffect(() => {
-    fetchUpbData();
-  }, [fetchUpbData]);
-
-  // Debounce search term to prevent excessive API calls
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      setPaginationModel((prev) => ({ ...prev, page: 0 })); // Reset page on search
-    }, 500); // 500ms delay
-
-    return () => clearTimeout(timeoutId); // Cleanup timeout on unmount or re-render
-  }, [searchTerm]);
-
-  // --- Handler Fungsi ---
-
+  // Event handlers
   const handleRefresh = () => {
-    setSearchTerm("");
-    setSelectedBidang("");
-    setSelectedUnit("");
-    setSelectedSubUnit("");
-    setPaginationModel((prev) => ({ ...prev, page: 0 })); // Reset page on refresh
-
-    // Re-fetch all initial data
-    fetchBidangList();
-    setUnitList([]); // Clear dependent lists
-    setSubUnitList([]);
+    setRefreshTrigger((prev) => prev + 1);
   };
 
   const handleExport = () => {
-    console.log("Exporting UPB data...");
-    // Implement your export logic here (e.g., call an export API or generate CSV)
+    console.log("Exporting subunit data...");
   };
 
   const handleOpenAddModal = () => {
-    setEditingUpb(null); // Clear any previous editing data
+    setEditingUpb(null);
     setIsAddModalOpen(true);
   };
 
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
-    setEditingUpb(null); // Clear editing state after modal closes
-    fetchUpbData(); // Refresh table data after add/edit
+    setEditingUpb(null);
   };
 
-  const handleSaveNewUpb = async (upbToSave) => {
-    try {
-      const payload = {
-        sub_unit_id: upbToSave.sub_unit_id,
-        kode_upb: upbToSave.kode_upb,
-        nama_upb: upbToSave.nama_upb,
-        kode: upbToSave.kode,
-      };
+  const handleSaveUpb = async (upbToSave) => {
+    const payload = {
+      sub_unit_id: upbToSave.sub_unit_id,
+      kode_upb: upbToSave.kode_upb,
+      nama_upb: upbToSave.nama_upb,
+      kode: upbToSave.kode,
+    };
 
+    try {
       if (upbToSave.id) {
-        await api.put(`/klasifikasi-instansi/upb/${upbToSave.id}`, payload);
+        await api.patch(`/klasifikasi-instansi/upb/${upbToSave.id}`, payload);
+        Swal.fire({
+          title: "Berhasil Edit",
+          text: "Data berhasil diubah.",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
+        });
       } else {
         await api.post("/klasifikasi-instansi/upb", payload);
+        Swal.fire({
+          title: "Berhasil Add",
+          text: "Data berhasil ditambah.",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
+        });
       }
-      handleCloseAddModal(); // Close modal and refresh data
+      handleRefresh();
+      handleCloseAddModal();
     } catch (error) {
-      console.error(
-        "Failed to save UPB data:",
-        error.response?.data || error.message
-      );
-      alert("Failed to save data. Check console for details.");
+      console.error("Gagal simpan upb:", error.response?.data || error.message);
+      Swal.fire({
+        title: "Gagal",
+        text: "Data tidak dapat disimpan.",
+        icon: "error",
+        timer: 1500,
+        showConfirmButton: false,
+      });
     }
   };
 
-  const handleEditClick = async (id) => {
-    setLoading(true);
-    try {
-      const response = await api.get(`/klasifikasi-instansi/upb/${id}`);
-      const dataToEdit = response.data.data;
-
-      // Map API response to modal's expected initialData format
-      const mappedForEdit = {
-        id: dataToEdit.id,
-        sub_unit_id: dataToEdit.sub_unit_id,
-        unit_id: dataToEdit.sub_unit?.unit_id || "",
-        bidang_id: dataToEdit.sub_unit?.unit?.bidang_id || "",
-        kode_upb: dataToEdit.kode_upb,
-        nama_upb: dataToEdit.nama_upb,
-        kode: dataToEdit.kode,
-      };
-      setEditingUpb(mappedForEdit);
+  const handleEditClick = (id) => {
+    const upbToEdit = upbData.find((item) => item.id === id);
+    if (upbToEdit) {
+      setEditingUpb(upbToEdit);
       setIsAddModalOpen(true);
-    } catch (error) {
-      console.error("Failed to fetch UPB data for editing:", error);
-      alert("Failed to load data for editing.");
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleDeleteClick = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this data?")) return;
+    const result = await Swal.fire({
+      title: "Yakin ingin menghapus data ini?",
+      text: "Data yang dihapus tidak dapat dikembalikan.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#e53935",
+      cancelButtonColor: "#aaa",
+      confirmButtonText: "Ya, hapus",
+      cancelButtonText: "Batal",
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
       await api.delete(`/klasifikasi-instansi/upb/${id}`);
-      fetchUpbData(); // Refresh table data after deletion
+      console.log("Berhasil menghapus upb dengan ID:", id);
+      Swal.fire({
+        title: "Berhasil Delete",
+        text: "Data berhasil dihapus.",
+        icon: "success",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+      handleRefresh();
     } catch (error) {
-      console.error(
-        "Failed to delete UPB:",
-        error.response?.data || error.message
-      );
-      alert("Failed to delete data. Check console for details.");
+      console.error("Gagal menghapus upb:", error);
+      Swal.fire({
+        title: "Gagal",
+        text: "Terjadi kesalahan saat menghapus data.",
+        icon: "error",
+      });
     }
   };
 
-  const handlePageSizeChange = (e) => {
-    const newPageSize = Number(e.target.value);
-    setPaginationModel((prev) => ({
-      pageSize: newPageSize,
-      page: 0, // Reset to first page when page size changes
-    }));
-  };
-
-  // --- Konfigurasi Kolom DataTable ---
+  // Table columns configuration
   const columns = [
     {
       field: "no",
@@ -307,12 +307,80 @@ const UpbPage = () => {
         return paginationModel.page * paginationModel.pageSize + index + 1;
       },
     },
-    { field: "bidang", headerName: "Bidang", width: 180 },
-    { field: "unit", headerName: "Unit", width: 180 },
-    { field: "subUnit", headerName: "Sub Unit", width: 180 },
-    { field: "kodeUpb", headerName: "Kode UPB", width: 150 },
-    { field: "namaUpb", headerName: "Nama UPB", flex: 1 },
-    { field: "kode", headerName: "Kode", width: 120 },
+    {
+      field: "provinsi",
+      headerName: "Provinsi",
+      flex: 1,
+      minWidth: 250,
+      renderCell: (params) => {
+        const provinsi =
+          params.row.sub_unit?.unit?.bidang?.kabupaten_kota?.provinsi;
+        return provinsi
+          ? `${provinsi.kode_provinsi} - ${provinsi.nama_provinsi}`
+          : "N/A";
+      },
+    },
+    {
+      field: "kabupaten_kota",
+      headerName: "Kabupaten/Kota",
+      flex: 1,
+      minWidth: 250,
+      renderCell: (params) => {
+        const kabKot = params.row.sub_unit?.unit?.bidang?.kabupaten_kota;
+        return kabKot
+          ? `${kabKot.kode_kabupaten_kota} - ${kabKot.nama_kabupaten_kota}`
+          : "N/A";
+      },
+    },
+    {
+      field: "bidang",
+      headerName: "Bidang",
+      flex: 1,
+      minWidth: 250,
+      renderCell: (params) => {
+        const bidang = params.row.sub_unit?.unit?.bidang;
+        return bidang ? `${bidang.kode_bidang} - ${bidang.nama_bidang}` : "N/A";
+      },
+    },
+    {
+      field: "unit",
+      headerName: "Unit",
+      flex: 1,
+      minWidth: 250,
+      renderCell: (params) => {
+        const unit = params.row.sub_unit?.unit;
+        return unit ? `${unit.kode_unit} - ${unit.nama_unit}` : "N/A";
+      },
+    },
+    {
+      field: "sub_unit",
+      headerName: "Sub Unit",
+      flex: 1,
+      minWidth: 250,
+      renderCell: (params) => {
+        const subUnit = params.row.sub_unit;
+        return subUnit
+          ? `${subUnit.kode_sub_unit} - ${subUnit.nama_sub_unit}`
+          : "N/A";
+      },
+    },
+    {
+      field: "kode_upb",
+      headerName: "Kode UPB",
+      width: 150,
+    },
+    {
+      field: "nama_upb",
+      headerName: "Nama UPB",
+      flex: 1,
+      minWidth: 250,
+    },
+    {
+      field: "kode",
+      headerName: "Kode",
+      width: 100,
+    },
+
     {
       field: "action",
       headerName: "Action",
@@ -337,13 +405,14 @@ const UpbPage = () => {
     },
   ];
 
-  // --- Render UI ---
   return (
     <div className="min-h-screen bg-[#f7f7f7]">
       <Navbar />
+
       <div className="px-8 py-8">
         <Breadcrumbs />
 
+        {/* Export Button */}
         <div className="flex justify-end mt-4 mb-4">
           <button
             onClick={handleExport}
@@ -353,9 +422,11 @@ const UpbPage = () => {
           </button>
         </div>
 
+        {/* Main Content */}
         <div className="bg-white rounded-lg shadow-sm p-6">
+          {/* Header */}
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold">Daftar UPB</h1>
+            <h1 className="text-2xl font-bold text-gray-800">Daftar UPB</h1>
             <div className="flex gap-3">
               <button
                 onClick={handleRefresh}
@@ -365,142 +436,121 @@ const UpbPage = () => {
               </button>
               <button
                 onClick={handleOpenAddModal}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cbg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
                 <Plus size={16} /> Add UPB
               </button>
             </div>
           </div>
 
+          {/* Filters and Search */}
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-4">
-            <div className="flex flex-col gap-4 md:flex-row md:items-end flex-wrap">
-              {" "}
-              {/* Added flex-wrap for better responsiveness */}
-              {/* Filter Bidang */}
+            {/* Left: Filters */}
+            <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end">
+              {/* Bidang Filter */}
               <div className="flex items-center gap-2">
-                <label className="text-gray-800 font-semibold whitespace-nowrap">
-                  Bidang
-                </label>
                 <select
                   value={selectedBidang}
                   onChange={(e) => setSelectedBidang(e.target.value)}
-                  className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
+                  className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto cursor-pointer"
                 >
-                  <option value="">-- Pilih Bidang --</option>
-                  {bidangList.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.full_name}
+                  <option value="">-- Semua Bidang --</option>
+                  {bidangList.map((bidang) => (
+                    <option key={bidang.id} value={bidang.id}>
+                      {bidang.kode_bidang} - {bidang.nama_bidang}
                     </option>
                   ))}
                 </select>
               </div>
-              {/* Filter Unit */}
-              <div className="flex items-center gap-2">
-                <label className="text-gray-800 font-semibold whitespace-nowrap">
-                  Unit
-                </label>
+              <select
+                value={selectedUnit}
+                onChange={(e) => setSelectedUnit(e.target.value)}
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto cursor-pointer"
+              >
+                <option value="">-- Semua Unit --</option>
+                {unitList.map((unit) => (
+                  <option key={unit.id} value={unit.id}>
+                    {unit.kode_unit} - {unit.nama_unit}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={selectedSubUnit}
+                onChange={(e) => setSelectedSubUnit(e.target.value)}
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto cursor-pointer"
+              >
+                <option value="">-- Semua Sub Unit --</option>
+                {subUnitList.map((subUnit) => (
+                  <option key={subUnit.id} value={subUnit.id}>
+                    {subUnit.kode_sub_unit} - {subUnit.nama_sub_unit}
+                  </option>
+                ))}
+              </select>
+
+              {/* Page Size Selector */}
+              <div className="flex items-center gap-2 mt-2 md:mt-0">
+                <span className="text-gray-600 text-sm">Show</span>
                 <select
-                  value={selectedUnit}
-                  onChange={(e) => setSelectedUnit(e.target.value)}
-                  className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-                  // Disabling dropdown if parent is not selected or no options available
-                  disabled={!selectedBidang || unitList.length === 0}
+                  value={paginationModel.pageSize}
+                  onChange={(e) =>
+                    setPaginationModel({
+                      page: 0,
+                      pageSize: Number(e.target.value),
+                    })
+                  }
+                  className="border border-gray-300 rounded px-3 py-1 text-sm cursor-pointer"
                 >
-                  <option value="">-- Pilih Unit --</option>
-                  {unitList.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.full_name}
+                  {[5, 10, 25, 50, 75, 100].map((size) => (
+                    <option key={size} value={size}>
+                      {size}
                     </option>
                   ))}
                 </select>
-              </div>
-              {/* Filter Sub Unit */}
-              <div className="flex items-center gap-2">
-                <label className="text-gray-800 font-semibold whitespace-nowrap">
-                  Sub Unit
-                </label>
-                <select
-                  value={selectedSubUnit}
-                  onChange={(e) => setSelectedSubUnit(e.target.value)}
-                  className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-                  // Disabling dropdown if parent is not selected or no options available
-                  disabled={!selectedUnit || subUnitList.length === 0}
-                >
-                  <option value="">-- Pilih Sub Unit --</option>
-                  {subUnitList.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.full_name}
-                    </option>
-                  ))}
-                </select>
+                <span className="text-gray-600 text-sm">entries</span>
               </div>
             </div>
 
-            {/* Search Input */}
-            <div className="relative w-full md:w-64 flex items-center">
-              <Search className="absolute left-3 text-gray-400" size={16} />
+            {/* Right: Search */}
+            <div className="relative w-full md:w-64">
+              <Search
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={16}
+              />
               <input
                 type="text"
                 placeholder="Search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
               />
             </div>
           </div>
 
-          {/* Pagination and Entries Per Page */}
-          <div className="flex justify-between items-center mb-6 text-sm text-gray-600">
-            <div className="flex items-center gap-2">
-              Show
-              <select
-                value={paginationModel.pageSize}
-                onChange={handlePageSizeChange}
-                className="border border-gray-300 rounded px-2 py-1"
-              >
-                {[5, 10, 25, 50, 100].map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-              entries
-            </div>
-          </div>
-
-          {/* DataTable or Loading Indicator */}
-          {loading ? (
-            <div className="text-center py-8 text-gray-500">Loading...</div>
-          ) : (
-            <DataTable
-              // Key to force re-render DataTable when filters change
-              key={`datatable-${paginationModel.page}-${paginationModel.pageSize}-${searchTerm}-${selectedBidang}-${selectedUnit}-${selectedSubUnit}`}
-              rows={upbData}
-              columns={columns}
-              pageSizeOptions={[5, 10, 25, 50, 100]}
-              height={500}
-              emptyRowsMessage="No UPB data available"
-              paginationModel={paginationModel}
-              onPaginationModelChange={setPaginationModel}
-              rowCount={totalRows}
-              paginationMode="server"
-              disableRowSelectionOnClick
-              hideFooterSelectedRowCount
-            />
-          )}
+          {/* Data Table */}
+          <DataTable
+            rows={upbData}
+            columns={columns}
+            rowCount={totalRows}
+            loading={loading}
+            paginationMode="server"
+            filterMode="server"
+            pageSizeOptions={[5, 10, 25, 50, 75, 100]}
+            paginationModel={paginationModel}
+            onPaginationModelChange={setPaginationModel}
+            disableRowSelectionOnClick
+            hideFooterSelectedRowCount
+            height={500}
+            emptyRowsMessage="Tidak ada data UPB yang tersedia"
+          />
         </div>
       </div>
-      {/* Add/Edit UPB Modal */}
+
+      {/* Add/Edit Modal */}
       <AddUpbModal
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
-        onSave={handleSaveNewUpb}
+        onSave={handleSaveUpb}
         initialData={editingUpb}
-        bidangList={bidangList}
-        unitList={unitList}
-        subUnitList={subUnitList}
-        fetchUnitList={fetchUnitList} // Pass fetch functions for dynamic dropdowns in modal
-        fetchSubUnitList={fetchSubUnitList}
       />
     </div>
   );

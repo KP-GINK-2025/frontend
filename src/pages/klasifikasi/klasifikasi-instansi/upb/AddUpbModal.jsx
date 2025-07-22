@@ -1,72 +1,133 @@
 import React, { useState, useEffect } from "react";
+import Select from "react-select";
+import api from "../../../../api/axios";
+import { motion, AnimatePresence } from "framer-motion";
+import Swal from "sweetalert2";
 
 const AddUpbModal = ({ isOpen, onClose, onSave, initialData }) => {
-  const [provinsi, setProvinsi] = useState("");
-  const [kabKot, setKabKot] = useState("");
-  const [bidang, setBidang] = useState("");
-  const [unit, setUnit] = useState("");
-  const [subUnit, setSubUnit] = useState("");
   const [kodeUpb, setKodeUpb] = useState("");
   const [namaUpb, setNamaUpb] = useState("");
   const [kode, setKode] = useState("");
+  const [selectedSubUnit, setSelectedSubUnit] = useState(null);
+  const [subUnitOptions, setSubUnitOptions] = useState([]);
+  const [isLoadingSubUnit, setIsLoadingSubUnit] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    // Isi form jika ada initialData (mode edit)
-    if (isOpen && initialData) {
-      setProvinsi(initialData.provinsi || "");
-      setKabKot(initialData.kabKot || "");
-      setBidang(initialData.bidang || "");
-      setUnit(initialData.unit || "");
-      setSubUnit(initialData.subUnit || "");
-      setKodeUpb(initialData.kodeUpb || "");
-      setNamaUpb(initialData.namaUpb || "");
-      setKode(initialData.kode || "");
-    } else if (isOpen && !initialData) {
-      // Reset form jika tidak ada initialData (mode add baru)
-      setProvinsi("");
-      setKabKot("");
-      setBidang("");
-      setUnit("");
-      setSubUnit("");
-      setKodeUpb("");
-      setNamaUpb("");
-      setKode("");
+    if (isOpen) {
+      if (initialData) {
+        // --- MODE EDIT ---
+        setKodeUpb(initialData.kode_upb || "");
+        setNamaUpb(initialData.nama_upb || "");
+        setKode(initialData.kode || "");
+
+        // Cek apakah data sub unit sudah ada di `initialData`
+        if (initialData.sub_unit) {
+          // atau if (initialData.subUnit)
+          // Jika ya (dari eager loading atau frontend join), langsung gunakan
+          const subUnit = initialData.sub_unit;
+          const option = {
+            value: subUnit.id,
+            label: `${subUnit.kode_sub_unit} - ${subUnit.nama_sub_unit}`,
+          };
+          setSelectedSubUnit(option);
+          setSubUnitOptions([option]); // Set opsi awal
+        } else if (initialData.sub_unit_id) {
+          // Fallback: Jika hanya ada ID, fetch ke API (seperti sebelumnya)
+          setIsLoadingSubUnit(true);
+          api
+            .get(`/klasifikasi-instansi/subunit/${initialData.sub_unit_id}`)
+            .then((response) => {
+              const data = response.data.data;
+              const option = {
+                value: data.id,
+                label: `${data.kode_sub_unit} - ${data.nama_sub_unit}`,
+              };
+              setSelectedSubUnit(option);
+              setSubUnitOptions([option]);
+            })
+            .catch((error) =>
+              console.error("Gagal fetch initial unit data:", error)
+            )
+            .finally(() => setIsLoadingSubUnit(false));
+        } else {
+          setSelectedSubUnit(null);
+        }
+      } else {
+        // --- MODE TAMBAH BARU (Reset semua form) ---
+        setKodeUpb("");
+        setNamaUpb("");
+        setKode("");
+        setSelectedSubUnit(null);
+        setSubUnitOptions([]);
+      }
     }
   }, [isOpen, initialData]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    if (
-      !provinsi ||
-      !kabKot ||
-      !bidang ||
-      !unit ||
-      !subUnit ||
-      !kodeUpb ||
-      !namaUpb
-    ) {
-      alert("Harap lengkapi semua field yang wajib diisi (*).");
+  const loadSubUnitOptions = (inputValue) => {
+    if (!inputValue) {
       return;
     }
+    setIsLoadingSubUnit(true);
+    api
+      .get(`/klasifikasi-instansi/subunit?per_page=1000&search=${inputValue}`)
+      .then((response) => {
+        const formattedOptions = response.data.data.map((item) => ({
+          value: item.id,
+          label: `${item.kode_sub_unit} - ${item.nama_sub_unit}`,
+        }));
+        setSubUnitOptions(formattedOptions);
+      })
+      .catch((error) => {
+        console.error("Gagal cari data subunit:", error);
+        setSubUnitOptions([]);
+      })
+      .finally(() => {
+        setIsLoadingSubUnit(false);
+      });
+  };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (
+      !selectedSubUnit ||
+      !kodeUpb.trim() ||
+      !namaUpb.trim() ||
+      !kode.trim()
+    ) {
+      Swal.fire({
+        text: "Harap lengkapi semua field yang wajib diisi (*)",
+        icon: "info",
+        timer: 2500,
+        showConfirmButton: false,
+      });
+      return;
+    }
     const dataToSave = {
-      provinsi,
-      kabKot,
-      bidang,
-      unit,
-      subUnit,
-      kodeUpb,
-      namaUpb,
+      sub_unit_id: selectedSubUnit.value,
+      kode_upb: kodeUpb,
+      nama_upb: namaUpb,
       kode,
     };
 
-    if (initialData && initialData.id) {
-      onSave({ ...dataToSave, id: initialData.id }); // Sertakan ID untuk update
-    } else {
-      onSave(dataToSave); // Tanpa ID untuk penambahan baru
+    try {
+      setIsSaving(true); // Mulai state loading
+      if (initialData && initialData.id) {
+        await onSave({ ...dataToSave, id: initialData.id });
+      } else {
+        await onSave(dataToSave);
+      }
+    } catch (err) {
+      // alert("Terjadi kesalahan saat menyimpan data.");
+      Swal.fire({
+        title: "Gagal",
+        text: "Terjadi kesalahan saat menyimpan data.",
+        icon: "error",
+      });
+      console.error("Gagal menyimpan: ", err);
+    } finally {
+      setIsSaving(false); // Selesai loading
     }
-    onClose();
   };
 
   if (!isOpen) {
@@ -74,195 +135,153 @@ const AddUpbModal = ({ isOpen, onClose, onSave, initialData }) => {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="relative w-full max-w-lg p-6 bg-white rounded-lg shadow-lg">
-        <div className="flex items-center justify-between pb-4 mb-4 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-800">
-            {initialData ? "EDIT UPB" : "TAMBAH UPB"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-6 h-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
-
-        <form
-          onSubmit={handleSubmit}
-          className="max-h-[calc(100vh-180px)] overflow-y-auto pr-2 pb-4"
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          key="modal-backdrop"
+          className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/20"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
         >
-          <div className="mb-4">
-            <label htmlFor="provinsi" className="block mb-2 text-gray-700">
-              Provinsi: <span className="text-red-500">*</span>
-            </label>
-            <select
-              id="provinsi"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={provinsi}
-              onChange={(e) => setProvinsi(e.target.value)}
-              required
-            >
-              <option value="">- Pilih Provinsi -</option>
-              <option value="18 - Lampung">18 - Lampung</option>
-            </select>
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="kabKot" className="block mb-2 text-gray-700">
-              Kabupaten/Kota: <span className="text-red-500">*</span>
-            </label>
-            <select
-              id="kabKot"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={kabKot}
-              onChange={(e) => setKabKot(e.target.value)}
-              required
-            >
-              <option value="">- Pilih Kabupaten/Kota -</option>
-              <option value="0 - PEMERINTAH PROVINSI LAMPUNG">
-                0 - PEMERINTAH PROVINSI LAMPUNG
-              </option>
-            </select>
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="bidang" className="block mb-2 text-gray-700">
-              Bidang: <span className="text-red-500">*</span>
-            </label>
-            <select
-              id="bidang"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={bidang}
-              onChange={(e) => setBidang(e.target.value)}
-              required
-            >
-              <option value="">- Pilih Bidang -</option>
-              <option value="1 - Sekwan/DPRD">1 - Sekwan/DPRD</option>
-              <option value="2 - Gubernur/Bupati/Walikota">
-                2 - Gubernur/Bupati/Walikota
-              </option>
-              <option value="3 - Wakil Gubernur/Bupati/Walikota">
-                3 - Wakil Gubernur/Bupati/Walikota
-              </option>
-            </select>
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="unit" className="block mb-2 text-gray-700">
-              Unit: <span className="text-red-500">*</span>
-            </label>
-            <select
-              id="unit"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={unit}
-              onChange={(e) => setUnit(e.target.value)}
-              required
-            >
-              <option value="">- Pilih Unit -</option>
-              <option value="1 - Sekretariat DPRD">1 - Sekretariat DPRD</option>
-              <option value="1 - Bupati Tanggamus">1 - Bupati Tanggamus</option>
-              <option value="1 - Wakil Bupati Tanggamus">
-                1 - Wakil Bupati Tanggamus
-              </option>
-            </select>
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="subUnit" className="block mb-2 text-gray-700">
-              Sub Unit: <span className="text-red-500">*</span>
-            </label>
-            <select
-              id="subUnit"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={subUnit}
-              onChange={(e) => setSubUnit(e.target.value)}
-              required
-            >
-              <option value="">- Pilih Sub Unit -</option>
-              <option value="1 - Sekretariat DPRD">1 - Sub Unit A</option>
-              <option value="2 - Sekretariat DPRD">2 - Sekretariat DPRD</option>
-              <option value="1 - Bupati Tanggamus">1 - Bupati Tanggamus</option>
-              <option value="1 - Wakil Bupati Tanggamus">
-                1 - Wakil Bupati Tanggamus
-              </option>
-            </select>
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="kodeUpb" className="block mb-2 text-gray-700">
-              Kode UPB: <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              id="kodeUpb"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={kodeUpb}
-              onChange={(e) => setKodeUpb(e.target.value)}
-              required
-              min="0"
-            />
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="namaUpb" className="block mb-2 text-gray-700">
-              Nama UPB: <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="namaUpb"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={namaUpb}
-              onChange={(e) => setNamaUpb(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="mb-6">
-            <label htmlFor="kode" className="block mb-2 text-gray-700">
-              Kode:
-            </label>
-            <input
-              type="text"
-              id="kode"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={kode}
-              onChange={(e) => setKode(e.target.value)}
-            />
-          </div>
-        </form>
-
-        <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200 mt-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-6 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 cursor-pointer"
+          <motion.div
+            key="modal-content"
+            initial={{ opacity: 0, scale: 0.95, y: -20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -20 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="relative w-full max-w-lg p-6 bg-white rounded-lg shadow-lg"
           >
-            Batal
-          </button>
-          <button
-            type="submit"
-            onClick={handleSubmit}
-            className="px-6 py-2 text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
-          >
-            {initialData ? "Simpan Perubahan" : "Simpan"}{" "}
-          </button>
-        </div>
-      </div>
-    </div>
+            {/* --- Modal Content Mulai dari sini --- */}
+            <div className="flex items-center justify-between pb-4 mb-4 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-800">
+                {initialData ? "EDIT UPB" : "TAMBAH UPB"}
+              </h2>
+              <button
+                onClick={onClose}
+                disabled={isSaving}
+                className={`text-2xl cursor-pointer ${
+                  isSaving
+                    ? "text-gray-300 cursor-not-allowed"
+                    : "text-gray-500 hover:text-red-700"
+                }`}
+              >
+                &times;
+              </button>
+            </div>
+
+            <form
+              onSubmit={handleSubmit}
+              className="max-h-[calc(100vh-220px)] overflow-y-auto pr-2 pb-4"
+            >
+              {/* --- Isi Form --- */}
+              <div className="mb-4">
+                <label htmlFor="subUnit" className="block mb-2 text-gray-700">
+                  Sub Unit: <span className="text-[#B53C3C]">*</span>
+                </label>
+                <Select
+                  id="subUnit"
+                  className="rounded-md focus:outline-none focus:ring-2 focus:ring-[#B53C3C]"
+                  options={subUnitOptions}
+                  value={selectedSubUnit}
+                  onChange={setSelectedSubUnit}
+                  onInputChange={(newValue) => {
+                    loadSubUnitOptions(newValue);
+                    return newValue;
+                  }}
+                  isLoading={isLoadingSubUnit}
+                  placeholder="Ketik untuk mencari ID atau Nama..."
+                  isClearable
+                  noOptionsMessage={({ inputValue }) =>
+                    !inputValue
+                      ? "Ketik sesuatu untuk mencari"
+                      : "Data tidak ditemukan"
+                  }
+                />
+              </div>
+
+              <div className="mb-4">
+                <label htmlFor="kodeUpb" className="block mb-2 text-gray-700">
+                  Kode UPB: <span className="text-[#B53C3C]">*</span>
+                </label>
+                <input
+                  type="number"
+                  id="kodeUpb"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#B53C3C]"
+                  value={kodeUpb}
+                  onChange={(e) => setKodeUpb(e.target.value)}
+                  required
+                  min="0"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label htmlFor="namaUpb" className="block mb-2 text-gray-700">
+                  Nama UPB: <span className="text-[#B53C3C]">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="namaUpb"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#B53C3C]"
+                  value={namaUpb}
+                  onChange={(e) => setNamaUpb(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="mb-6">
+                <label htmlFor="kode" className="block mb-2 text-gray-700">
+                  Kode: <span className="text-[#B53C3C]">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="kode"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#B53C3C]"
+                  value={kode}
+                  onChange={(e) => setKode(e.target.value)}
+                  required
+                />
+              </div>
+            </form>
+
+            <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200 mt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isSaving}
+                className={`px-6 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400 cursor-pointer ${
+                  isSaving
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                }`}
+              >
+                Batal
+              </button>
+
+              <button
+                type="submit"
+                onClick={handleSubmit}
+                disabled={isSaving}
+                className={`px-6 py-2 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-[#B53C3C] cursor-pointer ${
+                  isSaving
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-red-600 hover:bg-red-700"
+                }`}
+              >
+                {isSaving
+                  ? initialData
+                    ? "Menyimpan Perubahan..."
+                    : "Menyimpan..."
+                  : initialData
+                  ? "Simpan Perubahan"
+                  : "Simpan"}
+              </button>
+            </div>
+            {/* --- Modal Content Selesai --- */}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 

@@ -5,6 +5,7 @@ import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import DataTable from "../../../../components/DataTable";
 import AddSubUnitModal from "./AddSubUnitModal";
+import Swal from "sweetalert2";
 
 const SubUnitPage = () => {
   const [subUnitData, setSubUnitData] = useState([]);
@@ -103,7 +104,7 @@ const SubUnitPage = () => {
     fetchUnitList();
   }, []);
 
-  // Fetch unit data
+  // Fetch subunit data
   useEffect(() => {
     const fetchSubUnitData = async () => {
       setLoading(true);
@@ -183,19 +184,37 @@ const SubUnitPage = () => {
           `/klasifikasi-instansi/subunit/${subUnitToSave.id}`,
           payload
         );
-        alert("Unit data successfully updated!");
+        Swal.fire({
+          title: "Berhasil Edit",
+          text: "Data berhasil diubah.",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
+        });
       } else {
         await api.post("/klasifikasi-instansi/subunit", payload);
-        alert("Unit data successfully added!");
+        Swal.fire({
+          title: "Berhasil Add",
+          text: "Data berhasil ditambah.",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
+        });
       }
       handleRefresh();
       handleCloseAddModal();
     } catch (error) {
       console.error(
-        "Failed to save unit:",
+        "Gagal simpan bidang:",
         error.response?.data || error.message
       );
-      alert("Failed to save unit. Check console for details.");
+      Swal.fire({
+        title: "Gagal",
+        text: "Data tidak dapat disimpan.",
+        icon: "error",
+        timer: 1500,
+        showConfirmButton: false,
+      });
     }
   };
 
@@ -208,13 +227,37 @@ const SubUnitPage = () => {
   };
 
   const handleDeleteClick = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this data?")) return;
+    const result = await Swal.fire({
+      title: "Yakin ingin menghapus data ini?",
+      text: "Data yang dihapus tidak dapat dikembalikan.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#e53935",
+      cancelButtonColor: "#aaa",
+      confirmButtonText: "Ya, hapus",
+      cancelButtonText: "Batal",
+    });
+
+    if (!result.isConfirmed) return;
 
     try {
       await api.delete(`/klasifikasi-instansi/subunit/${id}`);
+      console.log("Berhasil menghapus subunit dengan ID:", id);
+      Swal.fire({
+        title: "Berhasil Delete",
+        text: "Data berhasil dihapus.",
+        icon: "success",
+        timer: 1500,
+        showConfirmButton: false,
+      });
       handleRefresh();
     } catch (error) {
-      console.error("Failed to delete subunit:", error);
+      console.error("Gagal menghapus subunit:", error);
+      Swal.fire({
+        title: "Gagal",
+        text: "Terjadi kesalahan saat menghapus data.",
+        icon: "error",
+      });
     }
   };
 
@@ -440,7 +483,7 @@ const SubUnitPage = () => {
             disableRowSelectionOnClick
             hideFooterSelectedRowCount
             height={500}
-            emptyRowsMessage="Tidak ada data unit yang tersedia"
+            emptyRowsMessage="Tidak ada data sub unit yang tersedia"
           />
         </div>
       </div>
