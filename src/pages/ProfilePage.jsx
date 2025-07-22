@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import api from "../api/axios";
 import { useNavigate } from "react-router-dom";
 import { Check } from "lucide-react";
 import Swal from "sweetalert2";
@@ -16,6 +17,9 @@ const ProfilePage = () => {
     name: storedUser.name || "",
     username: storedUser.username || "",
     email: storedUser.email || "",
+    position: storedUser.position || "",
+    active: storedUser.active ?? 1,
+    roles: storedUser.roles?.map((role) => role.name) || [],
   });
 
   const [errors, setErrors] = useState({
@@ -82,23 +86,42 @@ const ProfilePage = () => {
       cancelButtonText: "Batal",
     }).then((result) => {
       if (result.isConfirmed) {
-        const oldUser = JSON.parse(localStorage.getItem("user")) || {};
-        const updatedUser = {
-          ...oldUser,
-          ...formData,
-        };
+        const token = localStorage.getItem("token");
+        const user = JSON.parse(localStorage.getItem("user"));
+        const userId = user?.id;
 
-        localStorage.setItem("user", JSON.stringify(updatedUser));
+        api
+          .put(`/users/${userId}`, formData, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          })
+          .then((res) => {
+            const updatedUser = res.data.data || res.data;
 
-        Swal.fire({
-          position: "center",
-          icon: "success",
-          title: "Profil berhasil diperbarui!",
-          showConfirmButton: false,
-          timer: 1500,
-        }).then(() => {
-          navigate(-1);
-        });
+            localStorage.setItem("user", JSON.stringify(updatedUser));
+
+            Swal.fire({
+              position: "center",
+              icon: "success",
+              title: "Profil berhasil diperbarui!",
+              showConfirmButton: false,
+              timer: 1500,
+            }).then(() => {
+              navigate(-1);
+            });
+          })
+          .catch((err) => {
+            console.error(err);
+            Swal.fire({
+              icon: "error",
+              title: "Gagal Memperbarui",
+              text:
+                err.response?.data?.message ||
+                "Terjadi kesalahan saat menyimpan data.",
+              confirmButtonColor: "#B53C3C",
+            });
+          });
       }
     });
   };
