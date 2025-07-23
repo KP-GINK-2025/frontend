@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import UserDropdown from "./UserDropdown"; // Import the new UserDropdown component
-import ImagePreviewModal from "./ImagePreviewModal"; // Import the new ImagePreviewModal component
+import UserDropdown from "./UserDropdown";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [showImagePreview, setShowImagePreview] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState("");
 
   const storedUser = JSON.parse(localStorage.getItem("user")) || {
@@ -62,16 +60,9 @@ const Navbar = () => {
           setAvatarPreview={setAvatarPreview}
           setIsDropdownOpen={setIsDropdownOpen}
           isDropdownOpen={isDropdownOpen}
-          // Pass a function to UserDropdown to trigger image preview
-          onAvatarClick={() => setShowImagePreview(true)}
         />
       </div>
 
-      <ImagePreviewModal
-        show={showImagePreview}
-        src={avatarSrc}
-        onClose={() => setShowImagePreview(false)}
-      />
     </>
   );
 };
