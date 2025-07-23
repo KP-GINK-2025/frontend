@@ -1,49 +1,100 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import Navbar from "../../components/Navbar";
 import Breadcrumbs from "../../components/Breadcrumbs";
-import { Search, Download, RefreshCw, Plus } from "lucide-react";
-import AddRuanganModal from "./AddRuanganModal";
 import DataTable from "../../components/DataTable";
+import AddRuanganModal from "./AddRuanganModal";
 import api from "../../api/axios";
+import Swal from "sweetalert2";
+
+// Constants
+const ENTRIES_PER_PAGE_OPTIONS = [5, 10, 25, 50, 100];
+const DEFAULT_ENTRIES_PER_PAGE = 10;
+
+const INITIAL_FILTERS = {
+  tahun: "",
+  bidang: "",
+  unit: "",
+  subUnit: "",
+  upb: "",
+};
+
+const INITIAL_DROPDOWN_DATA = {
+  tahun: [],
+  bidang: [],
+  unit: [],
+  subUnit: [],
+  upb: [],
+};
+
+// Utility Components
+const FilterSelect = ({
+  label,
+  value,
+  onChange,
+  options,
+  valueKey = "",
+  labelKey = "",
+}) => (
+  <select
+    value={value}
+    onChange={(e) => onChange(e.target.value)}
+    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+  >
+    <option value="">{label}</option>
+    {options.map((option) => (
+      <option
+        key={option[valueKey] || option}
+        value={option[labelKey] || option}
+      >
+        {option[labelKey] || option}
+      </option>
+    ))}
+  </select>
+);
+
+const LoadingSpinner = () => (
+  <div className="text-center py-12">
+    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    <p className="mt-2 text-gray-500">Loading data...</p>
+  </div>
+);
+
+const ActionButtons = ({ onEdit, onDelete }) => (
+  <div className="flex gap-2 items-center">
+    <button
+      onClick={onEdit}
+      className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors cursor-pointer"
+    >
+      Edit
+    </button>
+    <button
+      onClick={onDelete}
+      className="text-red-600 hover:text-red-800 text-sm font-medium transition-colors cursor-pointer"
+    >
+      Delete
+    </button>
+  </div>
+);
 
 const DataRuanganPage = () => {
-  // State untuk pencarian dan pagination
+  // State management
   const [searchTerm, setSearchTerm] = useState("");
-  const [entriesPerPage, setEntriesPerPage] = useState(10);
-
-  // State untuk data dropdown
-  const [dropdownData, setDropdownData] = useState({
-    tahun: [],
-    bidang: [],
-    unit: [],
-    subUnit: [],
-    upb: [],
-  });
-
-  // State untuk filter yang dipilih
-  const [filters, setFilters] = useState({
-    tahun: "",
-    bidang: "",
-    unit: "",
-    subUnit: "",
-    upb: "",
-  });
-
-  // State utama
+  const [entriesPerPage, setEntriesPerPage] = useState(
+    DEFAULT_ENTRIES_PER_PAGE
+  );
+  const [dropdownData, setDropdownData] = useState(INITIAL_DROPDOWN_DATA);
+  const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [ruanganData, setRuanganData] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // State untuk modal
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingRuangan, setEditingRuangan] = useState(null);
-
-  // State untuk pagination DataTable
   const [dataTablePaginationModel, setDataTablePaginationModel] = useState({
     page: 0,
-    pageSize: 10,
+    pageSize: DEFAULT_ENTRIES_PER_PAGE,
   });
 
-  // Fungsi untuk fetch data dropdown
+  // API Functions
   const fetchDropdownData = useCallback(async () => {
     try {
       const [bidangRes, unitRes, subUnitRes, upbRes] = await Promise.all([
@@ -53,26 +104,18 @@ const DataRuanganPage = () => {
         api.get("/klasifikasi-instansi/upb?per_page=1000"),
       ]);
 
-      setDropdownData({
-        tahun: [], // Akan diisi dari data ruangan
+      setDropdownData((prev) => ({
+        ...prev,
         bidang: bidangRes.data.data || [],
         unit: unitRes.data.data || [],
         subUnit: subUnitRes.data.data || [],
         upb: upbRes.data.data || [],
-      });
+      }));
     } catch (error) {
       console.error("Gagal mengambil data dropdown:", error);
-      setDropdownData({
-        tahun: [],
-        bidang: [],
-        unit: [],
-        subUnit: [],
-        upb: [],
-      });
     }
   }, []);
 
-  // Fungsi untuk fetch data ruangan
   const fetchRuanganData = useCallback(async () => {
     setLoading(true);
     try {
@@ -80,11 +123,11 @@ const DataRuanganPage = () => {
       const data = response.data.data || [];
       setRuanganData(data);
 
-      // Generate tahun data dari ruangan data
-      const tahunUnik = [
+      // Extract unique years from data
+      const uniqueYears = [
         ...new Set(data.map((item) => item.tahun).filter(Boolean)),
       ].sort();
-      setDropdownData((prev) => ({ ...prev, tahun: tahunUnik }));
+      setDropdownData((prev) => ({ ...prev, tahun: uniqueYears }));
     } catch (error) {
       console.error("Gagal mengambil data ruangan:", error);
       setRuanganData([]);
@@ -93,7 +136,7 @@ const DataRuanganPage = () => {
     }
   }, []);
 
-  // Initial data load
+  // Effects
   useEffect(() => {
     const loadInitialData = async () => {
       await Promise.all([fetchDropdownData(), fetchRuanganData()]);
@@ -101,7 +144,6 @@ const DataRuanganPage = () => {
     loadInitialData();
   }, [fetchDropdownData, fetchRuanganData]);
 
-  // Update pagination model ketika entriesPerPage berubah
   useEffect(() => {
     setDataTablePaginationModel((prev) => ({
       ...prev,
@@ -110,30 +152,24 @@ const DataRuanganPage = () => {
     }));
   }, [entriesPerPage]);
 
-  // Filter data berdasarkan search dan filter yang dipilih
+  // Data filtering
   const filteredData = ruanganData.filter((item) => {
     const matchesSearch = item.nama_ruangan
       ?.toLowerCase()
       .includes(searchTerm.toLowerCase());
-    const matchesTahun = !filters.tahun || item.tahun === filters.tahun;
-    const matchesBidang =
-      !filters.bidang || item.bidang?.nama === filters.bidang;
-    const matchesUnit = !filters.unit || item.unit?.nama === filters.unit;
-    const matchesSubUnit =
-      !filters.subUnit || item.subUnit?.nama === filters.subUnit;
-    const matchesUpb = !filters.upb || item.upb?.nama === filters.upb;
 
-    return (
-      matchesSearch &&
-      matchesTahun &&
-      matchesBidang &&
-      matchesUnit &&
-      matchesSubUnit &&
-      matchesUpb
-    );
+    const filterChecks = [
+      !filters.tahun || item.tahun === filters.tahun,
+      !filters.bidang || item.bidang?.nama === filters.bidang,
+      !filters.unit || item.unit?.nama === filters.unit,
+      !filters.subUnit || item.subUnit?.nama === filters.subUnit,
+      !filters.upb || item.upb?.nama === filters.upb,
+    ];
+
+    return matchesSearch && filterChecks.every(Boolean);
   });
 
-  // Handler functions
+  // Event handlers
   const handleFilterChange = (filterType, value) => {
     setFilters((prev) => ({ ...prev, [filterType]: value }));
   };
@@ -145,13 +181,7 @@ const DataRuanganPage = () => {
 
   const handleRefresh = () => {
     setSearchTerm("");
-    setFilters({
-      tahun: "",
-      bidang: "",
-      unit: "",
-      subUnit: "",
-      upb: "",
-    });
+    setFilters(INITIAL_FILTERS);
     fetchRuanganData();
   };
 
@@ -167,7 +197,7 @@ const DataRuanganPage = () => {
 
   const handleSaveRuangan = (ruanganToSave) => {
     if (ruanganToSave.id) {
-      // Mode Edit
+      // Edit mode
       setRuanganData((prevData) =>
         prevData.map((item) =>
           item.id === ruanganToSave.id ? ruanganToSave : item
@@ -175,7 +205,7 @@ const DataRuanganPage = () => {
       );
       console.log("Update Ruangan:", ruanganToSave);
     } else {
-      // Mode Tambah Baru
+      // Add new mode
       const newRuangan = { id: Date.now(), ...ruanganToSave };
       setRuanganData((prevData) => [...prevData, newRuangan]);
       console.log("Menyimpan Ruangan baru:", newRuangan);
@@ -192,13 +222,30 @@ const DataRuanganPage = () => {
   };
 
   const handleDeleteClick = (id) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus data ini?")) {
-      setRuanganData((prevData) => prevData.filter((item) => item.id !== id));
-      console.log("Menghapus Ruangan dengan ID:", id);
-    }
+    Swal.fire({
+      title: "Apakah Anda yakin?",
+      text: "Data ruangan yang dihapus tidak dapat dikembalikan!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Ya, hapus!",
+      cancelButtonText: "Batal",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setRuanganData((prevData) => prevData.filter((item) => item.id !== id));
+        Swal.fire({
+          icon: "success",
+          title: "Terhapus!",
+          text: "Data ruangan berhasil dihapus.",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      }
+    });
   };
 
-  // Kolom untuk DataTable
+  // Table columns configuration
   const columns = [
     {
       field: "no",
@@ -206,11 +253,10 @@ const DataRuanganPage = () => {
       width: 70,
       sortable: false,
       renderCell: (params) => {
-        const index = filteredData.findIndex((row) => row.id === params.row.id);
         return (
-          dataTablePaginationModel.page * dataTablePaginationModel.pageSize +
-          index +
-          1
+          params.api.getRowIndexRelativeToVisibleRows(params.id) +
+          1 +
+          dataTablePaginationModel.page * dataTablePaginationModel.pageSize
         );
       },
     },
@@ -253,7 +299,53 @@ const DataRuanganPage = () => {
       headerName: "NIP Penanggung Jawab",
       width: 180,
     },
-    { field: "jabatan_penanggung_jawab", headerName: "Jabatan", width: 180 },
+    {
+      field: "jabatan_penanggung_jawab",
+      headerName: "Jabatan Penanggung Jawab",
+      width: 180,
+    },
+    {
+      field: "akun",
+      headerName: "Akun",
+      width: 150,
+      renderCell: (params) => params.row.akun?.nama || "-",
+    },
+    {
+      field: "kelompok",
+      headerName: "Kelompok",
+      width: 150,
+      renderCell: (params) => params.row.kelompok?.nama || "-",
+    },
+    {
+      field: "jenis",
+      headerName: "Jenis",
+      width: 150,
+      renderCell: (params) => params.row.jenis?.nama || "-",
+    },
+    {
+      field: "objek",
+      headerName: "Objek",
+      width: 150,
+      renderCell: (params) => params.row.objek?.nama || "-",
+    },
+    {
+      field: "rincian_objek",
+      headerName: "Rincian Objek",
+      width: 150,
+      renderCell: (params) => params.row.rincian_objek?.nama || "-",
+    },
+    {
+      field: "sub_rincian",
+      headerName: "Sub Rincian",
+      width: 150,
+      renderCell: (params) => params.row.sub_rincian?.nama || "-",
+    },
+    {
+      field: "sub_sub_rincian",
+      headerName: "Sub Sub Rincian",
+      width: 150,
+      renderCell: (params) => params.row.sub_sub_rincian?.nama || "-",
+    },
     { field: "no_register", headerName: "No Register", width: 150 },
     { field: "pemilik", headerName: "Pemilik", width: 120 },
     {
@@ -262,48 +354,13 @@ const DataRuanganPage = () => {
       width: 150,
       sortable: false,
       renderCell: (params) => (
-        <div className="flex gap-2 items-center">
-          <button
-            onClick={() => handleEditClick(params.row.id)}
-            className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => handleDeleteClick(params.row.id)}
-            className="text-red-600 hover:text-red-800 text-sm font-medium transition-colors"
-          >
-            Delete
-          </button>
-        </div>
+        <ActionButtons
+          onEdit={() => handleEditClick(params.row.id)}
+          onDelete={() => handleDeleteClick(params.row.id)}
+        />
       ),
     },
   ];
-
-  const FilterSelect = ({
-    label,
-    value,
-    onChange,
-    options,
-    valueKey,
-    labelKey,
-  }) => (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-    >
-      <option value="">{label}</option>
-      {options.map((option) => (
-        <option
-          key={option[valueKey] || option}
-          value={option[labelKey] || option}
-        >
-          {option[labelKey] || option}
-        </option>
-      ))}
-    </select>
-  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -357,8 +414,6 @@ const DataRuanganPage = () => {
               value={filters.tahun}
               onChange={(value) => handleFilterChange("tahun", value)}
               options={dropdownData.tahun}
-              valueKey=""
-              labelKey=""
             />
             <FilterSelect
               label="-- Bidang --"
@@ -403,7 +458,7 @@ const DataRuanganPage = () => {
                 onChange={(e) => setEntriesPerPage(Number(e.target.value))}
                 className="border border-gray-300 rounded px-2 py-1"
               >
-                {[5, 10, 25, 50, 100].map((n) => (
+                {ENTRIES_PER_PAGE_OPTIONS.map((n) => (
                   <option key={n} value={n}>
                     {n}
                   </option>
@@ -429,16 +484,13 @@ const DataRuanganPage = () => {
 
           {/* Data Table */}
           {loading ? (
-            <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <p className="mt-2 text-gray-500">Loading data...</p>
-            </div>
+            <LoadingSpinner />
           ) : (
             <DataTable
               rows={filteredData}
               columns={columns}
               initialPageSize={entriesPerPage}
-              pageSizeOptions={[5, 10, 25, 50, 100]}
+              pageSizeOptions={ENTRIES_PER_PAGE_OPTIONS}
               height={500}
               emptyRowsMessage="Tidak ada data ruangan tersedia"
               paginationModel={dataTablePaginationModel}
