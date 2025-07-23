@@ -6,7 +6,6 @@ import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import DataTable from "../../../../components/DataTable";
 import Swal from "sweetalert2";
 import AddSubUnitModal from "./AddSubUnitModal";
-import Swal from "sweetalert2";
 
 const SubUnitPage = () => {
   const [subUnitData, setSubUnitData] = useState([]);
