@@ -90,9 +90,7 @@ Make sure you have the following installed:
 9. Install SweetAlert2:
 
    ```bash
-   npm install react-select
-   # or
-   yarn add react-select
+   npm install sweetalert2
    ```
 
 10. Install Framer Motion:
