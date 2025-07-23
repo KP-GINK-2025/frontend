@@ -5,6 +5,7 @@ import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import DataTable from "../../../../components/DataTable";
 import AddSubUnitModal from "./AddSubUnitModal";
+import Swal from "sweetalert2";
 
 const SubUnitPage = () => {
   const [subUnitData, setSubUnitData] = useState([]);
