@@ -388,8 +388,8 @@ const DataRuanganPage = () => {
             <div className="flex gap-3">
               <button
                 onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
                 disabled={loading}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
                 <RefreshCw
                   size={16}
@@ -484,18 +484,36 @@ const DataRuanganPage = () => {
 
           {/* Data Table */}
           {loading ? (
-            <LoadingSpinner />
-          ) : (
             <DataTable
               rows={filteredData}
               columns={columns}
               initialPageSize={entriesPerPage}
-              pageSizeOptions={ENTRIES_PER_PAGE_OPTIONS}
+              pageSizeOptions={[5, 10, 25, 50, 100]}
               height={500}
-              emptyRowsMessage="Tidak ada data ruangan tersedia"
+              emptyRowsMessage="Tidak ada data tersedia"
               paginationModel={dataTablePaginationModel}
               onPaginationModelChange={setDataTablePaginationModel}
+              loading={true} // <-- ini yang penting
             />
+          ) : error ? (
+            <div className="text-center py-12">
+              <div className="text-red-600 mb-2">⚠️ Error</div>
+              <div className="text-gray-600">{error}</div>
+            </div>
+          ) : (
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <DataTable
+                rows={filteredData}
+                columns={columns}
+                initialPageSize={entriesPerPage}
+                pageSizeOptions={[5, 10, 25, 50, 100]}
+                height={500}
+                emptyRowsMessage="Tidak ada data tersedia"
+                paginationModel={dataTablePaginationModel}
+                onPaginationModelChange={setDataTablePaginationModel}
+                loading={false} // <-- ini yang penting
+              />
+            </div>
           )}
         </div>
       </div>

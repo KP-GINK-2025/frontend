@@ -1,10 +1,10 @@
-// src/pages/lra/LraPage.jsx
 import React, { useState, useEffect } from "react";
 import Navbar from "../../components/Navbar";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import AddLraModal from "./AddLraModal";
 import DataTable from "../../components/DataTable";
+import Swal from "sweetalert2";
 
 const LraPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -26,6 +26,7 @@ const LraPage = () => {
   const [selectedTahun, setSelectedTahun] = useState("");
 
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null); // Tambahkan state error
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingLra, setEditingLra] = useState(null);
 
@@ -37,69 +38,76 @@ const LraPage = () => {
 
   const fetchData = () => {
     setLoading(true);
-    setTimeout(() => {
-      // Dummy data untuk filter
-      setBidangData([
-        { id: 1, nama: "Bidang Keuangan" },
-        { id: 2, nama: "Bidang Umum" },
-      ]);
-      setUnitData([
-        { id: 1, nama: "Unit Anggaran" },
-        { id: 2, nama: "Unit Gaji" },
-      ]);
-      setSubUnitData([
-        { id: 1, nama: "Sub Unit A" },
-        { id: 2, nama: "Sub Unit B" },
-      ]);
-      setUpbData([
-        { id: 1, nama: "UPB A" },
-        { id: 2, nama: "UPB B" },
-      ]);
-      setSemesterData([
-        { id: 1, nama: "Ganjil" },
-        { id: 2, nama: "Genap" },
-      ]);
-      setTahunData(["2023", "2024", "2025"]);
+    setError(null); // Reset error state
 
-      // PASTIKAN OBJEK DI SINI MEMILIKI PROPERTI 'nilaiTotal' DENGAN NILAI ANGKA
-      const dummyLraData = [
-        {
-          id: 1,
-          tahun: "2024",
-          semester: "Ganjil",
-          bidang: "Bidang Keuangan",
-          unit: "Unit Anggaran",
-          subUnit: "Sub Unit A",
-          upb: "UPB A",
-          nilaiTotal: 100000000,
-          keterangan: "LRA Bulan Januari",
-        },
-        {
-          id: 2,
-          tahun: "2023",
-          semester: "Genap",
-          bidang: "Bidang Umum",
-          unit: "Unit Gaji",
-          subUnit: "Sub Unit B",
-          upb: "UPB B",
-          nilaiTotal: 75000000,
-          keterangan: "LRA Bulan Juli",
-        },
-        {
-          id: 3,
-          tahun: "2024",
-          semester: "Ganjil",
-          bidang: "Bidang Keuangan",
-          unit: "Unit Anggaran",
-          subUnit: "Sub Unit A",
-          upb: "UPB A",
-          nilaiTotal: 120000000,
-          keterangan: "LRA Bulan Februari",
-        },
-      ];
-      setLraData(dummyLraData);
-      console.log("Data LRA yang diset di fetchData:", dummyLraData); // Log ini penting untuk verifikasi awal
-      setLoading(false);
+    setTimeout(() => {
+      try {
+        // Dummy data untuk filter
+        setBidangData([
+          { id: 1, nama: "Bidang Keuangan" },
+          { id: 2, nama: "Bidang Umum" },
+        ]);
+        setUnitData([
+          { id: 1, nama: "Unit Anggaran" },
+          { id: 2, nama: "Unit Gaji" },
+        ]);
+        setSubUnitData([
+          { id: 1, nama: "Sub Unit A" },
+          { id: 2, nama: "Sub Unit B" },
+        ]);
+        setUpbData([
+          { id: 1, nama: "UPB A" },
+          { id: 2, nama: "UPB B" },
+        ]);
+        setSemesterData([
+          { id: 1, nama: "Ganjil" },
+          { id: 2, nama: "Genap" },
+        ]);
+        setTahunData(["2023", "2024", "2025"]);
+
+        // PASTIKAN OBJEK DI SINI MEMILIKI PROPERTI 'nilaiTotal' DENGAN NILAI ANGKA
+        const dummyLraData = [
+          {
+            id: 1,
+            tahun: "2024",
+            semester: "Ganjil",
+            bidang: "Bidang Keuangan",
+            unit: "Unit Anggaran",
+            subUnit: "Sub Unit A",
+            upb: "UPB A",
+            nilaiTotal: 100000000,
+            keterangan: "LRA Bulan Januari",
+          },
+          {
+            id: 2,
+            tahun: "2023",
+            semester: "Genap",
+            bidang: "Bidang Umum",
+            unit: "Unit Gaji",
+            subUnit: "Sub Unit B",
+            upb: "UPB B",
+            nilaiTotal: 75000000,
+            keterangan: "LRA Bulan Juli",
+          },
+          {
+            id: 3,
+            tahun: "2024",
+            semester: "Ganjil",
+            bidang: "Bidang Keuangan",
+            unit: "Unit Anggaran",
+            subUnit: "Sub Unit A",
+            upb: "UPB A",
+            nilaiTotal: 120000000,
+            keterangan: "LRA Bulan Februari",
+          },
+        ];
+        setLraData(dummyLraData);
+        console.log("Data LRA yang diset di fetchData:", dummyLraData);
+        setLoading(false);
+      } catch (err) {
+        setError("Gagal memuat data. Silakan coba lagi.");
+        setLoading(false);
+      }
     }, 800);
   };
 
@@ -140,8 +148,8 @@ const LraPage = () => {
   });
 
   const handleExport = () => console.log("Exporting LRA...");
+
   const handleRefresh = () => {
-    setLoading(true);
     setSearchTerm("");
     setSelectedBidang("");
     setSelectedUnit("");
@@ -149,7 +157,7 @@ const LraPage = () => {
     setSelectedUpb("");
     setSelectedSemester("");
     setSelectedTahun("");
-    fetchData();
+    fetchData(); // fetchData sudah mengatur loading state
   };
 
   const handleOpenAddModal = () => {
@@ -185,10 +193,27 @@ const LraPage = () => {
   };
 
   const handleDeleteClick = (id) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus data ini?")) {
-      setLraData((prevData) => prevData.filter((item) => item.id !== id));
-      console.log("Menghapus LRA dengan ID:", id);
-    }
+    Swal.fire({
+      title: "Apakah Anda yakin?",
+      text: "Data LRA yang dihapus tidak dapat dikembalikan!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Ya, hapus!",
+      cancelButtonText: "Batal",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setLraData((prevData) => prevData.filter((item) => item.id !== id));
+        Swal.fire({
+          icon: "success",
+          title: "Terhapus!",
+          text: "Data LRA berhasil dihapus.",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      }
+    });
   };
 
   const columns = [
@@ -256,6 +281,7 @@ const LraPage = () => {
                 value={selectedBidang}
                 onChange={(e) => setSelectedBidang(e.target.value)}
                 className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
+                disabled={loading}
               >
                 <option value=""> -- Bidang -- </option>
                 {bidangData.map((b) => (
@@ -268,6 +294,7 @@ const LraPage = () => {
                 value={selectedUnit}
                 onChange={(e) => setSelectedUnit(e.target.value)}
                 className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
+                disabled={loading}
               >
                 <option value=""> -- Unit -- </option>
                 {unitData.map((u) => (
@@ -280,6 +307,7 @@ const LraPage = () => {
                 value={selectedSubUnit}
                 onChange={(e) => setSelectedSubUnit(e.target.value)}
                 className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
+                disabled={loading}
               >
                 <option value=""> -- Sub Unit -- </option>
                 {subUnitData.map((s) => (
@@ -292,6 +320,7 @@ const LraPage = () => {
                 value={selectedUpb}
                 onChange={(e) => setSelectedUpb(e.target.value)}
                 className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
+                disabled={loading}
               >
                 <option value=""> -- UPB -- </option>
                 {upbData.map((u) => (
@@ -304,6 +333,7 @@ const LraPage = () => {
                 value={selectedSemester}
                 onChange={(e) => setSelectedSemester(e.target.value)}
                 className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
+                disabled={loading}
               >
                 <option value=""> -- Semester -- </option>
                 {semesterData.map((s) => (
@@ -316,6 +346,7 @@ const LraPage = () => {
                 value={selectedTahun}
                 onChange={(e) => setSelectedTahun(e.target.value)}
                 className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
+                disabled={loading}
               >
                 <option value=""> -- Tahun -- </option>
                 {tahunData.map((t, i) => (
@@ -329,9 +360,14 @@ const LraPage = () => {
             <div className="flex gap-2 items-center lg:self-end">
               <button
                 onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+                disabled={loading}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
-                <RefreshCw size={16} /> Refresh
+                <RefreshCw
+                  size={16}
+                  className={loading ? "animate-spin" : ""}
+                />
+                Refresh
               </button>
               <button
                 onClick={handleOpenAddModal}
@@ -356,6 +392,7 @@ const LraPage = () => {
                   }));
                 }}
                 className="border border-gray-300 rounded px-2 py-1"
+                disabled={loading}
               >
                 {[5, 10, 25, 50, 100].map((n) => (
                   <option key={n} value={n}>
@@ -376,24 +413,38 @@ const LraPage = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                disabled={loading}
               />
             </div>
           </div>
 
-          {loading ? (
-            <div className="text-center py-8 text-gray-500">Loading...</div>
-          ) : (
-            <DataTable
-              rows={filteredData}
-              columns={columns}
-              initialPageSize={entriesPerPage}
-              pageSizeOptions={[5, 10, 25, 50, 100]}
-              height={500}
-              emptyRowsMessage="No LRA data available"
-              paginationModel={dataTablePaginationModel}
-              onPaginationModelChange={setDataTablePaginationModel}
-            />
-          )}
+          {/* PERBAIKAN LOGIKA LOADING DI SINI */}
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            {error ? (
+              <div className="text-center py-12">
+                <div className="text-red-600 mb-2">⚠️ Error</div>
+                <div className="text-gray-600">{error}</div>
+                <button
+                  onClick={fetchData}
+                  className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
+                >
+                  Coba Lagi
+                </button>
+              </div>
+            ) : (
+              <DataTable
+                rows={filteredData}
+                columns={columns}
+                initialPageSize={entriesPerPage}
+                pageSizeOptions={[5, 10, 25, 50, 100]}
+                height={500}
+                emptyRowsMessage="Tidak ada data tersedia"
+                paginationModel={dataTablePaginationModel}
+                onPaginationModelChange={setDataTablePaginationModel}
+                loading={loading} // Pass loading state ke DataTable
+              />
+            )}
+          </div>
         </div>
       </div>
 
