@@ -8,27 +8,24 @@ import DataTable from "../../../../components/DataTable";
 import Swal from "sweetalert2";
 
 const BidangPage = () => {
-  // --- State untuk Data dan Filter ---
   const [searchTerm, setSearchTerm] = useState("");
   const [bidangData, setBidangData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [rowCount, setRowCount] = useState(0); // Total jumlah baris dari API
+  const [rowCount, setRowCount] = useState(0);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // --- State untuk Modal Add/Edit ---
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingBidang, setEditingBidang] = useState(null);
 
-  // --- State untuk Paginasi DataTable ---
+  // Pagination state
   const [dataTablePaginationModel, setDataTablePaginationModel] = useState({
-    page: 0, // Halaman saat ini (0-indexed)
-    pageSize: 10, // Jumlah baris per halaman
+    page: 0,
+    pageSize: 10,
   });
 
-  // --- OPTIMISASI: Debounce search term ---
-  // State untuk menyimpan search term yang di-debounce
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
+  // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
@@ -39,16 +36,14 @@ const BidangPage = () => {
     };
   }, [searchTerm]);
 
-  // Reset halaman ke 0 ketika debouncedSearchTerm berubah
+  // Reset pagination when filters change
   useEffect(() => {
-    // Pastikan ini hanya memicu reset halaman jika debouncedSearchTerm benar-benar berubah
-    // dan bukan saat inisialisasi awal jika searchTerm kosong
     if (debouncedSearchTerm !== searchTerm) {
       setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
     }
   }, [debouncedSearchTerm, searchTerm]);
 
-  // --- EFEK UTAMA UNTUK FETCH DATA ---
+  // Fetch bidang
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -56,6 +51,7 @@ const BidangPage = () => {
         const params = new URLSearchParams();
         params.append("page", dataTablePaginationModel.page + 1); // API biasanya 1-indexed
         params.append("per_page", dataTablePaginationModel.pageSize);
+
         if (debouncedSearchTerm) {
           params.append("search", debouncedSearchTerm);
         }
@@ -63,12 +59,13 @@ const BidangPage = () => {
         const response = await api.get(
           `/klasifikasi-instansi/bidang?${params.toString()}`
         );
+
         setBidangData(response.data.data);
         setRowCount(response.data.meta.total);
       } catch (error) {
         console.error("Gagal fetch data bidang:", error);
-        setBidangData([]); // Reset data jika gagal
-        setRowCount(0); // Reset total jika gagal
+        setBidangData([]);
+        setRowCount(0);
       } finally {
         setLoading(false);
       }
@@ -77,11 +74,9 @@ const BidangPage = () => {
     fetchData();
   }, [dataTablePaginationModel, debouncedSearchTerm, refreshTrigger]); // Dependencies yang memicu re-fetch
 
-  // --- Handler Fungsi ---
-
+  // Event handlers
   const handleExport = () => {
     console.log("Exporting data...");
-    // Implementasi logika ekspor data di sini
   };
 
   const handleRefresh = () => {
@@ -89,14 +84,13 @@ const BidangPage = () => {
   };
 
   const handleOpenAddModal = () => {
-    setEditingBidang(null); // Pastikan modal dalam mode 'add'
+    setEditingBidang(null);
     setIsAddModalOpen(true);
   };
 
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
-    setEditingBidang(null); // Reset editing state
-    // Tidak perlu memanggil handleRefresh di sini, karena onSave akan memanggilnya
+    setEditingBidang(null);
   };
 
   const handleSaveNewBidang = async (bidangToSave) => {
@@ -123,8 +117,8 @@ const BidangPage = () => {
           showConfirmButton: false,
         });
       }
-      handleCloseAddModal(); // Tutup modal
-      handleRefresh(); // Panggil refresh untuk mengambil data terbaru
+      handleCloseAddModal();
+      handleRefresh();
     } catch (error) {
       console.error(
         "Gagal simpan bidang:",
@@ -172,7 +166,7 @@ const BidangPage = () => {
         timer: 1500,
         showConfirmButton: false,
       });
-      handleRefresh(); // Refresh data
+      handleRefresh();
     } catch (error) {
       console.error("Gagal menghapus bidang:", error);
       Swal.fire({
@@ -183,56 +177,8 @@ const BidangPage = () => {
     }
   };
 
-  // --- Konfigurasi Kolom DataTable ---
+  // Table columns configuration
   const columns = [
-    {
-      field: "no",
-      headerName: "No",
-      width: 70,
-      sortable: false,
-      renderCell: (params) => {
-        // Menggunakan dataTablePaginationModel untuk perhitungan nomor
-        const index = bidangData.findIndex((row) => row.id === params.row.id);
-        return (
-          dataTablePaginationModel.page * dataTablePaginationModel.pageSize +
-          index +
-          1
-        );
-      },
-    },
-    {
-      field: "provinsi",
-      headerName: "Provinsi",
-      flex: 1,
-      minWidth: 250,
-      renderCell: (params) => {
-        // === PERBAIKAN DI SINI ===
-        const provinsi = params.row.kabupaten_kota?.provinsi;
-        return provinsi
-          ? `${provinsi.kode_provinsi} - ${provinsi.nama_provinsi}`
-          : "N/A";
-      },
-    },
-    {
-      field: "kabupaten_kota",
-      headerName: "Kabupaten/Kota",
-      flex: 1,
-      minWidth: 250,
-      renderCell: (params) => {
-        // === PERBAIKAN DI SINI ===
-        const kabKot = params.row.kabupaten_kota;
-        return kabKot
-          ? `${kabKot.kode_kabupaten_kota} - ${kabKot.nama_kabupaten_kota}`
-          : "N/A";
-      },
-    },
-    {
-      field: "kode_bidang",
-      headerName: "Kode Bidang",
-      width: 150,
-    },
-    { field: "nama_bidang", headerName: "Nama Bidang", flex: 1, minWidth: 250 },
-    { field: "kode", headerName: "Kode", width: 120 },
     {
       field: "action",
       headerName: "Action",
@@ -255,6 +201,51 @@ const BidangPage = () => {
         </div>
       ),
     },
+    {
+      field: "no",
+      headerName: "No",
+      width: 70,
+      sortable: false,
+      renderCell: (params) => {
+        const index = bidangData.findIndex((row) => row.id === params.row.id);
+        return (
+          dataTablePaginationModel.page * dataTablePaginationModel.pageSize +
+          index +
+          1
+        );
+      },
+    },
+    {
+      field: "provinsi",
+      headerName: "Provinsi",
+      flex: 1,
+      minWidth: 250,
+      renderCell: (params) => {
+        const provinsi = params.row.kabupaten_kota?.provinsi;
+        return provinsi
+          ? `${provinsi.kode_provinsi} - ${provinsi.nama_provinsi}`
+          : "N/A";
+      },
+    },
+    {
+      field: "kabupaten_kota",
+      headerName: "Kabupaten/Kota",
+      flex: 1,
+      minWidth: 250,
+      renderCell: (params) => {
+        const kabKot = params.row.kabupaten_kota;
+        return kabKot
+          ? `${kabKot.kode_kabupaten_kota} - ${kabKot.nama_kabupaten_kota}`
+          : "N/A";
+      },
+    },
+    {
+      field: "kode_bidang",
+      headerName: "Kode Bidang",
+      width: 150,
+    },
+    { field: "nama_bidang", headerName: "Nama Bidang", flex: 1, minWidth: 250 },
+    { field: "kode", headerName: "Kode", width: 120 },
   ];
 
   // --- Render UI ---

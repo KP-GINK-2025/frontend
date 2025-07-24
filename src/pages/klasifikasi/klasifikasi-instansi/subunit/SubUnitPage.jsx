@@ -70,7 +70,8 @@ const SubUnitPage = () => {
 
         setBidangList(sortedBidang);
       } catch (error) {
-        console.error("Failed to fetch bidang list:", error);
+        console.error("Gagal mendapatkan bidang list:", error);
+        setBidangList([]);
       }
     };
 
@@ -108,7 +109,8 @@ const SubUnitPage = () => {
 
         setUnitList(sortedUnit);
       } catch (error) {
-        console.error("Failed to fetch unit list:", error);
+        console.error("Gagal mendapatkan unit list:", error);
+        setUnitList([]);
       } finally {
         setLoadingUnits(false);
       }
@@ -147,7 +149,7 @@ const SubUnitPage = () => {
         setSubUnitData(response.data.data);
         setTotalRows(response.data.meta.total);
       } catch (error) {
-        console.error("Failed to fetch subunit data:", error);
+        console.error("Gagal mendapatkan subunit data:", error);
         setSubUnitData([]);
         setTotalRows(0);
       } finally {
@@ -277,6 +279,28 @@ const SubUnitPage = () => {
   // Table columns configuration
   const columns = [
     {
+      field: "action",
+      headerName: "Action",
+      width: 150,
+      sortable: false,
+      renderCell: (params) => (
+        <div className="flex gap-2 items-center">
+          <button
+            onClick={() => handleEditClick(params.row.id)}
+            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => handleDeleteClick(params.row.id)}
+            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
+          >
+            Delete
+          </button>
+        </div>
+      ),
+    },
+    {
       field: "no",
       headerName: "No",
       width: 70,
@@ -346,29 +370,6 @@ const SubUnitPage = () => {
       headerName: "Kode",
       width: 100,
     },
-
-    {
-      field: "action",
-      headerName: "Action",
-      width: 150,
-      sortable: false,
-      renderCell: (params) => (
-        <div className="flex gap-2 items-center">
-          <button
-            onClick={() => handleEditClick(params.row.id)}
-            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => handleDeleteClick(params.row.id)}
-            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
-          >
-            Delete
-          </button>
-        </div>
-      ),
-    },
   ];
 
   return (
@@ -416,37 +417,33 @@ const SubUnitPage = () => {
             {/* Left: Filters */}
             <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end">
               {/* Bidang Filter */}
-              <div className="flex items-center gap-2">
-                <select
-                  value={selectedBidang}
-                  onChange={(e) => {
-                    setSelectedBidang(e.target.value);
-                    setSelectedUnit(""); // PENTING: Reset pilihan unit saat bidang berubah
-                  }}
-                  className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto cursor-pointer"
-                >
-                  <option value="">-- Semua Bidang --</option>
-                  {bidangList.map((bidang) => (
-                    <option key={bidang.id} value={bidang.id}>
-                      {bidang.kode_bidang} - {bidang.nama_bidang}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <select
+                value={selectedBidang}
+                onChange={(e) => {
+                  setSelectedBidang(e.target.value);
+                  setSelectedUnit("");
+                }}
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto cursor-pointer"
+              >
+                <option value="">-- Semua Bidang --</option>
+                {bidangList.map((bidang) => (
+                  <option key={bidang.id} value={bidang.id}>
+                    {bidang.kode_bidang} - {bidang.nama_bidang}
+                  </option>
+                ))}
+              </select>
 
               {/* Unit Filter */}
               <select
                 value={selectedUnit}
-                onChange={(e) => setSelectedUnit(e.target.value)}
+                onChange={(e) => {
+                  setSelectedUnit(e.target.value);
+                }}
                 className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto cursor-pointer"
-                disabled={!selectedBidang || loadingUnits} // Non-aktifkan jika bidang belum dipilih atau sedang loading
+                disabled={!selectedBidang || loadingUnits}
               >
                 <option value="">
-                  {loadingUnits
-                    ? "Memuat Unit..."
-                    : unitList.length > 0
-                    ? "-- Semua Unit --"
-                    : "-- Pilih Bidang Dahulu --"}
+                  {loadingUnits ? "Memuat..." : "-- Semua Unit --"}
                 </option>
                 {unitList.map((unit) => (
                   <option key={unit.id} value={unit.id}>

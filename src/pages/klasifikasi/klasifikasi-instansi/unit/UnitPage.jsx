@@ -67,7 +67,8 @@ const UnitPage = () => {
 
         setBidangList(sortedBidang);
       } catch (error) {
-        console.error("Failed to fetch bidang list:", error);
+        console.error("Gagal mendapatkan bidang list:", error);
+        setBidangList([]);
       }
     };
 
@@ -100,7 +101,7 @@ const UnitPage = () => {
         setUnitData(response.data.data);
         setTotalRows(response.data.meta.total);
       } catch (error) {
-        console.error("Failed to fetch unit data:", error);
+        console.error("Gagal mendapatkan unit data:", error);
         setUnitData([]);
         setTotalRows(0);
       } finally {
@@ -221,6 +222,28 @@ const UnitPage = () => {
   // Table columns configuration
   const columns = [
     {
+      field: "action",
+      headerName: "Action",
+      width: 150,
+      sortable: false,
+      renderCell: (params) => (
+        <div className="flex gap-2 items-center">
+          <button
+            onClick={() => handleEditClick(params.row.id)}
+            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => handleDeleteClick(params.row.id)}
+            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
+          >
+            Delete
+          </button>
+        </div>
+      ),
+    },
+    {
       field: "no",
       headerName: "No",
       width: 70,
@@ -279,28 +302,6 @@ const UnitPage = () => {
       field: "kode",
       headerName: "Kode",
       width: 100,
-    },
-    {
-      field: "action",
-      headerName: "Action",
-      width: 150,
-      sortable: false,
-      renderCell: (params) => (
-        <div className="flex gap-2 items-center">
-          <button
-            onClick={() => handleEditClick(params.row.id)}
-            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => handleDeleteClick(params.row.id)}
-            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
-          >
-            Delete
-          </button>
-        </div>
-      ),
     },
   ];
 
