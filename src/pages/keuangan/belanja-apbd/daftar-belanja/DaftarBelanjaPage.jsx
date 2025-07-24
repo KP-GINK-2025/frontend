@@ -4,89 +4,101 @@ import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { RefreshCw, Plus, Download, Search } from "lucide-react";
 import DataTable from "../../../../components/DataTable";
 import AddBarangModal from "./AddBarangModal";
+import Swal from "sweetalert2";
 
 const DaftarBelanjaPage = () => {
+  // Search and pagination states
   const [searchTerm, setSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(10);
+  const [dataTablePaginationModel, setDataTablePaginationModel] = useState({
+    page: 0,
+    pageSize: 10,
+  });
 
+  // Main data state
   const [daftarBelanjaData, setDaftarBelanjaData] = useState([]);
 
-  // State untuk data dropdown filter
-  const [bidangData, setBidangData] = useState([]);
-  const [unitData, setUnitData] = useState([]);
-  const [subUnitData, setSubUnitData] = useState([]);
-  const [upbData, setUpbData] = useState([]);
-  const [semesterData, setSemesterData] = useState([]);
-  const [tahunData, setTahunData] = useState([]);
-  const [kualifikasiBelanjaData, setKualifikasiBelanjaData] = useState([]);
-  const [statusVerifikasiData, setStatusVerifikasiData] = useState([]);
-  const [statusTotalBelanjaData, setStatusTotalBelanjaData] = useState([]);
+  // Filter dropdown data states
+  const [filterOptions, setFilterOptions] = useState({
+    bidang: [],
+    unit: [],
+    subUnit: [],
+    upb: [],
+    semester: [],
+    tahun: [],
+    kualifikasiBelanja: [],
+    statusVerifikasi: [],
+    statusTotalBelanja: [],
+  });
 
   // Selected filter states
-  const [selectedTahun, setSelectedTahun] = useState("");
-  const [selectedBidang, setSelectedBidang] = useState("");
-  const [selectedUnit, setSelectedUnit] = useState("");
-  const [selectedSubUnit, setSelectedSubUnit] = useState("");
-  const [selectedUpb, setSelectedUpb] = useState("");
-  const [selectedSemester, setSelectedSemester] = useState("");
-  const [selectedKualifikasiBelanja, setSelectedKualifikasiBelanja] =
-    useState("");
-  const [selectedStatusVerifikasi, setSelectedStatusVerifikasi] = useState("");
-  const [selectedStatusTotalHarga, setSelectedStatusTotalHarga] = useState("");
+  const [filters, setFilters] = useState({
+    tahun: "",
+    bidang: "",
+    unit: "",
+    subUnit: "",
+    upb: "",
+    semester: "",
+    kualifikasiBelanja: "",
+    statusVerifikasi: "",
+    statusTotalHarga: "",
+  });
 
+  // UI states
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
 
-  const [dataTablePaginationModel, setDataTablePaginationModel] =
-    React.useState({
-      page: 0,
-      pageSize: entriesPerPage,
-    });
-
+  // Fetch data function with proper loading state management
   const fetchData = async () => {
     setLoading(true);
-    setError(null); // Reset error saat fetch dimulai
-    try {
-      // Dummy data untuk dropdown filter
-      setBidangData([
-        { id: 1, nama: "Bidang Pendidikan" },
-        { id: 2, nama: "Bidang Kesehatan" },
-      ]);
-      setUnitData([
-        { id: 1, nama: "Dinas Pendidikan" },
-        { id: 2, nama: "Dinas Kesehatan" },
-      ]);
-      setSubUnitData([
-        { id: 1, nama: "Sub Unit Sekolah" },
-        { id: 2, nama: "Sub Unit Puskesmas" },
-      ]);
-      setUpbData([
-        { id: 1, nama: "UPB 001" },
-        { id: 2, nama: "UPB 002" },
-      ]);
-      setSemesterData([
-        { id: 1, nama: "1" },
-        { id: 2, nama: "2" },
-      ]);
-      setKualifikasiBelanjaData([
-        { id: 1, nama: "Barang" },
-        { id: 2, nama: "Jasa" },
-        { id: 3, nama: "Modal" },
-      ]);
-      setStatusVerifikasiData([
-        { id: 1, nama: "Diverifikasi" },
-        { id: 2, nama: "Menunggu" },
-        { id: 3, nama: "Ditolak" },
-      ]);
-      setStatusTotalBelanjaData([
-        { id: 1, nama: "Lunas" },
-        { id: 2, nama: "Belum Lunas" },
-      ]);
-      setTahunData(["2023", "2024", "2025"]);
+    setError(null);
 
-      // Dummy data untuk tabel, PASTIKAN NILAI BERUPA NUMBER
+    try {
+      // Simulate API delay for better UX demonstration
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Set filter dropdown options
+      setFilterOptions({
+        bidang: [
+          { id: 1, nama: "Bidang Pendidikan" },
+          { id: 2, nama: "Bidang Kesehatan" },
+        ],
+        unit: [
+          { id: 1, nama: "Dinas Pendidikan" },
+          { id: 2, nama: "Dinas Kesehatan" },
+        ],
+        subUnit: [
+          { id: 1, nama: "Sub Unit Sekolah" },
+          { id: 2, nama: "Sub Unit Puskesmas" },
+        ],
+        upb: [
+          { id: 1, nama: "UPB 001" },
+          { id: 2, nama: "UPB 002" },
+        ],
+        semester: [
+          { id: 1, nama: "1" },
+          { id: 2, nama: "2" },
+        ],
+        kualifikasiBelanja: [
+          { id: 1, nama: "Barang" },
+          { id: 2, nama: "Jasa" },
+          { id: 3, nama: "Modal" },
+        ],
+        statusVerifikasi: [
+          { id: 1, nama: "Diverifikasi" },
+          { id: 2, nama: "Menunggu" },
+          { id: 3, nama: "Ditolak" },
+        ],
+        statusTotalBelanja: [
+          { id: 1, nama: "Lunas" },
+          { id: 2, nama: "Belum Lunas" },
+        ],
+        tahun: ["2023", "2024", "2025"],
+      });
+
+      // Set main table data
       const dummyData = [
         {
           id: 1,
@@ -195,69 +207,78 @@ const DaftarBelanjaPage = () => {
         },
       ];
 
-      setDaftarBelanjaData(dummyData); // Set data utama
-      setLoading(false);
+      setDaftarBelanjaData(dummyData);
     } catch (err) {
       console.error("Error fetching data:", err);
       setError("Gagal memuat data: " + err.message);
+    } finally {
       setLoading(false);
     }
   };
 
+  // Initial data fetch
   useEffect(() => {
-    fetchData(); // Panggil fetchData saat komponen di-mount
-  }, []); // Dependencies kosong, karena filtering sekarang di luar fetchData
+    fetchData();
+  }, []);
 
-  // Filter data (dilakukan di luar fetchData)
+  // Update pagination model when entriesPerPage changes
+  useEffect(() => {
+    setDataTablePaginationModel((prev) => ({
+      ...prev,
+      pageSize: entriesPerPage,
+      page: 0,
+    }));
+  }, [entriesPerPage]);
+
+  // Filter data based on search term and selected filters
   const filteredData = daftarBelanjaData.filter((item) => {
-    const matchesSearch =
-      item.upb?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.namaPekerjaan?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.nomorKontrak?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.kodeKegiatan?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.totalHarga
-        ?.toString()
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      item.nilaiRealisasi
-        ?.toString()
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
+    const matchesSearch = [
+      item.upb,
+      item.namaPekerjaan,
+      item.nomorKontrak,
+      item.kodeKegiatan,
+      item.totalHarga?.toString(),
+      item.nilaiRealisasi?.toString(),
+    ].some((field) => field?.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const matchesAllFilters =
-      (selectedTahun === "" || item.tahun === selectedTahun) &&
-      (selectedBidang === "" || item.bidang === selectedBidang) &&
-      (selectedUnit === "" || item.unit === selectedUnit) &&
-      (selectedSubUnit === "" || item.subUnit === selectedSubUnit) &&
-      (selectedUpb === "" || item.upb === selectedUpb) &&
-      (selectedSemester === "" || item.semester === selectedSemester) &&
-      (selectedKualifikasiBelanja === "" ||
-        item.kualifikasiBelanja === selectedKualifikasiBelanja) &&
-      (selectedStatusVerifikasi === "" ||
-        item.statusVerifikasi === selectedStatusVerifikasi) &&
-      (selectedStatusTotalHarga === "" ||
-        item.statusTotalHarga === selectedStatusTotalHarga);
+    const matchesFilters = Object.entries(filters).every(([key, value]) => {
+      if (!value) return true;
+      return item[key] === value;
+    });
 
-    return matchesSearch && matchesAllFilters;
+    return matchesSearch && matchesFilters;
   });
 
-  const handleExport = () => console.log("Exporting Daftar Belanja...");
-
-  const handleRefresh = () => {
-    setLoading(true);
-    setSearchTerm("");
-    setSelectedTahun("");
-    setSelectedBidang("");
-    setSelectedUnit("");
-    setSelectedSubUnit("");
-    setSelectedUpb("");
-    setSelectedSemester("");
-    setSelectedKualifikasiBelanja("");
-    setSelectedStatusVerifikasi("");
-    setSelectedStatusTotalHarga("");
-    fetchData();
+  // Handle filter changes
+  const handleFilterChange = (filterKey, value) => {
+    setFilters((prev) => ({ ...prev, [filterKey]: value }));
+    setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
   };
 
+  // Handle refresh with proper loading state
+  const handleRefresh = async () => {
+    setSearchTerm("");
+    setFilters({
+      tahun: "",
+      bidang: "",
+      unit: "",
+      subUnit: "",
+      upb: "",
+      semester: "",
+      kualifikasiBelanja: "",
+      statusVerifikasi: "",
+      statusTotalHarga: "",
+    });
+    setDataTablePaginationModel({ page: 0, pageSize: entriesPerPage });
+    await fetchData();
+  };
+
+  const handleExport = () => {
+    console.log("Exporting Daftar Belanja...");
+    // Add your export logic here
+  };
+
+  // Modal handlers
   const handleOpenAddModal = () => {
     setEditingItem(null);
     setIsAddModalOpen(true);
@@ -270,6 +291,7 @@ const DaftarBelanjaPage = () => {
 
   const handleSaveNewDaftarBelanja = (daftarBelanjaToSave) => {
     if (daftarBelanjaToSave.id) {
+      // Update existing item
       setDaftarBelanjaData((prevData) =>
         prevData.map((item) =>
           item.id === daftarBelanjaToSave.id ? daftarBelanjaToSave : item
@@ -277,6 +299,7 @@ const DaftarBelanjaPage = () => {
       );
       console.log("Update Daftar Belanja:", daftarBelanjaToSave);
     } else {
+      // Add new item
       setDaftarBelanjaData((prevData) => [
         ...prevData,
         { id: Date.now(), ...daftarBelanjaToSave },
@@ -295,14 +318,32 @@ const DaftarBelanjaPage = () => {
   };
 
   const handleDeleteClick = (id) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus data ini?")) {
-      setDaftarBelanjaData((prevData) =>
-        prevData.filter((item) => item.id !== id)
-      );
-      console.log("Menghapus Belanja dengan ID:", id);
-    }
+    Swal.fire({
+      title: "Apakah Anda yakin?",
+      text: "Data belanja yang dihapus tidak dapat dikembalikan!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Ya, hapus!",
+      cancelButtonText: "Batal",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setDaftarBelanjaData((prevData) =>
+          prevData.filter((item) => item.id !== id)
+        );
+        Swal.fire({
+          icon: "success",
+          title: "Terhapus!",
+          text: "Data belanja berhasil dihapus.",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      }
+    });
   };
 
+  // Table columns configuration
   const columns = [
     { field: "id", headerName: "ID", width: 70 },
     { field: "upb", headerName: "UPB", width: 120 },
@@ -370,12 +411,35 @@ const DaftarBelanjaPage = () => {
     },
   ];
 
+  // Filter dropdown component
+  const FilterDropdown = ({
+    label,
+    value,
+    options,
+    onChange,
+    valueKey = "nama",
+  }) => (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+    >
+      <option value="">-- {label} --</option>
+      {options.map((option, index) => (
+        <option key={option.id || index} value={option[valueKey] || option}>
+          {option[valueKey] || option}
+        </option>
+      ))}
+    </select>
+  );
+
   return (
     <div className="min-h-screen bg-[#f7f7f7]">
       <Navbar />
       <div className="px-8 py-8">
         <Breadcrumbs />
 
+        {/* Export Button */}
         <div className="flex justify-end mb-4">
           <button
             onClick={handleExport}
@@ -388,167 +452,85 @@ const DaftarBelanjaPage = () => {
         <div className="bg-white rounded-lg shadow-sm p-6">
           <h1 className="text-2xl font-bold mb-6">Daftar Belanja APBD</h1>
 
-          {/* BARIS Filter & Tombol Aksi */}
+          {/* Filters and Action Buttons */}
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4 mb-6">
-            {/* Dropdown Filters (kiri) */}
+            {/* Filter Dropdowns */}
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 flex-1">
-              {" "}
-              {/* Disamakan dengan DataRuangPage */}
-              {/* Filter Tahun */}
-              <select
-                value={selectedTahun}
-                onChange={(e) => {
-                  setSelectedTahun(e.target.value);
-                  setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
-                }}
-                className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-              >
-                <option value=""> -- Tahun -- </option>
-                {tahunData.map((tahun, i) => (
-                  <option key={i} value={tahun}>
-                    {tahun}
-                  </option>
-                ))}
-              </select>
-              {/* Filter Bidang */}
-              <select
-                value={selectedBidang}
-                onChange={(e) => {
-                  setSelectedBidang(e.target.value);
-                  setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
-                }}
-                className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-              >
-                <option value=""> -- Bidang -- </option>
-                {bidangData.map((b) => (
-                  <option key={b.id} value={b.nama}>
-                    {b.nama}
-                  </option>
-                ))}
-              </select>
-              {/* Filter Unit */}
-              <select
-                value={selectedUnit}
-                onChange={(e) => {
-                  setSelectedUnit(e.target.value);
-                  setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
-                }}
-                className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-              >
-                <option value=""> -- Unit -- </option>
-                {unitData.map((u) => (
-                  <option key={u.id} value={u.nama}>
-                    {u.nama}
-                  </option>
-                ))}
-              </select>
-              {/* Filter Sub Unit */}
-              <select
-                value={selectedSubUnit}
-                onChange={(e) => {
-                  setSelectedSubUnit(e.target.value);
-                  setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
-                }}
-                className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-              >
-                <option value=""> -- Sub Unit -- </option>
-                {subUnitData.map((s) => (
-                  <option key={s.id} value={s.nama}>
-                    {s.nama}
-                  </option>
-                ))}
-              </select>
-              {/* Filter UPB */}
-              <select
-                value={selectedUpb}
-                onChange={(e) => {
-                  setSelectedUpb(e.target.value);
-                  setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
-                }}
-                className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-              >
-                <option value=""> -- UPB -- </option>
-                {upbData.map((u) => (
-                  <option key={u.id} value={u.nama}>
-                    {u.nama}
-                  </option>
-                ))}
-              </select>
-              {/* Filter Semester */}
-              <select
-                value={selectedSemester}
-                onChange={(e) => {
-                  setSelectedSemester(e.target.value);
-                  setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
-                }}
-                className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-              >
-                <option value=""> -- Semester -- </option>
-                {semesterData.map((s) => (
-                  <option key={s.id} value={s.nama}>
-                    {s.nama}
-                  </option>
-                ))}
-              </select>
-              {/* Filter Kualifikasi Belanja */}
-              <select
-                value={selectedKualifikasiBelanja}
-                onChange={(e) => {
-                  setSelectedKualifikasiBelanja(e.target.value);
-                  setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
-                }}
-                className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-              >
-                <option value="">-- Kualifikasi --</option>
-                {kualifikasiBelanjaData.map((k) => (
-                  <option key={k.id} value={k.nama}>
-                    {k.nama}
-                  </option>
-                ))}
-              </select>
-              {/* Filter Status Verifikasi */}
-              <select
-                value={selectedStatusVerifikasi}
-                onChange={(e) => {
-                  setSelectedStatusVerifikasi(e.target.value);
-                  setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
-                }}
-                className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-              >
-                <option value="">-- Status Verifikasi --</option>
-                {statusVerifikasiData.map((s) => (
-                  <option key={s.id} value={s.nama}>
-                    {s.nama}
-                  </option>
-                ))}
-              </select>
-              {/* Filter Status Total Belanja */}
-              <select
-                value={selectedStatusTotalHarga}
-                onChange={(e) => {
-                  setSelectedStatusTotalHarga(e.target.value);
-                  setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
-                }}
-                className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-              >
-                <option value="">-- Status Total --</option>
-                {statusTotalBelanjaData.map((s) => (
-                  <option key={s.id} value={s.nama}>
-                    {s.nama}
-                  </option>
-                ))}
-              </select>
+              <FilterDropdown
+                label="Tahun"
+                value={filters.tahun}
+                options={filterOptions.tahun}
+                onChange={(value) => handleFilterChange("tahun", value)}
+                valueKey={null}
+              />
+              <FilterDropdown
+                label="Bidang"
+                value={filters.bidang}
+                options={filterOptions.bidang}
+                onChange={(value) => handleFilterChange("bidang", value)}
+              />
+              <FilterDropdown
+                label="Unit"
+                value={filters.unit}
+                options={filterOptions.unit}
+                onChange={(value) => handleFilterChange("unit", value)}
+              />
+              <FilterDropdown
+                label="Sub Unit"
+                value={filters.subUnit}
+                options={filterOptions.subUnit}
+                onChange={(value) => handleFilterChange("subUnit", value)}
+              />
+              <FilterDropdown
+                label="UPB"
+                value={filters.upb}
+                options={filterOptions.upb}
+                onChange={(value) => handleFilterChange("upb", value)}
+              />
+              <FilterDropdown
+                label="Semester"
+                value={filters.semester}
+                options={filterOptions.semester}
+                onChange={(value) => handleFilterChange("semester", value)}
+              />
+              <FilterDropdown
+                label="Kualifikasi"
+                value={filters.kualifikasiBelanja}
+                options={filterOptions.kualifikasiBelanja}
+                onChange={(value) =>
+                  handleFilterChange("kualifikasiBelanja", value)
+                }
+              />
+              <FilterDropdown
+                label="Status Verifikasi"
+                value={filters.statusVerifikasi}
+                options={filterOptions.statusVerifikasi}
+                onChange={(value) =>
+                  handleFilterChange("statusVerifikasi", value)
+                }
+              />
+              <FilterDropdown
+                label="Status Total"
+                value={filters.statusTotalHarga}
+                options={filterOptions.statusTotalBelanja}
+                onChange={(value) =>
+                  handleFilterChange("statusTotalHarga", value)
+                }
+              />
             </div>
 
-            {/* Tombol Refresh dan Add Barang (di kanan) */}
+            {/* Action Buttons */}
             <div className="flex gap-2 items-center lg:self-end">
-              {" "}
-              {/* self-end untuk menyelaraskan ke bawah di desktop */}
               <button
                 onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+                disabled={loading}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
-                <RefreshCw size={16} /> Refresh
+                <RefreshCw
+                  size={16}
+                  className={loading ? "animate-spin" : ""}
+                />
+                Refresh
               </button>
               <button
                 onClick={handleOpenAddModal}
@@ -559,21 +541,14 @@ const DaftarBelanjaPage = () => {
             </div>
           </div>
 
-          {/* BARIS Kontrol Tabel: Show entries dan Search */}
+          {/* Table Controls */}
           <div className="flex justify-between items-center mb-6 text-sm text-gray-600">
             <div className="flex items-center gap-2">
               Show
               <select
                 value={entriesPerPage}
-                onChange={(e) => {
-                  setEntriesPerPage(Number(e.target.value));
-                  setDataTablePaginationModel((prev) => ({
-                    ...prev,
-                    pageSize: Number(e.target.value),
-                    page: 0,
-                  }));
-                }}
-                className="border border-gray-300 rounded px-2 py-1"
+                onChange={(e) => setEntriesPerPage(Number(e.target.value))}
+                className="border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="5">5</option>
                 <option value="10">10</option>
@@ -598,26 +573,43 @@ const DaftarBelanjaPage = () => {
             </div>
           </div>
 
-          {/* DataTable Component */}
+          {/* Data Table */}
           {loading ? (
-            <div className="text-center py-8 text-gray-500">Memuat data...</div>
-          ) : error ? (
-            <div className="text-center py-8 text-red-600">Error: {error}</div>
-          ) : (
             <DataTable
               rows={filteredData}
               columns={columns}
               initialPageSize={entriesPerPage}
               pageSizeOptions={[5, 10, 25, 50, 100]}
               height={500}
-              emptyRowsMessage="No data available in table"
+              emptyRowsMessage="Tidak ada data tersedia"
               paginationModel={dataTablePaginationModel}
               onPaginationModelChange={setDataTablePaginationModel}
+              loading={true} // <-- ini yang penting
             />
+          ) : error ? (
+            <div className="text-center py-12">
+              <div className="text-red-600 mb-2">⚠️ Error</div>
+              <div className="text-gray-600">{error}</div>
+            </div>
+          ) : (
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <DataTable
+                rows={filteredData}
+                columns={columns}
+                initialPageSize={entriesPerPage}
+                pageSizeOptions={[5, 10, 25, 50, 100]}
+                height={500}
+                emptyRowsMessage="Tidak ada data tersedia"
+                paginationModel={dataTablePaginationModel}
+                onPaginationModelChange={setDataTablePaginationModel}
+                loading={false} // <-- ini yang penting
+              />
+            </div>
           )}
         </div>
       </div>
 
+      {/* Add/Edit Modal */}
       <AddBarangModal
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}

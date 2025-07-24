@@ -5,11 +5,13 @@ import { RefreshCw, Download, Search } from "lucide-react";
 import DataTable from "../../../../components/DataTable";
 
 const PostingBelanjaPage = () => {
+  // State untuk data utama
   const [searchTerm, setSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [postingBelanjaData, setPostingBelanjaData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // State untuk data dropdown filter
   const [bidangData, setBidangData] = useState([]);
@@ -20,7 +22,7 @@ const PostingBelanjaPage = () => {
   const [kualifikasiBelanjaData, setKualifikasiBelanjaData] = useState([]);
   const [kualifikasiAsetData, setKualifikasiAsetData] = useState([]);
 
-  // Selected filter states
+  // State untuk filter yang dipilih
   const [selectedBidang, setSelectedBidang] = useState("");
   const [selectedUnit, setSelectedUnit] = useState("");
   const [selectedSubUnit, setSelectedSubUnit] = useState("");
@@ -30,135 +32,152 @@ const PostingBelanjaPage = () => {
     useState("");
   const [selectedKualifikasiAset, setSelectedKualifikasiAset] = useState("");
 
-  const [dataTablePaginationModel, setDataTablePaginationModel] =
-    React.useState({
-      page: 0,
-      pageSize: entriesPerPage,
-    });
+  // State pagination
+  const [dataTablePaginationModel, setDataTablePaginationModel] = useState({
+    page: 0,
+    pageSize: entriesPerPage,
+  });
+
+  // Data dropdown statis
+  const dropdownData = {
+    bidang: [
+      { id: 1, nama: "Bidang Pendidikan" },
+      { id: 2, nama: "Bidang Kesehatan" },
+    ],
+    unit: [
+      { id: 1, nama: "Dinas Pendidikan" },
+      { id: 2, nama: "Dinas Kesehatan" },
+    ],
+    subUnit: [
+      { id: 1, nama: "Sub Unit Sekolah" },
+      { id: 2, nama: "Sub Unit Puskesmas" },
+    ],
+    upb: [
+      { id: 1, nama: "UPB 001" },
+      { id: 2, nama: "UPB 002" },
+    ],
+    semester: [
+      { id: 1, nama: "1" },
+      { id: 2, nama: "2" },
+    ],
+    kualifikasiBelanja: [
+      { id: 1, nama: "Barang" },
+      { id: 2, nama: "Jasa" },
+      { id: 3, nama: "Modal" },
+    ],
+    kualifikasiAset: [
+      { id: 1, nama: "Aset Tetap" },
+      { id: 2, nama: "Bukan Aset" },
+    ],
+  };
+
+  // Data tabel statis
+  const dummyPostingBelanjaData = [
+    {
+      id: 1,
+      belanjaApbdId: "BLJ001",
+      bidang: "Bidang Pendidikan",
+      unit: "Dinas Pendidikan",
+      subUnit: "Sub Unit Sekolah",
+      upb: "UPB 001",
+      semester: "1",
+      tanggalPerolehan: "2024-01-15",
+      kegiatan: "Kegiatan A",
+      pekerjaan: "Pengadaan Komputer",
+      kontrak: "Kontrak-A-001",
+      kualifikasiBelanja: "Barang",
+      jenisItem: "Elektronik",
+      kodeBarang: "KB001",
+      namaBarang: "Laptop ASUS",
+      merkType: "ASUS/X441",
+      ukuran: "14 inci",
+      jumlahBarang: 10,
+      nilaiTotal: 50000000,
+      kualifikasiAset: "Aset Tetap",
+      peningkatanKualitas: "Tidak ada",
+      statusVerifikasi: "Diverifikasi",
+      catatanVerifikasi: "Sesuai",
+      jumlahPosting: 2,
+    },
+    {
+      id: 2,
+      belanjaApbdId: "BLJ002",
+      bidang: "Bidang Kesehatan",
+      unit: "Dinas Kesehatan",
+      subUnit: "Sub Unit Puskesmas",
+      upb: "UPB 002",
+      semester: "1",
+      tanggalPerolehan: "2024-02-20",
+      kegiatan: "Kegiatan B",
+      pekerjaan: "Renovasi Gedung",
+      kontrak: "Kontrak-B-001",
+      kualifikasiBelanja: "Jasa",
+      jenisItem: "Konstruksi",
+      kodeBarang: "KC001",
+      namaBarang: "Cat Dinding",
+      merkType: "Dulux/Weatherbond",
+      ukuran: "5 kg",
+      jumlahBarang: 50,
+      nilaiTotal: 25000000,
+      kualifikasiAset: "Bukan Aset",
+      peningkatanKualitas: "Ada",
+      statusVerifikasi: "Menunggu",
+      catatanVerifikasi: "",
+      jumlahPosting: 0,
+    },
+    {
+      id: 3,
+      belanjaApbdId: "BLJ003",
+      bidang: "Bidang Pendidikan",
+      unit: "Dinas Pendidikan",
+      subUnit: "Sub Unit Sekolah",
+      upb: "UPB 001",
+      semester: "2",
+      tanggalPerolehan: "2024-03-01",
+      kegiatan: "Kegiatan C",
+      pekerjaan: "Pemasangan CCTV",
+      kontrak: "Kontrak-C-001",
+      kualifikasiBelanja: "Jasa",
+      jenisItem: "Elektronik",
+      kodeBarang: "KB002",
+      namaBarang: "CCTV Outdoor",
+      merkType: "Hikvision/DS-2CE",
+      ukuran: "2MP",
+      jumlahBarang: 5,
+      nilaiTotal: 7500000,
+      kualifikasiAset: "Aset Tetap",
+      peningkatanKualitas: "Tidak ada",
+      statusVerifikasi: "Diverifikasi",
+      catatanVerifikasi: "Selesai",
+      jumlahPosting: 1,
+    },
+  ];
 
   const fetchData = async () => {
     setLoading(true);
     setError(null);
+
     try {
-      // Dummy data untuk dropdown filter
-      setBidangData([
-        { id: 1, nama: "Bidang Pendidikan" },
-        { id: 2, nama: "Bidang Kesehatan" },
-      ]);
-      setUnitData([
-        { id: 1, nama: "Dinas Pendidikan" },
-        { id: 2, nama: "Dinas Kesehatan" },
-      ]);
-      setSubUnitData([
-        { id: 1, nama: "Sub Unit Sekolah" },
-        { id: 2, nama: "Sub Unit Puskesmas" },
-      ]);
-      setUpbData([
-        { id: 1, nama: "UPB 001" },
-        { id: 2, nama: "UPB 002" },
-      ]);
-      setSemesterData([
-        { id: 1, nama: "1" },
-        { id: 2, nama: "2" },
-      ]);
-      setKualifikasiBelanjaData([
-        { id: 1, nama: "Barang" },
-        { id: 2, nama: "Jasa" },
-        { id: 3, nama: "Modal" },
-      ]);
-      setKualifikasiAsetData([
-        { id: 1, nama: "Aset Tetap" },
-        { id: 2, nama: "Bukan Aset" },
-      ]);
+      // Simulasi delay API
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
-      // Dummy data untuk tabel Posting Belanja
-      const dummyPostingBelanjaData = [
-        {
-          id: 1,
-          belanjaApbdId: "BLJ001",
-          bidang: "Bidang Pendidikan",
-          unit: "Dinas Pendidikan",
-          subUnit: "Sub Unit Sekolah",
-          upb: "UPB 001",
-          semester: "1",
-          tanggalPerolehan: "2024-01-15",
-          kegiatan: "Kegiatan A",
-          pekerjaan: "Pengadaan Komputer",
-          kontrak: "Kontrak-A-001",
-          kualifikasiBelanja: "Barang",
-          jenisItem: "Elektronik",
-          kodeBarang: "KB001",
-          namaBarang: "Laptop ASUS",
-          merkType: "ASUS/X441",
-          ukuran: "14 inci",
-          jumlahBarang: 10,
-          nilaiTotal: 50000000,
-          kualifikasiAset: "Aset Tetap",
-          peningkatanKualitas: "Tidak ada",
-          statusVerifikasi: "Diverifikasi",
-          catatanVerifikasi: "Sesuai",
-          jumlahPosting: 2,
-        },
-        {
-          id: 2,
-          belanjaApbdId: "BLJ002",
-          bidang: "Bidang Kesehatan",
-          unit: "Dinas Kesehatan",
-          subUnit: "Sub Unit Puskesmas",
-          upb: "UPB 002",
-          semester: "1",
-          tanggalPerolehan: "2024-02-20",
-          kegiatan: "Kegiatan B",
-          pekerjaan: "Renovasi Gedung",
-          kontrak: "Kontrak-B-001",
-          kualifikasiBelanja: "Jasa",
-          jenisItem: "Konstruksi",
-          kodeBarang: "KC001",
-          namaBarang: "Cat Dinding",
-          merkType: "Dulux/Weatherbond",
-          ukuran: "5 kg",
-          jumlahBarang: 50,
-          nilaiTotal: 25000000,
-          kualifikasiAset: "Bukan Aset",
-          peningkatanKualitas: "Ada",
-          statusVerifikasi: "Menunggu",
-          catatanVerifikasi: "",
-          jumlahPosting: 0,
-        },
-        {
-          id: 3,
-          belanjaApbdId: "BLJ003",
-          bidang: "Bidang Pendidikan",
-          unit: "Dinas Pendidikan",
-          subUnit: "Sub Unit Sekolah",
-          upb: "UPB 001",
-          semester: "2",
-          tanggalPerolehan: "2024-03-01",
-          kegiatan: "Kegiatan C",
-          pekerjaan: "Pemasangan CCTV",
-          kontrak: "Kontrak-C-001",
-          kualifikasiBelanja: "Jasa",
-          jenisItem: "Elektronik",
-          kodeBarang: "KB002",
-          namaBarang: "CCTV Outdoor",
-          merkType: "Hikvision/DS-2CE",
-          ukuran: "2MP",
-          jumlahBarang: 5,
-          nilaiTotal: 7500000,
-          kualifikasiAset: "Aset Tetap",
-          peningkatanKualitas: "Tidak ada",
-          statusVerifikasi: "Diverifikasi",
-          catatanVerifikasi: "Selesai",
-          jumlahPosting: 1,
-        },
-      ];
+      // Set data dropdown
+      setBidangData(dropdownData.bidang);
+      setUnitData(dropdownData.unit);
+      setSubUnitData(dropdownData.subUnit);
+      setUpbData(dropdownData.upb);
+      setSemesterData(dropdownData.semester);
+      setKualifikasiBelanjaData(dropdownData.kualifikasiBelanja);
+      setKualifikasiAsetData(dropdownData.kualifikasiAset);
 
+      // Set data tabel
       setPostingBelanjaData(dummyPostingBelanjaData);
-      setLoading(false);
     } catch (err) {
       console.error("Error fetching data:", err);
       setError("Gagal memuat data: " + err.message);
+    } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -166,30 +185,8 @@ const PostingBelanjaPage = () => {
     fetchData();
   }, []);
 
-  // Filtering data
-  const filteredData = postingBelanjaData.filter((item) => {
-    const matchesSearch = Object.values(item).some((val) =>
-      String(val).toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    const matchesAllFilters =
-      (selectedBidang === "" || item.bidang === selectedBidang) &&
-      (selectedUnit === "" || item.unit === selectedUnit) &&
-      (selectedSubUnit === "" || item.subUnit === selectedSubUnit) &&
-      (selectedUpb === "" || item.upb === selectedUpb) &&
-      (selectedSemester === "" || item.semester === selectedSemester) &&
-      (selectedKualifikasiBelanja === "" ||
-        item.kualifikasiBelanja === selectedKualifikasiBelanja) &&
-      (selectedKualifikasiAset === "" ||
-        item.kualifikasiAset === selectedKualifikasiAset);
-
-    return matchesSearch && matchesAllFilters;
-  });
-
-  const handleExport = () => console.log("Exporting Posting Belanja...");
-
-  const handleRefresh = () => {
-    setLoading(true);
+  // Filter untuk reset semua state filter
+  const resetFilters = () => {
     setSearchTerm("");
     setSelectedBidang("");
     setSelectedUnit("");
@@ -198,11 +195,76 @@ const PostingBelanjaPage = () => {
     setSelectedSemester("");
     setSelectedKualifikasiBelanja("");
     setSelectedKualifikasiAset("");
-    fetchData();
+    setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
   };
 
-  // Tidak ada handleOpenAddModal, handleCloseAddModal, handleSaveNewItem, handleEditClick, handleDeleteClick
+  // Filter data berdasarkan search dan filter yang dipilih
+  const filteredData = postingBelanjaData.filter((item) => {
+    const matchesSearch = Object.values(item).some((val) =>
+      String(val).toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
+    const matchesFilters = [
+      selectedBidang === "" || item.bidang === selectedBidang,
+      selectedUnit === "" || item.unit === selectedUnit,
+      selectedSubUnit === "" || item.subUnit === selectedSubUnit,
+      selectedUpb === "" || item.upb === selectedUpb,
+      selectedSemester === "" || item.semester === selectedSemester,
+      selectedKualifikasiBelanja === "" ||
+        item.kualifikasiBelanja === selectedKualifikasiBelanja,
+      selectedKualifikasiAset === "" ||
+        item.kualifikasiAset === selectedKualifikasiAset,
+    ].every(Boolean);
+
+    return matchesSearch && matchesFilters;
+  });
+
+  // Handler untuk export
+  const handleExport = () => {
+    console.log("Exporting Posting Belanja...");
+    // Implementasi export logic di sini
+  };
+
+  // Handler untuk refresh dengan animasi
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    resetFilters();
+    await fetchData();
+  };
+
+  // Handler untuk perubahan filter dengan reset pagination
+  const handleFilterChange = (setter) => (e) => {
+    setter(e.target.value);
+    setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
+  };
+
+  // Handler untuk perubahan entries per page
+  const handleEntriesPerPageChange = (e) => {
+    const newPageSize = Number(e.target.value);
+    setEntriesPerPage(newPageSize);
+    setDataTablePaginationModel({
+      page: 0,
+      pageSize: newPageSize,
+    });
+  };
+
+  // Komponen filter dropdown
+  const FilterSelect = ({ value, onChange, options, placeholder }) => (
+    <select
+      value={value}
+      onChange={onChange}
+      className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+    >
+      <option value="">{placeholder}</option>
+      {options.map((option) => (
+        <option key={option.id} value={option.nama}>
+          {option.nama}
+        </option>
+      ))}
+    </select>
+  );
+
+  // Konfigurasi kolom tabel
   const columns = [
     { field: "id", headerName: "ID", width: 70 },
     { field: "belanjaApbdId", headerName: "No Belanja APBD", width: 150 },
@@ -258,16 +320,9 @@ const PostingBelanjaPage = () => {
       sortable: false,
       renderCell: (params) => (
         <div className="flex gap-2 items-center">
-          {/* <button
-            onClick={() => console.log("Posting Item ID:", params.row.id)}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-sm cursor-pointer"
-          >
-            Posting
-          </button> */}
-          {/* Opsional: Tombol Lihat Detail jika diperlukan */}
           <button
             onClick={() => console.log("Lihat Detail Item ID:", params.row.id)}
-            className=" bg-[#B53C3C] p-2 text-white hover:bg-gray-300 hover:text-[#B53C3C] rounded-md text-sm cursor-pointer"
+            className="bg-[#B53C3C] p-2 text-white hover:bg-gray-300 hover:text-[#B53C3C] rounded-md text-sm transition-colors duration-200"
           >
             Lihat
           </button>
@@ -282,6 +337,7 @@ const PostingBelanjaPage = () => {
       <div className="px-8 py-8">
         <Breadcrumbs />
 
+        {/* Export Button */}
         <div className="flex justify-end mb-4">
           <button
             onClick={handleExport}
@@ -294,134 +350,67 @@ const PostingBelanjaPage = () => {
         <div className="bg-white rounded-lg shadow-sm p-6">
           <h1 className="text-2xl font-bold mb-6">Posting Belanja APBD</h1>
 
-          {/* BARIS Filter & Tombol Aksi */}
+          {/* Filter Controls */}
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4 mb-6">
-            {/* Dropdown Filters (kiri) */}
+            {/* Dropdown Filters */}
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 flex-1">
-              {" "}
-              {/* Filter Bidang */}
-              <select
+              <FilterSelect
                 value={selectedBidang}
-                onChange={(e) => {
-                  setSelectedBidang(e.target.value);
-                  setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
-                }}
-                className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-              >
-                <option value=""> -- Bidang -- </option>
-                {bidangData.map((b) => (
-                  <option key={b.id} value={b.nama}>
-                    {b.nama}
-                  </option>
-                ))}
-              </select>
-              {/* Filter Unit */}
-              <select
+                onChange={handleFilterChange(setSelectedBidang)}
+                options={bidangData}
+                placeholder="-- Bidang --"
+              />
+              <FilterSelect
                 value={selectedUnit}
-                onChange={(e) => {
-                  setSelectedUnit(e.target.value);
-                  setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
-                }}
-                className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-              >
-                <option value=""> -- Unit -- </option>
-                {unitData.map((u) => (
-                  <option key={u.id} value={u.nama}>
-                    {u.nama}
-                  </option>
-                ))}
-              </select>
-              {/* Filter Sub Unit */}
-              <select
+                onChange={handleFilterChange(setSelectedUnit)}
+                options={unitData}
+                placeholder="-- Unit --"
+              />
+              <FilterSelect
                 value={selectedSubUnit}
-                onChange={(e) => {
-                  setSelectedSubUnit(e.target.value);
-                  setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
-                }}
-                className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-              >
-                <option value=""> -- Sub Unit -- </option>
-                {subUnitData.map((s) => (
-                  <option key={s.id} value={s.nama}>
-                    {s.nama}
-                  </option>
-                ))}
-              </select>
-              {/* Filter UPB */}
-              <select
+                onChange={handleFilterChange(setSelectedSubUnit)}
+                options={subUnitData}
+                placeholder="-- Sub Unit --"
+              />
+              <FilterSelect
                 value={selectedUpb}
-                onChange={(e) => {
-                  setSelectedUpb(e.target.value);
-                  setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
-                }}
-                className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-              >
-                <option value=""> -- UPB -- </option>
-                {upbData.map((u) => (
-                  <option key={u.id} value={u.nama}>
-                    {u.nama}
-                  </option>
-                ))}
-              </select>
-              {/* Filter Semester */}
-              <select
+                onChange={handleFilterChange(setSelectedUpb)}
+                options={upbData}
+                placeholder="-- UPB --"
+              />
+              <FilterSelect
                 value={selectedSemester}
-                onChange={(e) => {
-                  setSelectedSemester(e.target.value);
-                  setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
-                }}
-                className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-              >
-                <option value=""> -- Semester -- </option>
-                {semesterData.map((s) => (
-                  <option key={s.id} value={s.nama}>
-                    {s.nama}
-                  </option>
-                ))}
-              </select>
-              {/* Filter Jenis Belanja (Kualifikasi Belanja) */}
-              <select
+                onChange={handleFilterChange(setSelectedSemester)}
+                options={semesterData}
+                placeholder="-- Semester --"
+              />
+              <FilterSelect
                 value={selectedKualifikasiBelanja}
-                onChange={(e) => {
-                  setSelectedKualifikasiBelanja(e.target.value);
-                  setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
-                }}
-                className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-              >
-                <option value="">-- Jenis Belanja --</option>
-                {kualifikasiBelanjaData.map((k) => (
-                  <option key={k.id} value={k.nama}>
-                    {k.nama}
-                  </option>
-                ))}
-              </select>
-              {/* Filter Kualifikasi Aset */}
-              <select
+                onChange={handleFilterChange(setSelectedKualifikasiBelanja)}
+                options={kualifikasiBelanjaData}
+                placeholder="-- Jenis Belanja --"
+              />
+              <FilterSelect
                 value={selectedKualifikasiAset}
-                onChange={(e) => {
-                  setSelectedKualifikasiAset(e.target.value);
-                  setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
-                }}
-                className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-              >
-                <option value="">-- Kualifikasi Aset --</option>
-                {kualifikasiAsetData.map((k) => (
-                  <option key={k.id} value={k.nama}>
-                    {k.nama}
-                  </option>
-                ))}
-              </select>
+                onChange={handleFilterChange(setSelectedKualifikasiAset)}
+                options={kualifikasiAsetData}
+                placeholder="-- Kualifikasi Aset --"
+              />
             </div>
 
             {/* Tombol Refresh */}
             <div className="flex gap-2 items-center lg:self-end">
               <button
                 onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+                disabled={loading}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
-                <RefreshCw size={16} /> Refresh
+                <RefreshCw
+                  size={16}
+                  className={loading ? "animate-spin" : ""}
+                />
+                Refresh
               </button>
-              {/* Tidak ada tombol Add di halaman ini */}
             </div>
           </div>
 
@@ -440,6 +429,7 @@ const PostingBelanjaPage = () => {
                   }));
                 }}
                 className="border border-gray-300 rounded px-2 py-1"
+                disabled={loading}
               >
                 <option value="5">5</option>
                 <option value="10">10</option>
@@ -460,27 +450,38 @@ const PostingBelanjaPage = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                disabled={loading}
               />
             </div>
           </div>
 
           {/* DataTable Component */}
-          {loading ? (
-            <div className="text-center py-8 text-gray-500">Memuat data...</div>
-          ) : error ? (
-            <div className="text-center py-8 text-red-600">Error: {error}</div>
-          ) : (
-            <DataTable
-              rows={filteredData}
-              columns={columns}
-              initialPageSize={entriesPerPage}
-              pageSizeOptions={[5, 10, 25, 50, 100]}
-              height={500}
-              emptyRowsMessage="No data available in table"
-              paginationModel={dataTablePaginationModel}
-              onPaginationModelChange={setDataTablePaginationModel}
-            />
-          )}
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            {error ? (
+              <div className="text-center py-12">
+                <div className="text-red-600 mb-2">⚠️ Error</div>
+                <div className="text-gray-600">{error}</div>
+                <button
+                  onClick={fetchData}
+                  className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
+                >
+                  Coba Lagi
+                </button>
+              </div>
+            ) : (
+              <DataTable
+                rows={filteredData}
+                columns={columns}
+                initialPageSize={entriesPerPage}
+                pageSizeOptions={[5, 10, 25, 50, 100]}
+                height={500}
+                emptyRowsMessage="Tidak ada data tersedia"
+                paginationModel={dataTablePaginationModel}
+                onPaginationModelChange={setDataTablePaginationModel}
+                loading={loading}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>

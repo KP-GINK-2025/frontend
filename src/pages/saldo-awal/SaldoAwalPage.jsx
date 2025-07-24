@@ -4,6 +4,7 @@ import Breadcrumbs from "../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import AddNeracaAsetModal from "./AddNeracaAsetModal";
 import DataTable from "../../components/DataTable";
+import Swal from "sweetalert2";
 
 const SaldoAwalPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -188,6 +189,7 @@ const SaldoAwalPage = () => {
   });
 
   const handleExport = () => console.log("Exporting Saldo Awal...");
+
   const handleRefresh = () => {
     setLoading(true);
     setSearchTerm("");
@@ -201,7 +203,7 @@ const SaldoAwalPage = () => {
     setSelectedKelompokAset("");
     setSelectedJenisAset("");
     setSelectedObjekAset("");
-    fetchData(); // Panggil ulang fetchData
+    fetchData();
   };
 
   const handleOpenAddModal = () => {
@@ -243,10 +245,29 @@ const SaldoAwalPage = () => {
   };
 
   const handleDeleteClick = (id) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus data ini?")) {
-      setSaldoAwalData((prevData) => prevData.filter((item) => item.id !== id));
-      console.log("Menghapus Saldo Awal dengan ID:", id);
-    }
+    Swal.fire({
+      title: "Apakah Anda yakin?",
+      text: "Data saldo awal yang dihapus tidak dapat dikembalikan!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Ya, hapus!",
+      cancelButtonText: "Batal",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setSaldoAwalData((prevData) =>
+          prevData.filter((item) => item.id !== id)
+        );
+        Swal.fire({
+          icon: "success",
+          title: "Terhapus!",
+          text: "Data saldo awal berhasil dihapus.",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      }
+    });
   };
 
   // Data kolom untuk MUI DataGrid
@@ -322,15 +343,19 @@ const SaldoAwalPage = () => {
         </div>
 
         <div className="bg-white rounded-lg shadow-sm p-6">
-          {/* BARIS ATAS: Judul H1, Refresh, Add Saldo Awal */}
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-gray-800">Saldo Awal</h1>
             <div className="flex gap-3">
               <button
                 onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+                disabled={loading}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
-                <RefreshCw size={16} /> Refresh
+                <RefreshCw
+                  size={16}
+                  className={loading ? "animate-spin" : ""}
+                />
+                Refresh
               </button>
               <button
                 onClick={handleOpenAddModal}
@@ -519,18 +544,36 @@ const SaldoAwalPage = () => {
 
           {/* DataTable Component */}
           {loading ? (
-            <div className="text-center py-8 text-gray-500">Loading...</div>
-          ) : (
             <DataTable
               rows={filteredData}
               columns={columns}
               initialPageSize={entriesPerPage}
               pageSizeOptions={[5, 10, 25, 50, 100]}
               height={500}
-              emptyRowsMessage="No Saldo Awal data available"
+              emptyRowsMessage="Tidak ada data tersedia"
               paginationModel={dataTablePaginationModel}
               onPaginationModelChange={setDataTablePaginationModel}
+              loading={true} // <-- ini yang penting
             />
+          ) : error ? (
+            <div className="text-center py-12">
+              <div className="text-red-600 mb-2">⚠️ Error</div>
+              <div className="text-gray-600">{error}</div>
+            </div>
+          ) : (
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <DataTable
+                rows={filteredData}
+                columns={columns}
+                initialPageSize={entriesPerPage}
+                pageSizeOptions={[5, 10, 25, 50, 100]}
+                height={500}
+                emptyRowsMessage="Tidak ada data tersedia"
+                paginationModel={dataTablePaginationModel}
+                onPaginationModelChange={setDataTablePaginationModel}
+                loading={false} // <-- ini yang penting
+              />
+            </div>
           )}
         </div>
       </div>

@@ -4,68 +4,82 @@ import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { RefreshCw, Plus, Download, Search } from "lucide-react";
 import DataTable from "../../../../components/DataTable";
 import AddMutasiModal from "./AddMutasiModal";
+import Swal from "sweetalert2";
 
 const DaftarMutasiPage = () => {
+  // State untuk data dan loading
   const [searchTerm, setSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [mutasiData, setMutasiData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // State untuk data dropdown filter
-  const [kualifikasiPerolehanData, setKualifikasiPerolehanData] = useState([]);
-  const [asalData, setAsalData] = useState([]);
-  const [tujuanData, setTujuanData] = useState([]);
-  const [semesterData, setSemesterData] = useState([]);
-  const [statusVerifikasiData, setStatusVerifikasiData] = useState([]);
+  const [filterData, setFilterData] = useState({
+    kualifikasiPerolehan: [],
+    asal: [],
+    tujuan: [],
+    semester: [],
+    statusVerifikasi: [],
+  });
 
-  // Selected filter states
-  const [selectedKualifikasiPerolehan, setSelectedKualifikasiPerolehan] =
-    useState("");
-  const [selectedAsal, setSelectedAsal] = useState("");
-  const [selectedTujuan, setSelectedTujuan] = useState("");
-  const [selectedSemester, setSelectedSemester] = useState("");
-  const [selectedStatusVerifikasi, setSelectedStatusVerifikasi] = useState("");
+  // State untuk filter yang dipilih
+  const [selectedFilters, setSelectedFilters] = useState({
+    kualifikasiPerolehan: "",
+    asal: "",
+    tujuan: "",
+    semester: "",
+    statusVerifikasi: "",
+  });
 
+  // State untuk modal
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
 
-  const [dataTablePaginationModel, setDataTablePaginationModel] =
-    React.useState({
-      page: 0,
-      pageSize: entriesPerPage,
-    });
+  // State untuk pagination
+  const [dataTablePaginationModel, setDataTablePaginationModel] = useState({
+    page: 0,
+    pageSize: entriesPerPage,
+  });
 
+  // Fetch data function
   const fetchData = async () => {
     setLoading(true);
     setError(null);
-    try {
-      // Dummy data untuk dropdown filter
-      setKualifikasiPerolehanData([
-        { id: 1, nama: "Dropping Pusat" },
-        { id: 2, nama: "Dropping Pemda" },
-        { id: 3, nama: "Hibah" },
-        { id: 4, nama: "Pembelian" },
-      ]);
-      setAsalData([
-        { id: 1, nama: "Jakarta" },
-        { id: 2, nama: "Lampung" },
-      ]);
-      setTujuanData([
-        { id: 1, nama: "Bandar Lampung" },
-        { id: 2, nama: "Metro" },
-      ]);
-      setSemesterData([
-        { id: 1, nama: "Ganjil" },
-        { id: 2, nama: "Genap" },
-      ]);
-      setStatusVerifikasiData([
-        { id: 1, nama: "Diverifikasi" },
-        { id: 2, nama: "Menunggu" },
-        { id: 3, nama: "Ditolak" },
-      ]);
 
-      // Dummy data untuk tabel Mutasi
+    try {
+      // Simulasi delay untuk menunjukkan loading
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      // Data dropdown filter
+      const newFilterData = {
+        kualifikasiPerolehan: [
+          { id: 1, nama: "Dropping Pusat" },
+          { id: 2, nama: "Dropping Pemda" },
+          { id: 3, nama: "Hibah" },
+          { id: 4, nama: "Pembelian" },
+        ],
+        asal: [
+          { id: 1, nama: "Jakarta" },
+          { id: 2, nama: "Lampung" },
+        ],
+        tujuan: [
+          { id: 1, nama: "Bandar Lampung" },
+          { id: 2, nama: "Metro" },
+        ],
+        semester: [
+          { id: 1, nama: "Ganjil" },
+          { id: 2, nama: "Genap" },
+        ],
+        statusVerifikasi: [
+          { id: 1, nama: "Diverifikasi" },
+          { id: 2, nama: "Menunggu" },
+          { id: 3, nama: "Ditolak" },
+        ],
+      };
+
+      // Data mutasi dummy
       const dummyMutasiData = [
         {
           id: 1,
@@ -79,18 +93,12 @@ const DaftarMutasiPage = () => {
           lampiran: "lampiran_dp001.pdf",
           statusVerifikasi: "Diverifikasi",
           catatanVerifikasi: "Dokumen lengkap",
-          // Conditional fields for Dropping Pusat
           tahunPerolehan: "2024",
           nomorSp2d: "SP2D/001",
           tanggalSp2d: "2024-01-05",
           nomorSuratPengantar: "SP/PST/001",
           tanggalSuratPengantar: "2024-01-01",
-          // Fields from other types should be undefined/null
-          opdAsal: undefined,
-          opdTujuan: undefined,
-          nomorSkpd: undefined,
-          tanggalSkpd: undefined,
-          semester: "Ganjil", // Untuk filter semester
+          semester: "Ganjil",
         },
         {
           id: 2,
@@ -104,18 +112,11 @@ const DaftarMutasiPage = () => {
           lampiran: "lampiran_dpm002.pdf",
           statusVerifikasi: "Menunggu",
           catatanVerifikasi: "",
-          // Conditional fields for Dropping Pemda
           opdAsal: "Dinas Pendidikan",
           opdTujuan: "Dinas Kesehatan",
           nomorSkpd: "SKPD/001",
           tanggalSkpd: "2024-02-10",
-          // Fields from other types should be undefined/null
-          tahunPerolehan: undefined,
-          nomorSp2d: undefined,
-          tanggalSp2d: undefined,
-          nomorSuratPengantar: undefined,
-          tanggalSuratPengantar: undefined,
-          semester: "Ganjil", // Untuk filter semester
+          semester: "Ganjil",
         },
         {
           id: 3,
@@ -129,65 +130,113 @@ const DaftarMutasiPage = () => {
           lampiran: "lampiran_pbl003.pdf",
           statusVerifikasi: "Diverifikasi",
           catatanVerifikasi: "Pembelian rutin",
-          // Semua field kondisional akan undefined/null
-          tahunPerolehan: undefined,
-          nomorSp2d: undefined,
-          tanggalSp2d: undefined,
-          nomorSuratPengantar: undefined,
-          tanggalSuratPengantar: undefined,
-          opdAsal: undefined,
-          opdTujuan: undefined,
-          nomorSkpd: undefined,
-          tanggalSkpd: undefined,
-          semester: "Genap", // Untuk filter semester
+          semester: "Genap",
         },
       ];
 
+      setFilterData(newFilterData);
       setMutasiData(dummyMutasiData);
-      setLoading(false);
     } catch (err) {
       console.error("Error fetching data:", err);
       setError("Gagal memuat data: " + err.message);
+
+      // Show error toast
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Gagal memuat data. Silakan coba lagi.",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 3000,
+      });
+    } finally {
       setLoading(false);
     }
   };
 
+  // Initial data fetch
   useEffect(() => {
     fetchData();
   }, []);
 
-  // Filtering data
+  // Update pagination when entries per page changes
+  useEffect(() => {
+    setDataTablePaginationModel((prev) => ({
+      ...prev,
+      pageSize: entriesPerPage,
+      page: 0,
+    }));
+  }, [entriesPerPage]);
+
+  // Filter data based on search and selected filters
   const filteredData = mutasiData.filter((item) => {
     const matchesSearch = Object.values(item).some((val) =>
       String(val)?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const matchesAllFilters =
-      (selectedKualifikasiPerolehan === "" ||
-        item.kualifikasiPerolehan === selectedKualifikasiPerolehan) &&
-      (selectedAsal === "" || item.asal === selectedAsal) &&
-      (selectedTujuan === "" || item.tujuan === selectedTujuan) &&
-      (selectedSemester === "" || item.semester === selectedSemester) &&
-      (selectedStatusVerifikasi === "" ||
-        item.statusVerifikasi === selectedStatusVerifikasi);
+    const matchesFilters = Object.entries(selectedFilters).every(
+      ([key, value]) => {
+        if (!value) return true;
+        return item[key] === value;
+      }
+    );
 
-    return matchesSearch && matchesAllFilters;
+    return matchesSearch && matchesFilters;
   });
 
-  const handleExport = () => console.log("Exporting Daftar Mutasi...");
-
-  const handleRefresh = () => {
-    setLoading(true);
-    setSearchTerm("");
-    setSelectedKualifikasiPerolehan("");
-    setSelectedAsal("");
-    setSelectedTujuan("");
-    setSelectedSemester("");
-    setSelectedStatusVerifikasi("");
-    setDataTablePaginationModel({ page: 0, pageSize: entriesPerPage });
-    fetchData();
+  // Handle filter change
+  const handleFilterChange = (filterType, value) => {
+    setSelectedFilters((prev) => ({
+      ...prev,
+      [filterType]: value,
+    }));
+    setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
   };
 
+  // Reset all filters and refresh data
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    setSearchTerm("");
+    setSelectedFilters({
+      kualifikasiPerolehan: "",
+      asal: "",
+      tujuan: "",
+      semester: "",
+      statusVerifikasi: "",
+    });
+    setDataTablePaginationModel({ page: 0, pageSize: entriesPerPage });
+
+    await fetchData();
+    setIsRefreshing(false);
+
+    // Show success toast
+    Swal.fire({
+      icon: "success",
+      title: "Berhasil!",
+      text: "Data berhasil dimuat ulang.",
+      toast: true,
+      position: "top-end",
+      showConfirmButton: false,
+      timer: 2000,
+    });
+  };
+
+  // Export functionality
+  const handleExport = () => {
+    console.log("Exporting Daftar Mutasi...");
+    Swal.fire({
+      icon: "info",
+      title: "Export",
+      text: "Fitur export sedang dalam pengembangan.",
+      toast: true,
+      position: "top-end",
+      showConfirmButton: false,
+      timer: 2000,
+    });
+  };
+
+  // Modal handlers
   const handleOpenAddModal = () => {
     setEditingItem(null);
     setIsAddModalOpen(true);
@@ -198,26 +247,47 @@ const DaftarMutasiPage = () => {
     setEditingItem(null);
   };
 
+  // Save new or edited mutasi
   const handleSaveNewMutasi = (mutasiToSave) => {
     if (mutasiToSave.id) {
-      // Mode Edit
+      // Edit mode
       setMutasiData((prevData) =>
         prevData.map((item) =>
           item.id === mutasiToSave.id ? mutasiToSave : item
         )
       );
-      console.log("Update Mutasi:", mutasiToSave);
+
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data mutasi berhasil diperbarui.",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+      });
     } else {
-      // Mode Tambah Baru
+      // Add new mode
       setMutasiData((prevData) => [
         ...prevData,
         { ...mutasiToSave, id: Date.now() },
       ]);
-      console.log("Menyimpan Mutasi baru:", mutasiToSave);
+
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data mutasi baru berhasil ditambahkan.",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+      });
     }
+
     handleCloseAddModal();
   };
 
+  // Edit mutasi
   const handleEditClick = (id) => {
     const itemToEdit = mutasiData.find((item) => item.id === id);
     if (itemToEdit) {
@@ -226,14 +296,36 @@ const DaftarMutasiPage = () => {
     }
   };
 
-  const handleDeleteClick = (id) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus data ini?")) {
+  // Delete mutasi with SweetAlert2
+  const handleDeleteClick = async (id) => {
+    const result = await Swal.fire({
+      title: "Apakah Anda yakin?",
+      text: "Data yang dihapus tidak dapat dikembalikan!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Ya, hapus!",
+      cancelButtonText: "Batal",
+      reverseButtons: true,
+    });
+
+    if (result.isConfirmed) {
       setMutasiData((prevData) => prevData.filter((item) => item.id !== id));
-      console.log("Menghapus Mutasi dengan ID:", id);
+
+      Swal.fire({
+        icon: "success",
+        title: "Terhapus!",
+        text: "Data mutasi berhasil dihapus.",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+      });
     }
   };
 
-  // Definisi kolom untuk DataTable
+  // Table columns definition
   const columns = [
     { field: "id", headerName: "ID", width: 70 },
     {
@@ -260,10 +352,39 @@ const DaftarMutasiPage = () => {
       headerName: "Total Harga",
       type: "number",
       width: 150,
+      valueFormatter: (params) =>
+        new Intl.NumberFormat("id-ID", {
+          style: "currency",
+          currency: "IDR",
+        }).format(params.value),
     },
-    { field: "lampiran", headerName: "Lampiran", width: 100 }, // Jika berupa link/button, perlu renderCell
-    { field: "statusVerifikasi", headerName: "Status Verifikasi", width: 150 },
-    { field: "catatanVerifikasi", headerName: "Catatan Verifikasi", flex: 1 }, // Menggunakan flex
+    { field: "lampiran", headerName: "Lampiran", width: 100 },
+    {
+      field: "statusVerifikasi",
+      headerName: "Status Verifikasi",
+      width: 150,
+      renderCell: (params) => {
+        const status = params.value;
+        let bgColor = "bg-gray-100 text-gray-800";
+
+        if (status === "Diverifikasi") {
+          bgColor = "bg-green-100 text-green-800";
+        } else if (status === "Menunggu") {
+          bgColor = "bg-yellow-100 text-yellow-800";
+        } else if (status === "Ditolak") {
+          bgColor = "bg-red-100 text-red-800";
+        }
+
+        return (
+          <span
+            className={`px-2 py-1 rounded-full text-xs font-medium ${bgColor}`}
+          >
+            {status}
+          </span>
+        );
+      },
+    },
+    { field: "catatanVerifikasi", headerName: "Catatan Verifikasi", flex: 1 },
     {
       field: "action",
       headerName: "Action",
@@ -273,256 +394,184 @@ const DaftarMutasiPage = () => {
         <div className="flex gap-2 items-center">
           <button
             onClick={() => handleEditClick(params.row.id)}
-            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
+            className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors duration-200 hover:underline cursor-pointer"
           >
             Edit
           </button>
           <button
             onClick={() => handleDeleteClick(params.row.id)}
-            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
+            className="text-red-600 hover:text-red-800 text-sm font-medium transition-colors duration-200 hover:underline cursor-pointer"
           >
             Delete
           </button>
         </div>
       ),
     },
-    // Kolom-kolom kondisional yang mungkin ada di data tapi tidak selalu tampil di tabel utama
-    // Tambahkan mereka sebagai kolom tersembunyi atau muncul berdasarkan kebutuhan user/admin
-    {
-      field: "tahunPerolehan",
-      headerName: "Tahun Perolehan (DP)",
-      width: 150,
-      hide: true,
-    },
-    {
-      field: "nomorSp2d",
-      headerName: "Nomor SP2D (DP)",
-      width: 150,
-      hide: true,
-    },
-    {
-      field: "tanggalSp2d",
-      headerName: "Tgl SP2D (DP)",
-      width: 150,
-      hide: true,
-    },
-    {
-      field: "nomorSuratPengantar",
-      headerName: "No Surat Pengantar (DP)",
-      width: 200,
-      hide: true,
-    },
-    {
-      field: "tanggalSuratPengantar",
-      headerName: "Tgl Surat Pengantar (DP)",
-      width: 200,
-      hide: true,
-    },
-    { field: "opdAsal", headerName: "OPD Asal (DPM)", width: 150, hide: true },
-    {
-      field: "opdTujuan",
-      headerName: "OPD Tujuan (DPM)",
-      width: 150,
-      hide: true,
-    },
-    {
-      field: "nomorSkpd",
-      headerName: "Nomor SKPD (DPM)",
-      width: 150,
-      hide: true,
-    },
-    {
-      field: "tanggalSkpd",
-      headerName: "Tgl SKPD (DPM)",
-      width: 150,
-      hide: true,
-    },
   ];
 
+  // Render filter dropdown
+  const renderFilterSelect = (filterKey, placeholder, options) => (
+    <select
+      value={selectedFilters[filterKey]}
+      onChange={(e) => handleFilterChange(filterKey, e.target.value)}
+      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+    >
+      <option value="">{placeholder}</option>
+      {options.map((option) => (
+        <option key={option.id} value={option.nama}>
+          {option.nama}
+        </option>
+      ))}
+    </select>
+  );
+
   return (
-    <div className="min-h-screen bg-[#f7f7f7]">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <div className="px-8 py-8">
+      <div className="px-4 sm:px-6 lg:px-8 py-8">
         <Breadcrumbs />
 
-        <div className="flex justify-end mb-4">
+        {/* Export Button */}
+        <div className="flex justify-end mb-6">
           <button
             onClick={handleExport}
             className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
           >
-            <Download size={16} /> Export
+            <Download size={16} />
+            Export
           </button>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h1 className="text-2xl font-bold mb-6">Daftar Mutasi</h1>
+        {/* Main Content Card */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-6">
+            <h1 className="text-2xl font-bold text-gray-900 mb-6">
+              Daftar Mutasi
+            </h1>
 
-          {/* Filter Baris 1: Dropdown Filters & Tombol Aksi (Refresh, Add) */}
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4 mb-6">
-            {/* Dropdown Filters (kiri) - Menggunakan grid untuk responsifitas */}
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 flex-1">
-              {/* Filter Kualifikasi Perolehan */}
-              <select
-                value={selectedKualifikasiPerolehan}
-                onChange={(e) => {
-                  setSelectedKualifikasiPerolehan(e.target.value);
-                  setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
-                }}
-                className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-              >
-                <option value=""> -- Kualifikasi Perolehan -- </option>
-                {kualifikasiPerolehanData.map((k) => (
-                  <option key={k.id} value={k.nama}>
-                    {k.nama}
-                  </option>
-                ))}
-              </select>
+            {/* Filters and Action Buttons */}
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 mb-6">
+              {/* Filter Dropdowns */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 flex-1">
+                {renderFilterSelect(
+                  "kualifikasiPerolehan",
+                  "-- Kualifikasi Perolehan --",
+                  filterData.kualifikasiPerolehan
+                )}
+                {renderFilterSelect("asal", "-- Asal --", filterData.asal)}
+                {renderFilterSelect(
+                  "tujuan",
+                  "-- Tujuan --",
+                  filterData.tujuan
+                )}
+                {renderFilterSelect(
+                  "semester",
+                  "-- Semester --",
+                  filterData.semester
+                )}
+                {renderFilterSelect(
+                  "statusVerifikasi",
+                  "-- Status Verifikasi --",
+                  filterData.statusVerifikasi
+                )}
+              </div>
 
-              {/* Filter Asal */}
-              <select
-                value={selectedAsal}
-                onChange={(e) => {
-                  setSelectedAsal(e.target.value);
-                  setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
-                }}
-                className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-              >
-                <option value=""> -- Asal -- </option>
-                {asalData.map((a) => (
-                  <option key={a.id} value={a.nama}>
-                    {a.nama}
-                  </option>
-                ))}
-              </select>
-
-              {/* Filter Tujuan */}
-              <select
-                value={selectedTujuan}
-                onChange={(e) => {
-                  setSelectedTujuan(e.target.value);
-                  setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
-                }}
-                className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-              >
-                <option value=""> -- Tujuan -- </option>
-                {tujuanData.map((t) => (
-                  <option key={t.id} value={t.nama}>
-                    {t.nama}
-                  </option>
-                ))}
-              </select>
-
-              {/* Filter Semester */}
-              <select
-                value={selectedSemester}
-                onChange={(e) => {
-                  setSelectedSemester(e.target.value);
-                  setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
-                }}
-                className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-              >
-                <option value=""> -- Semester -- </option>
-                {semesterData.map((s) => (
-                  <option key={s.id} value={s.nama}>
-                    {s.nama}
-                  </option>
-                ))}
-              </select>
-
-              {/* Filter Status Verifikasi */}
-              <select
-                value={selectedStatusVerifikasi}
-                onChange={(e) => {
-                  setSelectedStatusVerifikasi(e.target.value);
-                  setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
-                }}
-                className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-              >
-                <option value=""> -- Status Verifikasi -- </option>
-                {statusVerifikasiData.map((s) => (
-                  <option key={s.id} value={s.nama}>
-                    {s.nama}
-                  </option>
-                ))}
-              </select>
+              {/* Action Buttons */}
+              <div className="flex gap-3 items-center">
+                <button
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+                >
+                  <RefreshCw
+                    size={16}
+                    className={`transition-transform ${
+                      isRefreshing ? "animate-spin" : ""
+                    }`}
+                  />
+                  Refresh
+                </button>
+                <button
+                  onClick={handleOpenAddModal}
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+                >
+                  <Plus size={16} />
+                  Add Mutasi
+                </button>
+              </div>
             </div>
 
-            {/* Tombol Refresh dan Add Mutasi (di kanan) */}
-            <div className="flex gap-2 items-center lg:self-end">
-              <button
-                onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
-              >
-                <RefreshCw size={16} /> Refresh
-              </button>
-              <button
-                onClick={handleOpenAddModal}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
-              >
-                <Plus size={16} /> Add Mutasi
-              </button>
-            </div>
-          </div>
+            {/* Table Controls */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <span>Show</span>
+                <select
+                  value={entriesPerPage}
+                  onChange={(e) => setEntriesPerPage(Number(e.target.value))}
+                  className="border border-gray-300 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="5">5</option>
+                  <option value="10">10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+                <span>entries</span>
+              </div>
 
-          {/* BARIS Kontrol Tabel: Show entries dan Search */}
-          <div className="flex justify-between items-center mb-6 text-sm text-gray-600">
-            <div className="flex items-center gap-2">
-              Show
-              <select
-                value={entriesPerPage}
-                onChange={(e) => {
-                  setEntriesPerPage(Number(e.target.value));
-                  setDataTablePaginationModel((prev) => ({
-                    ...prev,
-                    pageSize: Number(e.target.value),
-                    page: 0,
-                  }));
-                }}
-                className="border border-gray-300 rounded px-2 py-1"
-              >
-                <option value="5">5</option>
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-              </select>
-              entries
+              <div className="relative w-full sm:w-64">
+                <Search
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  size={16}
+                />
+                <input
+                  type="text"
+                  placeholder="Search"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
+                />
+              </div>
             </div>
-            <div className="relative w-full md:w-64">
-              <Search
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                size={16}
+
+            {/* Data Table */}
+            {loading ? (
+              <DataTable
+                rows={filteredData}
+                columns={columns}
+                initialPageSize={entriesPerPage}
+                pageSizeOptions={[5, 10, 25, 50, 100]}
+                height={500}
+                emptyRowsMessage="Tidak ada data tersedia"
+                paginationModel={dataTablePaginationModel}
+                onPaginationModelChange={setDataTablePaginationModel}
+                loading={true} // <-- ini yang penting
               />
-              <input
-                type="text"
-                placeholder="Search"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-              />
-            </div>
+            ) : error ? (
+              <div className="text-center py-12">
+                <div className="text-red-600 mb-2">⚠️ Error</div>
+                <div className="text-gray-600">{error}</div>
+              </div>
+            ) : (
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <DataTable
+                  rows={filteredData}
+                  columns={columns}
+                  initialPageSize={entriesPerPage}
+                  pageSizeOptions={[5, 10, 25, 50, 100]}
+                  height={500}
+                  emptyRowsMessage="Tidak ada data tersedia"
+                  paginationModel={dataTablePaginationModel}
+                  onPaginationModelChange={setDataTablePaginationModel}
+                  loading={false} // <-- ini yang penting
+                />
+              </div>
+            )}
           </div>
-
-          {/* DataTable Component */}
-          {loading ? (
-            <div className="text-center py-8 text-gray-500">Memuat data...</div>
-          ) : error ? (
-            <div className="text-center py-8 text-red-600">Error: {error}</div>
-          ) : (
-            <DataTable
-              rows={filteredData}
-              columns={columns}
-              initialPageSize={entriesPerPage}
-              pageSizeOptions={[5, 10, 25, 50, 100]}
-              height={500}
-              emptyRowsMessage="No data available in table"
-              paginationModel={dataTablePaginationModel}
-              onPaginationModelChange={setDataTablePaginationModel}
-            />
-          )}
         </div>
       </div>
 
+      {/* Add/Edit Modal */}
       <AddMutasiModal
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
