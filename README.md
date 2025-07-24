@@ -10,6 +10,8 @@
 - **Material UI**: MUI offers a comprehensive suite of free UI tools to help you ship new features faster.
 - **Lucide Icons**: A beautiful & consistent icon toolkit based on Feather Icons.
 - **React Select**: A flexible and beautiful Select Input control for ReactJS with multiselect, autocomplete, async and creatable support.
+- **SweetAlert2**: A beautiful, responsive, customizable, accessible (WAI-ARIA) replacement for JavaScript's popup boxes
+- **Framer Motion**: An open source, production-ready animation library
 
 ## Getting Started
 
@@ -84,6 +86,20 @@ Make sure you have the following installed:
    # or
    yarn add react-select
    ```
+
+9. Install SweetAlert2:
+
+   ```bash
+   npm install sweetalert2
+   ```
+
+10. Install Framer Motion:
+
+    ```bash
+    npm install framer-motion
+    # or
+    yarn add framer-motion
+    ```
 
 ### Running the Application
 

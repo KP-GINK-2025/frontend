@@ -5,6 +5,7 @@ import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import DataTable from "../../../../components/DataTable";
 import AddSubUnitModal from "./AddSubUnitModal";
+import Swal from "sweetalert2";
 
 const SubUnitPage = () => {
   const [subUnitData, setSubUnitData] = useState([]);
@@ -18,6 +19,7 @@ const SubUnitPage = () => {
   const [bidangList, setBidangList] = useState([]);
   const [selectedUnit, setSelectedUnit] = useState("");
   const [unitList, setUnitList] = useState([]);
+  const [loadingUnits, setLoadingUnits] = useState(false);
 
   // Modal state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -75,11 +77,21 @@ const SubUnitPage = () => {
     fetchBidangList();
   }, []);
 
+  // Fetch unit list (static data)
   useEffect(() => {
+    if (!selectedBidang) {
+      setUnitList([]);
+      return;
+    }
+
     const fetchUnitList = async () => {
+      setLoadingUnits(true);
       try {
         const response = await api.get("/klasifikasi-instansi/unit", {
-          params: { per_page: 1000 },
+          params: {
+            per_page: 1000,
+            bidang_id: selectedBidang,
+          },
         });
 
         const sortedUnit = response.data.data
@@ -97,11 +109,13 @@ const SubUnitPage = () => {
         setUnitList(sortedUnit);
       } catch (error) {
         console.error("Failed to fetch unit list:", error);
+      } finally {
+        setLoadingUnits(false);
       }
     };
 
     fetchUnitList();
-  }, []);
+  }, [selectedBidang]);
 
   // Fetch subunit data
   useEffect(() => {
@@ -118,12 +132,12 @@ const SubUnitPage = () => {
           params.append("search", debouncedSearchTerm);
         }
 
-        if (selectedBidang) {
-          params.append("bidang_id", selectedBidang);
-        }
-
         if (selectedUnit) {
+          // Jika unit dipilih, ini sudah paling spesifik
           params.append("unit_id", selectedUnit);
+        } else if (selectedBidang) {
+          // Jika hanya bidang yang dipilih, baru gunakan bidang_id
+          params.append("bidang_id", selectedBidang);
         }
 
         const response = await api.get(
@@ -400,12 +414,15 @@ const SubUnitPage = () => {
           {/* Filters and Search */}
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-4">
             {/* Left: Filters */}
-            <div className="flex flex-col gap-4 md:flex-row md:items-end">
+            <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end">
               {/* Bidang Filter */}
               <div className="flex items-center gap-2">
                 <select
                   value={selectedBidang}
-                  onChange={(e) => setSelectedBidang(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedBidang(e.target.value);
+                    setSelectedUnit(""); // PENTING: Reset pilihan unit saat bidang berubah
+                  }}
                   className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto cursor-pointer"
                 >
                   <option value="">-- Semua Bidang --</option>
@@ -416,12 +433,21 @@ const SubUnitPage = () => {
                   ))}
                 </select>
               </div>
+
+              {/* Unit Filter */}
               <select
                 value={selectedUnit}
                 onChange={(e) => setSelectedUnit(e.target.value)}
                 className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto cursor-pointer"
+                disabled={!selectedBidang || loadingUnits} // Non-aktifkan jika bidang belum dipilih atau sedang loading
               >
-                <option value="">-- Semua Unit --</option>
+                <option value="">
+                  {loadingUnits
+                    ? "Memuat Unit..."
+                    : unitList.length > 0
+                    ? "-- Semua Unit --"
+                    : "-- Pilih Bidang Dahulu --"}
+                </option>
                 {unitList.map((unit) => (
                   <option key={unit.id} value={unit.id}>
                     {unit.kode_unit} - {unit.nama_unit}
