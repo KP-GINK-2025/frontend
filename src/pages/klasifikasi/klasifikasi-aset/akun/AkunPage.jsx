@@ -5,168 +5,180 @@ import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import AddAkunModal from "./AddAkunModal";
 import DataTable from "../../../../components/DataTable";
+import Swal from "sweetalert2";
 
 const AkunPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [entriesPerPage, setEntriesPerPage] = useState(10);
-  const [asetSatuData, setAsetSatuData] = useState([]);
+  const [akunData, setAkunData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [rowCount, setRowCount] = useState(0);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [editingAset, setEditingAset] = useState(null);
+  const [editingAkun, setEditingAkun] = useState(null);
 
-  const [dataTablePaginationModel, setDataTablePaginationModel] =
-    React.useState({
-      page: 0,
-      pageSize: entriesPerPage,
-    });
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const response = await api.get("/klasifikasi-aset/akun-aset", {
-        params: {
-          search: searchTerm,
-          per_page: entriesPerPage,
-        },
-      });
-
-      const data = response.data.data.map((item) => ({
-        id: item.id,
-        kodeAset: item.kode_akun_aset,
-        namaAset: item.nama_akun_aset,
-        kode: item.kode,
-      }));
-
-      setAsetSatuData(data);
-    } catch (error) {
-      console.error("Gagal mengambil data akun aset:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, [searchTerm, entriesPerPage]);
-
-  const filteredData = asetSatuData.filter((item) => {
-    const nama = String(item.namaAset || "").toLowerCase();
-    const kodeAset = String(item.kodeAset || "").toLowerCase();
-    const kode = String(item.kode || "").toLowerCase();
-    const search = searchTerm.toLowerCase();
-
-    return (
-      nama.includes(search) ||
-      kodeAset.includes(search) ||
-      kode.includes(search)
-    );
+  // Pagination state
+  const [dataTablePaginationModel, setDataTablePaginationModel] = useState({
+    page: 0,
+    pageSize: 10,
   });
 
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300); // Tunggu 300ms setelah user berhenti mengetik
+
+    return () => {
+      clearTimeout(timer); // Bersihkan timer jika searchTerm berubah sebelum 300ms
+    };
+  }, [searchTerm]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    if (debouncedSearchTerm !== searchTerm) {
+      setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
+    }
+  }, [debouncedSearchTerm, searchTerm]);
+
+  // Fetch akun
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        params.append("page", dataTablePaginationModel.page + 1); // API biasanya 1-indexed
+        params.append("per_page", dataTablePaginationModel.pageSize);
+
+        if (debouncedSearchTerm) {
+          params.append("search", debouncedSearchTerm);
+        }
+
+        const response = await api.get(
+          `/klasifikasi-aset/akun-aset?${params.toString()}`
+        );
+
+        setAkunData(response.data.data);
+        setRowCount(response.data.meta.total);
+      } catch (error) {
+        console.error("Gagal fetch data akun:", error);
+        setAkunData([]);
+        setRowCount(0);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [dataTablePaginationModel, debouncedSearchTerm, refreshTrigger]); // Dependencies yang memicu re-fetch
+
+  // Event handlers
   const handleExport = () => {
     console.log("Exporting data...");
   };
 
   const handleRefresh = () => {
-    setLoading(true);
-    setSearchTerm("");
-    fetchData();
+    setRefreshTrigger((c) => c + 1);
   };
 
   const handleOpenAddModal = () => {
-    setEditingAset(null);
+    setEditingAkun(null);
     setIsAddModalOpen(true);
   };
 
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
-    setEditingAset(null);
+    setEditingAkun(null);
   };
 
-  const handleSaveNewAset = async (asetToSave) => {
+  const handleSaveNewAkun = async (akunToSave) => {
     try {
-      if (asetToSave.id) {
-        // UPDATE
-        const response = await api.put(
-          `/klasifikasi-aset/akun-aset/${asetToSave.id}`,
-          {
-            kode_akun_aset: asetToSave.kodeAset,
-            nama_akun_aset: asetToSave.namaAset,
-            kode: asetToSave.kode,
-          }
-        );
-        console.log("Update sukses:", response.data);
-      } else {
-        // CREATE
-        const response = await api.post("/klasifikasi-aset/akun-aset", {
-          kode_akun_aset: asetToSave.kodeAset,
-          nama_akun_aset: asetToSave.namaAset,
-          kode: asetToSave.kode,
+      if (akunToSave.id) {
+        // Mode Edit
+        const { id, ...payload } = akunToSave;
+        await api.patch(`/klasifikasi-aset/akun-aset/${id}`, payload);
+        Swal.fire({
+          title: "Berhasil Edit",
+          text: "Data berhasil diubah.",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
         });
-        console.log("Tambah sukses:", response.data);
-      }
-
-      fetchData(); // refresh table setelah simpan
-      handleCloseAddModal();
-    } catch (error) {
-      if (error.response && error.response.data.errors) {
-        console.error("Validasi gagal:", error.response.data.errors);
       } else {
-        console.error("Terjadi kesalahan:", error);
+        // Mode Add
+        await api.post("/klasifikasi-aset/akun-aset", akunToSave);
+        Swal.fire({
+          title: "Berhasil Add",
+          text: "Data berhasil ditambah.",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
+        });
       }
+      handleCloseAddModal();
+      handleRefresh();
+    } catch (error) {
+      console.error(
+        "Gagal simpan akun:",
+        error.response?.data || error.message
+      );
+      Swal.fire({
+        title: "Gagal",
+        text: "Data tidak dapat disimpan.",
+        icon: "error",
+        timer: 1500,
+        showConfirmButton: false,
+      });
     }
   };
 
   const handleEditClick = (id) => {
-    const asetToEdit = asetSatuData.find((item) => item.id === id);
-    if (asetToEdit) {
-      setEditingAset(asetToEdit);
+    const akunToEdit = akunData.find((item) => item.id === id);
+    if (akunToEdit) {
+      setEditingAkun(akunToEdit);
       setIsAddModalOpen(true);
     }
   };
 
   const handleDeleteClick = async (id) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus data ini?")) {
-      try {
-        await api.delete(`/klasifikasi-aset/akun-aset/${id}`);
-        console.log("Akun aset berhasil dihapus:", id);
-        fetchData(); // refresh data
-      } catch (error) {
-        console.error("Gagal menghapus data:", error);
-      }
+    const result = await Swal.fire({
+      title: "Yakin ingin menghapus data ini?",
+      text: "Data yang dihapus tidak dapat dikembalikan.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#e53935",
+      cancelButtonColor: "#aaa",
+      confirmButtonText: "Ya, hapus",
+      cancelButtonText: "Batal",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      await api.delete(`/klasifikasi-aset/akun-aset/${id}`);
+      console.log("Berhasil menghapus akun dengan ID:", id);
+      Swal.fire({
+        title: "Berhasil Delete",
+        text: "Data berhasil dihapus.",
+        icon: "success",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+      handleRefresh();
+    } catch (error) {
+      console.error("Gagal menghapus akun:", error);
+      Swal.fire({
+        title: "Gagal",
+        text: "Terjadi kesalahan saat menghapus data.",
+        icon: "error",
+      });
     }
   };
 
-  // Data kolom untuk MUI DataGrid
+  // Table columns configuration
   const columns = [
-    {
-      field: "no",
-      headerName: "No",
-      width: 70,
-      sortable: false,
-      renderCell: (params) => {
-        const index = asetSatuData.findIndex((row) => row.id === params.row.id);
-        return (
-          dataTablePaginationModel.page * dataTablePaginationModel.pageSize +
-          index +
-          1
-        );
-      },
-    },
-    {
-      field: "kodeAset",
-      headerName: "Kode Aset 1",
-      width: 150,
-    },
-    {
-      field: "namaAset",
-      headerName: "Nama Aset 1",
-      flex: 1,
-    },
-    {
-      field: "kode",
-      headerName: "Kode",
-      width: 150,
-    },
     {
       field: "action",
       headerName: "Action",
@@ -189,8 +201,35 @@ const AkunPage = () => {
         </div>
       ),
     },
+    {
+      field: "no",
+      headerName: "No",
+      width: 70,
+      sortable: false,
+      renderCell: (params) => {
+        const index = akunData.findIndex((row) => row.id === params.row.id);
+        return (
+          dataTablePaginationModel.page * dataTablePaginationModel.pageSize +
+          index +
+          1
+        );
+      },
+    },
+    {
+      field: "kode_akun_aset",
+      headerName: "Kode Akun",
+      width: 150,
+    },
+    {
+      field: "nama_akun_aset",
+      headerName: "Nama Akun",
+      flex: 1,
+      minWidth: 250,
+    },
+    { field: "kode", headerName: "Kode", width: 120 },
   ];
 
+  // --- Render UI ---
   return (
     <div className="min-h-screen bg-[#f7f7f7]">
       <Navbar />
@@ -209,9 +248,7 @@ const AkunPage = () => {
 
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-800">
-              Daftar Klasifikasi Aset 1
-            </h1>{" "}
+            <h1 className="text-2xl font-bold text-gray-800">Daftar Akun</h1>
             <div className="flex gap-3">
               <button
                 onClick={handleRefresh}
@@ -232,18 +269,17 @@ const AkunPage = () => {
             <div className="flex items-center gap-2">
               <span className="text-gray-600 text-sm">Show</span>
               <select
-                value={entriesPerPage}
+                value={dataTablePaginationModel.pageSize}
                 onChange={(e) => {
-                  setEntriesPerPage(Number(e.target.value));
                   setDataTablePaginationModel((prev) => ({
                     ...prev,
                     pageSize: Number(e.target.value),
-                    page: 0,
+                    page: 0, // Reset ke halaman pertama saat jumlah entri berubah
                   }));
                 }}
-                className="border border-gray-300 rounded px-3 py-1 text-sm"
+                className="border border-gray-300 rounded px-3 py-1 text-sm cursor-pointer"
               >
-                {[5, 10, 25, 50, 100].map((n) => (
+                {[5, 10, 25, 50, 75, 100].map((n) => (
                   <option key={n} value={n}>
                     {n}
                   </option>
@@ -259,7 +295,7 @@ const AkunPage = () => {
               />
               <input
                 type="text"
-                placeholder="Search"
+                placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
@@ -267,32 +303,29 @@ const AkunPage = () => {
             </div>
           </div>
 
-          {loading ? (
-            <div className="text-center py-8 text-gray-500">Loading...</div>
-          ) : filteredData.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              No Aset 1 data available
-            </div>
-          ) : (
-            <DataTable
-              rows={filteredData}
-              columns={columns}
-              initialPageSize={entriesPerPage}
-              pageSizeOptions={[5, 10, 25, 50, 100]}
-              height={500}
-              emptyRowsMessage="No Aset 1 data available"
-              paginationModel={dataTablePaginationModel}
-              onPaginationModelChange={setDataTablePaginationModel}
-            />
-          )}
+          <DataTable
+            rows={akunData}
+            columns={columns}
+            rowCount={rowCount}
+            loading={loading}
+            paginationMode="server"
+            filterMode="server" // Ini sebenarnya dikontrol oleh cara Anda mem-fetch data dengan 'search' param
+            pageSizeOptions={[5, 10, 25, 50, 75, 100]}
+            paginationModel={dataTablePaginationModel}
+            onPaginationModelChange={setDataTablePaginationModel}
+            height={500}
+            emptyRowsMessage="Tidak ada data akun yang tersedia"
+            disableRowSelectionOnClick // Menambahkan ini agar baris tidak terpilih saat diklik
+            hideFooterSelectedRowCount // Menambahkan ini untuk menyembunyikan hitungan baris yang dipilih di footer
+          />
         </div>
       </div>
 
       <AddAkunModal
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
-        onSave={handleSaveNewAset}
-        initialData={editingAset}
+        onSave={handleSaveNewAkun}
+        initialData={editingAkun}
       />
     </div>
   );

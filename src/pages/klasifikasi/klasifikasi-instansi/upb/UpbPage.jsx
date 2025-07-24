@@ -86,6 +86,7 @@ const UpbPage = () => {
     fetchBidangList();
   }, []);
 
+  // Fetch unit list (static data)
   useEffect(() => {
     if (!selectedBidang) {
       setUnitList([]);
@@ -123,6 +124,7 @@ const UpbPage = () => {
     fetchUnitList();
   }, [selectedBidang]);
 
+  // Fetch subunit list (static data)
   useEffect(() => {
     if (!selectedUnit) {
       setSubUnitList([]);
