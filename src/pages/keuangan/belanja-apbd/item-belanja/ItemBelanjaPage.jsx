@@ -3,6 +3,7 @@ import Navbar from "../../../../components/Navbar";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { RefreshCw, Download, Search } from "lucide-react";
 import DataTable from "../../../../components/DataTable";
+import Swal from "sweetalert2";
 
 const ItemBelanjaPage = () => {
   // Search and pagination states
@@ -42,11 +43,11 @@ const ItemBelanjaPage = () => {
 
   const [dataTablePaginationModel, setDataTablePaginationModel] = useState({
     page: 0,
-    pageSize: entriesPerPage,
+    pageSize: 10,
   });
 
-  // Dummy data generator functions
-  const generateFilterData = () => ({
+  // Mock data functions
+  const getMockFilterData = () => ({
     bidang: [
       { id: 1, nama: "Bidang Pendidikan" },
       { id: 2, nama: "Bidang Kesehatan" },
@@ -84,7 +85,7 @@ const ItemBelanjaPage = () => {
     ],
   });
 
-  const generateDummyData = () => [
+  const getMockItemData = () => [
     {
       id: 1,
       belanjaApbdId: "BLJ001",
@@ -196,27 +197,107 @@ const ItemBelanjaPage = () => {
       catatanVerifikasi: "Sesuai spesifikasi",
       lampiran: "lampiran_003.pdf",
     },
+    {
+      id: 4,
+      belanjaApbdId: "BLJ004",
+      idBelanja: 4,
+      bidang: "Bidang Kesehatan",
+      unit: "Dinas Kesehatan",
+      subUnit: "Sub Unit Puskesmas",
+      upb: "UPB 001",
+      semester: "2",
+      tahun: "2024",
+      tanggalBaPenerimaan: "2024-04-10",
+      namaKegiatan: "Kegiatan Pengadaan Medis",
+      namaPekerjaan: "Pengadaan Alat Kesehatan",
+      nomorKontrak: "KTR/004/2024",
+      kualifikasiBelanja: "Barang",
+      jenisItem: "Alat Medis",
+      kodeBarang: "AM001",
+      jenis: "Peralatan",
+      objek: "Tensimeter",
+      namaBarang: "Tensimeter Digital",
+      merkType: "Omron/HEM-7120",
+      ukuran: "Standar",
+      bahan: "Plastik/Elektronik",
+      hargaSatuan: 500000,
+      penambahanBiayaLain: 25000,
+      hargaSatuanSetelahBiayaLainnya: 525000,
+      nilaiTotal: 2625000,
+      jumlahBarang: 5,
+      lokasiRuangan: "Ruang Pemeriksaan",
+      kualifikasiAset: "Aset Tetap",
+      peningkatanKualitas: "Tidak Ada",
+      noNhpd: "NHPD-004",
+      keterangan: "Pengadaan alat medis",
+      statusVerifikasi: "Diverifikasi",
+      catatanVerifikasi: "Sesuai standar medis",
+      lampiran: "lampiran_004.pdf",
+    },
   ];
 
+  // Reset filters to initial state
+  const resetFilters = () => {
+    setFilters({
+      tahun: "",
+      bidang: "",
+      unit: "",
+      subUnit: "",
+      upb: "",
+      semester: "",
+      kualifikasiBelanja: "",
+      kualifikasiAset: "",
+      statusVerifikasi: "",
+    });
+  };
+
   // Fetch data function with proper loading simulation
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (showSuccessMessage = false) => {
     setLoading(true);
     setError(null);
 
     try {
-      // Simulate API delay for better UX
+      // Simulate API delay
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      setFilterData(generateFilterData());
-      setItemBelanjaData(generateDummyData());
+      setFilterData(getMockFilterData());
+      setItemBelanjaData(getMockItemData());
+
+      // Show success message if requested
+      if (showSuccessMessage) {
+        Swal.fire({
+          icon: "success",
+          title: "Berhasil!",
+          text: "Data berhasil dimuat ulang.",
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
+          timer: 2000,
+          timerProgressBar: true,
+        });
+      }
     } catch (err) {
       console.error("Error fetching data:", err);
       setError("Gagal memuat data: " + err.message);
+
+      if (showSuccessMessage) {
+        Swal.fire({
+          icon: "error",
+          title: "Gagal!",
+          text: "Terjadi kesalahan saat memuat data.",
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+        });
+      }
     } finally {
       setLoading(false);
     }
   }, []);
 
+  // Initial data fetch
   useEffect(() => {
     fetchData();
   }, [fetchData]);
@@ -249,36 +330,40 @@ const ItemBelanjaPage = () => {
     setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
   };
 
-  // Reset all filters and search
-  const resetFilters = () => {
-    setSearchTerm("");
-    setFilters({
-      tahun: "",
-      bidang: "",
-      unit: "",
-      subUnit: "",
-      upb: "",
-      semester: "",
-      kualifikasiBelanja: "",
-      kualifikasiAset: "",
-      statusVerifikasi: "",
-    });
-  };
-
-  // Handle refresh with proper loading state
+  // Handle refresh with proper loading state and SweetAlert
   const handleRefresh = async () => {
+    setSearchTerm("");
     resetFilters();
-    await fetchData();
+    setDataTablePaginationModel({ page: 0, pageSize: entriesPerPage });
+    await fetchData(true); // Pass true to show success message
   };
 
   const handleExport = () => {
     console.log("Exporting Item Belanja...");
-    // Implement export functionality here
+    Swal.fire({
+      icon: "info",
+      title: "Export",
+      text: "Fitur export sedang dalam pengembangan.",
+      toast: true,
+      position: "top-end",
+      showConfirmButton: false,
+      timer: 2000,
+      timerProgressBar: true,
+    });
   };
 
   const handleViewDetail = (itemId) => {
     console.log("Lihat Detail Item:", itemId);
-    // Implement view detail modal here
+    Swal.fire({
+      icon: "info",
+      title: "Detail Item",
+      text: "Fitur detail item sedang dalam pengembangan.",
+      toast: true,
+      position: "top-end",
+      showConfirmButton: false,
+      timer: 2000,
+      timerProgressBar: true,
+    });
   };
 
   // Column definitions
@@ -384,7 +469,7 @@ const ItemBelanjaPage = () => {
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
     >
       <option value="">{placeholder}</option>
       {options.map((option, index) => (
@@ -398,29 +483,29 @@ const ItemBelanjaPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <div className="px-8 py-8">
+      <div className="px-4 md:px-8 py-6 md:py-8">
         <Breadcrumbs />
 
         {/* Export Button */}
         <div className="flex justify-end mb-4">
           <button
             onClick={handleExport}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors font-medium cursor-pointer"
           >
             <Download size={16} />
             Export
           </button>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h1 className="text-2xl font-bold text-gray-800 mb-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-6">
             Item Belanja APBD
           </h1>
 
           {/* Filters and Action Buttons */}
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4 mb-6">
             {/* Filter Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 flex-1">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 flex-1 w-full">
               <FilterSelect
                 value={filters.tahun}
                 onChange={(value) => handleFilterChange("tahun", value)}
@@ -492,12 +577,12 @@ const ItemBelanjaPage = () => {
               />
             </div>
 
-            {/* Tombol Refresh */}
+            {/* Refresh Button */}
             <div className="flex gap-2 items-center lg:self-end">
               <button
                 onClick={handleRefresh}
                 disabled={loading}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors font-medium cursor-pointer"
               >
                 <RefreshCw
                   size={16}
@@ -508,10 +593,10 @@ const ItemBelanjaPage = () => {
             </div>
           </div>
 
-          {/* BARIS Kontrol Tabel: Show entries dan Search */}
-          <div className="flex justify-between items-center mb-6 text-sm text-gray-600">
+          {/* Table Controls: Show entries and Search */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 text-sm text-gray-600">
             <div className="flex items-center gap-2">
-              Show
+              <span>Show</span>
               <select
                 value={entriesPerPage}
                 onChange={(e) => {
@@ -522,7 +607,7 @@ const ItemBelanjaPage = () => {
                     page: 0,
                   }));
                 }}
-                className="border border-gray-300 rounded px-2 py-1"
+                className="border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 disabled={loading}
               >
                 <option value="5">5</option>
@@ -531,7 +616,7 @@ const ItemBelanjaPage = () => {
                 <option value="50">50</option>
                 <option value="100">100</option>
               </select>
-              entries
+              <span>entries</span>
             </div>
             <div className="relative w-full md:w-64">
               <Search
@@ -540,29 +625,29 @@ const ItemBelanjaPage = () => {
               />
               <input
                 type="text"
-                placeholder="Search"
+                placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 disabled={loading}
               />
             </div>
           </div>
 
           {/* DataTable Component */}
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
-            {error ? (
-              <div className="text-center py-12">
-                <div className="text-red-600 mb-2">⚠️ Error</div>
-                <div className="text-gray-600">{error}</div>
-                <button
-                  onClick={fetchData}
-                  className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
-                >
-                  Coba Lagi
-                </button>
-              </div>
-            ) : (
+          {error ? (
+            <div className="text-center py-12 bg-red-50 rounded-lg border border-red-200">
+              <div className="text-red-600 text-lg mb-2">⚠️ Error</div>
+              <div className="text-gray-600 mb-4">{error}</div>
+              <button
+                onClick={() => fetchData()}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md transition-colors font-medium"
+              >
+                Coba Lagi
+              </button>
+            </div>
+          ) : (
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
               <DataTable
                 rows={filteredData}
                 columns={columns}
@@ -574,8 +659,8 @@ const ItemBelanjaPage = () => {
                 onPaginationModelChange={setDataTablePaginationModel}
                 loading={loading}
               />
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

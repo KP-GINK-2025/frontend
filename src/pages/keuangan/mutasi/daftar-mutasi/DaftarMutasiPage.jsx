@@ -480,14 +480,12 @@ const DaftarMutasiPage = () => {
               <div className="flex gap-3 items-center">
                 <button
                   onClick={handleRefresh}
-                  disabled={isRefreshing}
+                  disabled={loading}
                   className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
                 >
                   <RefreshCw
                     size={16}
-                    className={`transition-transform ${
-                      isRefreshing ? "animate-spin" : ""
-                    }`}
+                    className={loading ? "animate-spin" : ""}
                   />
                   Refresh
                 </button>
@@ -519,17 +517,18 @@ const DaftarMutasiPage = () => {
                 <span>entries</span>
               </div>
 
-              <div className="relative w-full sm:w-64">
+              <div className="relative w-full md:w-64">
                 <Search
                   className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                   size={16}
                 />
                 <input
                   type="text"
-                  placeholder="Search"
+                  placeholder="Search..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
+                  className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={loading}
                 />
               </div>
             </div>

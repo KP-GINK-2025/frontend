@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import Navbar from "../../../components/Navbar";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import { RefreshCw, Plus, Download, Search } from "lucide-react";
+import Swal from "sweetalert2";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
@@ -75,7 +76,46 @@ const UpdatingDataPage = () => {
   }, [fetchData]);
 
   const handleRefresh = () => {
+    setIsLoading(true);
     fetchData();
+    Swal.fire({
+      icon: "success",
+      title: "Berhasil!",
+      text: "Data aktivitas berhasil dimuat ulang.",
+      toast: true,
+      position: "top-end",
+      showConfirmButton: false,
+      timer: 2000,
+      timerProgressBar: true,
+    });
+  };
+
+  const handleDeleteClick = (id) => {
+    Swal.fire({
+      title: "Apakah Anda yakin?",
+      text: "Data aktivitas yang dihapus tidak dapat dikembalikan!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Ya, hapus!",
+      cancelButtonText: "Batal",
+      reverseButtons: true,
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setTableData((prevData) => prevData.filter((item) => item.id !== id));
+        Swal.fire({
+          icon: "success",
+          title: "Terhapus!",
+          text: "Data aktivitas berhasil dihapus.",
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
+          timer: 2000,
+          timerProgressBar: true,
+        });
+      }
+    });
   };
 
   const handleExport = () => {
@@ -90,7 +130,9 @@ const UpdatingDataPage = () => {
 
     const matchesBlok = selectedBlok ? item.blok === selectedBlok : true;
     const matchesGrup = selectedGrup ? item.grup === selectedGrup : true;
-    const matchesUsername = selectedUsername ? item.username === selectedUsername : true;
+    const matchesUsername = selectedUsername
+      ? item.username === selectedUsername
+      : true;
 
     const loginDate = new Date(item.terakhirLogin);
     const matchesStartDate = startDate ? loginDate >= startDate : true;
@@ -123,7 +165,9 @@ const UpdatingDataPage = () => {
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow">
-          <h1 className="text-2xl font-bold text-gray-800 mb-6">Daftar Audittrail</h1>
+          <h1 className="text-2xl font-bold text-gray-800 mb-6">
+            Daftar Audittrail
+          </h1>
 
           {/* Filter Row */}
           <div className="flex justify-between items-center flex-wrap gap-4 mb-4">
@@ -165,9 +209,14 @@ const UpdatingDataPage = () => {
             <div className="flex gap-2">
               <button
                 onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 text-sm cursor-pointer"
+                disabled={isLoading}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-md flex items-center gap-2 text-sm cursor-pointer"
               >
-                <RefreshCw size={16} /> Refresh
+                <RefreshCw
+                  size={16}
+                  className={isLoading ? "animate-spin" : ""}
+                />
+                Refresh
               </button>
             </div>
           </div>
@@ -195,10 +244,10 @@ const UpdatingDataPage = () => {
               />
               <input
                 type="text"
-                placeholder="Search"
+                placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -220,20 +269,36 @@ const UpdatingDataPage = () => {
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan="7" className="text-center py-4 text-gray-500">Memuat data...</td>
+                    <td colSpan="7" className="text-center py-4 text-gray-500">
+                      Memuat data...
+                    </td>
                   </tr>
                 ) : paginatedData.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="text-center py-4 text-gray-500">Tidak ada data tersedia</td>
+                    <td colSpan="7" className="text-center py-4 text-gray-500">
+                      Tidak ada data tersedia
+                    </td>
                   </tr>
                 ) : (
                   paginatedData.map((item) => (
-                    <tr key={item.id} className="bg-white border-b hover:bg-gray-50">
+                    <tr
+                      key={item.id}
+                      className="bg-white border-b hover:bg-gray-50"
+                    >
                       <td className="py-4 px-6">
-                        <button className="text-blue-600 hover:underline mr-2">Edit</button>
-                        <button className="text-red-600 hover:underline">Delete</button>
+                        <button className="text-blue-600 hover:underline cursor-pointer mr-2">
+                          Edit
+                        </button>
+                        <button
+                          className="text-red-600 hover:underline cursor-pointer"
+                          onClick={() => handleDeleteClick(item.id)}
+                        >
+                          Delete
+                        </button>
                       </td>
-                      <td className="py-4 px-6">{new Date(item.terakhirLogin).toLocaleString()}</td>
+                      <td className="py-4 px-6">
+                        {new Date(item.terakhirLogin).toLocaleString()}
+                      </td>
                       <td className="py-4 px-6">{item.ip}</td>
                       <td className="py-4 px-6">{item.username}</td>
                       <td className="py-4 px-6">{item.objek}</td>
@@ -249,13 +314,20 @@ const UpdatingDataPage = () => {
           {/* Info & Pagination */}
           <div className="flex justify-between items-center mt-4 text-sm text-gray-700">
             <div>
-              Show {paginatedData.length > 0 ? 1 : 0} to {paginatedData.length} of {filteredData.length} entries
+              Show {paginatedData.length > 0 ? 1 : 0} to {paginatedData.length}{" "}
+              of {filteredData.length} entries
             </div>
             <div className="flex gap-2">
-              <button className="py-1 px-3 border border-gray-300 rounded-md hover:bg-gray-100" disabled>
+              <button
+                className="py-1 px-3 border border-gray-300 rounded-md hover:bg-gray-100"
+                disabled
+              >
                 Previous
               </button>
-              <button className="py-1 px-3 border border-gray-300 rounded-md hover:bg-gray-100" disabled>
+              <button
+                className="py-1 px-3 border border-gray-300 rounded-md hover:bg-gray-100"
+                disabled
+              >
                 Next
               </button>
             </div>
