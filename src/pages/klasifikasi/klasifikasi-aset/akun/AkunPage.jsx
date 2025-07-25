@@ -93,7 +93,7 @@ const AkunPage = () => {
     setEditingAkun(null);
   };
 
-  const handleSaveNewAkun = async (akunToSave) => {
+  const handleSaveAkun = async (akunToSave) => {
     try {
       if (akunToSave.id) {
         // Mode Edit
@@ -119,18 +119,30 @@ const AkunPage = () => {
       }
       handleCloseAddModal();
       handleRefresh();
-    } catch (error) {
-      console.error(
-        "Gagal simpan akun:",
-        error.response?.data || error.message
-      );
-      Swal.fire({
-        title: "Gagal",
-        text: "Data tidak dapat disimpan.",
-        icon: "error",
-        timer: 1500,
-        showConfirmButton: false,
-      });
+    } catch (err) {
+      console.error("Gagal menyimpan:", err);
+
+      const errorData = err.response?.data;
+
+      if (errorData?.errors) {
+        const errorMessages = Object.values(errorData.errors).flat().join("\n");
+        Swal.fire({
+          title: "Gagal",
+          text: errorMessages,
+          icon: "error",
+        });
+      } else {
+        Swal.fire({
+          title: "Gagal",
+          text: "Terjadi kesalahan saat menyimpan data.",
+          icon: "error",
+          buttonsStyling: false,
+          customClass: {
+            confirmButton:
+              "bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500",
+          },
+        });
+      }
     }
   };
 
@@ -324,7 +336,7 @@ const AkunPage = () => {
       <AddAkunModal
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
-        onSave={handleSaveNewAkun}
+        onSave={handleSaveAkun}
         initialData={editingAkun}
       />
     </div>

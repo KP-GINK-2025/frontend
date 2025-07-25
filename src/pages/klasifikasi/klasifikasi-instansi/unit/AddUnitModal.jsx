@@ -4,91 +4,195 @@ import api from "../../../../api/axios";
 import { motion, AnimatePresence } from "framer-motion";
 import Swal from "sweetalert2";
 
+// Helper untuk format options, bisa ditaruh di luar komponen
+const formatOptions = (data, valueKey, labelKey, prefixKey = null) =>
+  data.map((item) => ({
+    value: item[valueKey],
+    label: prefixKey
+      ? `${item[prefixKey]} - ${item[labelKey]}`
+      : item[labelKey],
+  }));
+
 const AddUnitModal = ({ isOpen, onClose, onSave, initialData }) => {
+  // State untuk data form
   const [kodeUnit, setKodeUnit] = useState("");
   const [namaUnit, setNamaUnit] = useState("");
   const [kode, setKode] = useState("");
+
+  // State untuk dropdowns
+  const [selectedProvinsi, setSelectedProvinsi] = useState(null);
+  const [selectedKabupaten, setSelectedKabupaten] = useState(null);
   const [selectedBidang, setSelectedBidang] = useState(null);
+
+  // State untuk options dan loading
+  const [provinsiOptions, setProvinsiOptions] = useState([]);
+  const [kabupatenOptions, setKabupatenOptions] = useState([]);
   const [bidangOptions, setBidangOptions] = useState([]);
+  const [isLoadingProvinsi, setIsLoadingProvinsi] = useState(false);
+  const [isLoadingKabupaten, setIsLoadingKabupaten] = useState(false);
   const [isLoadingBidang, setIsLoadingBidang] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  // =================================================================
+  // EFEK 1: SETUP UTAMA SAAT MODAL DIBUKA (MEMPERBAIKI BUG #1 & #2)
+  // =================================================================
   useEffect(() => {
     if (isOpen) {
-      if (initialData) {
+      if (initialData?.bidang?.kabupaten_kota?.provinsi) {
         // --- MODE EDIT ---
-        setKodeUnit(initialData.kode_unit || "");
-        setNamaUnit(initialData.nama_unit || "");
-        setKode(initialData.kode || "");
-
-        // Cek apakah data bidang sudah ada di `initialData`
-        if (initialData.bidang) {
-          // Jika ya (dari eager loading atau frontend join), langsung gunakan
-          const bidang = initialData.bidang;
-          const option = {
-            value: bidang.id,
-            label: `${bidang.kode_bidang} - ${bidang.nama_bidang}`,
-          };
-          setSelectedBidang(option);
-          setBidangOptions([option]); // Set opsi awal
-        } else if (initialData.bidang_id) {
-          // Fallback: Jika hanya ada ID, fetch ke API (seperti sebelumnya)
+        const setupEditMode = async () => {
+          setIsLoadingProvinsi(true);
+          setIsLoadingKabupaten(true);
           setIsLoadingBidang(true);
-          api
-            .get(`/klasifikasi-instansi/bidang/${initialData.bidang_id}`)
-            .then((response) => {
-              const data = response.data.data;
-              const option = {
-                value: data.id,
-                label: `${data.kode_bidang} - ${data.nama_bidang}`,
-              };
-              setSelectedBidang(option);
-              setBidangOptions([option]);
-            })
-            .catch((error) =>
-              console.error("Gagal fetch initial bidang data:", error)
-            )
-            .finally(() => setIsLoadingBidang(false));
-        } else {
-          setSelectedBidang(null);
-        }
+          try {
+            const { bidang } = initialData;
+            const prov = bidang.kabupaten_kota.provinsi;
+            const kab = bidang.kabupaten_kota;
+
+            const [provRes, kabRes, bidangRes] = await Promise.all([
+              api.get("/klasifikasi-instansi/provinsi/all"),
+              api.get(
+                `/klasifikasi-instansi/kabupaten-kota/by-provinsi/${prov.id}`
+              ),
+              api.get(
+                `/klasifikasi-instansi/bidang/by-kabupaten-kota/${kab.id}`
+              ),
+            ]);
+
+            const provOptions = formatOptions(
+              provRes.data,
+              "id",
+              "nama_provinsi",
+              "kode_provinsi"
+            );
+            const kabOptions = formatOptions(
+              kabRes.data,
+              "id",
+              "nama_kabupaten_kota",
+              "kode_kabupaten_kota"
+            );
+            const bidangOptionsFmt = formatOptions(
+              bidangRes.data,
+              "id",
+              "nama_bidang",
+              "kode_bidang"
+            );
+
+            setProvinsiOptions(provOptions);
+            setKabupatenOptions(kabOptions);
+            setBidangOptions(bidangOptionsFmt);
+
+            setSelectedProvinsi(provOptions.find((p) => p.value === prov.id));
+            setSelectedKabupaten(kabOptions.find((k) => k.value === kab.id));
+            setSelectedBidang(
+              bidangOptionsFmt.find((b) => b.value === bidang.id)
+            );
+
+            setKodeUnit(initialData.kode_unit || "");
+            setNamaUnit(initialData.nama_unit || "");
+            setKode(initialData.kode || "");
+          } catch (err) {
+            console.error("Gagal setup edit mode:", err);
+            Swal.fire("Error", "Gagal memuat data untuk diedit.", "error");
+          } finally {
+            setIsLoadingProvinsi(false);
+            setIsLoadingKabupaten(false);
+            setIsLoadingBidang(false);
+          }
+        };
+        setupEditMode();
       } else {
-        // --- MODE TAMBAH BARU (Reset semua form) ---
+        // --- MODE ADD ---
+        // Reset SEMUA state yang relevan ke kondisi awal
         setKodeUnit("");
         setNamaUnit("");
         setKode("");
+        setSelectedProvinsi(null);
+        setSelectedKabupaten(null);
         setSelectedBidang(null);
+        setKabupatenOptions([]);
         setBidangOptions([]);
+
+        const fetchProvinsi = async () => {
+          setIsLoadingProvinsi(true);
+          try {
+            const res = await api.get("/klasifikasi-instansi/provinsi/all");
+            setProvinsiOptions(
+              formatOptions(res.data, "id", "nama_provinsi", "kode_provinsi")
+            );
+          } catch (err) {
+            setProvinsiOptions([]); // Pastikan kosong jika gagal
+            console.error("Gagal fetch provinsi list:", err);
+          } finally {
+            setIsLoadingProvinsi(false);
+          }
+        };
+        fetchProvinsi();
       }
     }
   }, [isOpen, initialData]);
 
-  const loadBidangOptions = (inputValue) => {
-    if (!inputValue) {
-      return;
-    }
-    setIsLoadingBidang(true);
-    api
-      .get(`/klasifikasi-instansi/bidang?per_page=1000&search=${inputValue}`)
-      .then((response) => {
-        const formattedOptions = response.data.data.map((item) => ({
-          value: item.id,
-          label: `${item.kode_bidang} - ${item.nama_bidang}`,
-        }));
-        setBidangOptions(formattedOptions);
-      })
-      .catch((error) => {
-        console.error("Gagal cari data bidang:", error);
+  // =====================================================================
+  // EFEK 2 & 3: CASCADE SAAT INTERAKSI PENGGUNA (MEMPERBAIKI BUG #3)
+  // =====================================================================
+  // Menangani perubahan Provinsi oleh pengguna
+  useEffect(() => {
+    if (!selectedProvinsi?.value) return; // Hanya berjalan jika ada nilai
+
+    const fetchKabupaten = async () => {
+      setIsLoadingKabupaten(true);
+      try {
+        const res = await api.get(
+          `/klasifikasi-instansi/kabupaten-kota/by-provinsi/${selectedProvinsi.value}`
+        );
+        setKabupatenOptions(
+          formatOptions(
+            res.data,
+            "id",
+            "nama_kabupaten_kota",
+            "kode_kabupaten_kota"
+          )
+        );
+      } catch (err) {
+        setKabupatenOptions([]);
+        console.error("Gagal fetch kabupaten/kota", err);
+      } finally {
+        setIsLoadingKabupaten(false);
+      }
+    };
+
+    fetchKabupaten();
+  }, [selectedProvinsi]);
+
+  // Menangani perubahan Kabupaten oleh pengguna
+  useEffect(() => {
+    if (!selectedKabupaten?.value) return; // Hanya berjalan jika ada nilai
+
+    const fetchBidang = async () => {
+      setIsLoadingBidang(true);
+      try {
+        const res = await api.get(
+          `/klasifikasi-instansi/bidang/by-kabupaten-kota/${selectedKabupaten.value}`
+        );
+        setBidangOptions(
+          formatOptions(res.data, "id", "nama_bidang", "kode_bidang")
+        );
+      } catch (err) {
         setBidangOptions([]);
-      })
-      .finally(() => {
+        console.error("Gagal fetch bidang", err);
+      } finally {
         setIsLoadingBidang(false);
-      });
-  };
+      }
+    };
+
+    fetchBidang();
+  }, [selectedKabupaten]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (
+      !selectedProvinsi ||
+      !selectedKabupaten ||
       !selectedBidang ||
       !kodeUnit.trim() ||
       !namaUnit.trim() ||
@@ -118,12 +222,12 @@ const AddUnitModal = ({ isOpen, onClose, onSave, initialData }) => {
       }
     } catch (err) {
       // alert("Terjadi kesalahan saat menyimpan data.");
+      console.error("Gagal menyimpan: ", err);
       Swal.fire({
         title: "Gagal",
         text: "Terjadi kesalahan saat menyimpan data.",
         icon: "error",
       });
-      console.error("Gagal menyimpan: ", err);
     } finally {
       setIsSaving(false); // Selesai loading
     }
@@ -174,6 +278,52 @@ const AddUnitModal = ({ isOpen, onClose, onSave, initialData }) => {
               className="max-h-[calc(100vh-220px)] overflow-y-auto pr-2 pb-4"
             >
               {/* --- Isi Form --- */}
+              {/* Provinsi */}
+              <div className="mb-4">
+                <label className="block mb-2 text-gray-700">
+                  Provinsi: <span className="text-[#B53C3C]">*</span>
+                </label>
+                <Select
+                  value={selectedProvinsi}
+                  onChange={(option) => {
+                    setSelectedProvinsi(option);
+                    // Reset anak-anaknya secara manual saat ada interaksi
+                    setSelectedKabupaten(null);
+                    setKabupatenOptions([]);
+                    setSelectedBidang(null);
+                    setBidangOptions([]);
+                  }}
+                  options={provinsiOptions}
+                  isLoading={isLoadingProvinsi}
+                  placeholder="Pilih provinsi..."
+                  isClearable
+                />
+              </div>
+
+              {/* Kabupaten */}
+              <div className="mb-4">
+                <label className="block mb-2 text-gray-700">
+                  Kabupaten/Kota: <span className="text-[#B53C3C]">*</span>
+                </label>
+                <Select
+                  value={selectedKabupaten}
+                  onChange={(option) => {
+                    setSelectedKabupaten(option);
+                    // Reset anak-anaknya
+                    setSelectedBidang(null);
+                    setBidangOptions([]);
+                  }}
+                  options={kabupatenOptions}
+                  isLoading={isLoadingKabupaten}
+                  placeholder={
+                    selectedProvinsi
+                      ? "Pilih kabupaten/kota..."
+                      : "Pilih provinsi terlebih dahulu"
+                  }
+                  isDisabled={!selectedProvinsi}
+                  isClearable
+                />
+              </div>
               <div className="mb-4">
                 <label htmlFor="bidang" className="block mb-2 text-gray-700">
                   Bidang: <span className="text-[#B53C3C]">*</span>
@@ -184,18 +334,14 @@ const AddUnitModal = ({ isOpen, onClose, onSave, initialData }) => {
                   options={bidangOptions}
                   value={selectedBidang}
                   onChange={setSelectedBidang}
-                  onInputChange={(newValue) => {
-                    loadBidangOptions(newValue);
-                    return newValue;
-                  }}
                   isLoading={isLoadingBidang}
-                  placeholder="Ketik untuk mencari ID atau Nama..."
-                  isClearable
-                  noOptionsMessage={({ inputValue }) =>
-                    !inputValue
-                      ? "Ketik sesuatu untuk mencari"
-                      : "Data tidak ditemukan"
+                  placeholder={
+                    selectedKabupaten
+                      ? "Pilih bidang..."
+                      : "Pilih kabupaten/kota terlebih dahulu"
                   }
+                  isDisabled={!selectedKabupaten}
+                  isClearable
                 />
               </div>
 
