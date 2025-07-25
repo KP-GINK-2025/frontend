@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import Navbar from "../../../../components/Navbar";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { RefreshCw, Download, Search } from "lucide-react";
+import Swal from "sweetalert2";
 
 const ItemHibahPage = () => {
   // State untuk menyimpan nilai filter
@@ -33,9 +34,48 @@ const ItemHibahPage = () => {
   };
 
   // Fungsi untuk refresh data
-  const handleRefresh = () => {
-    console.log("Refreshing Item Hibah data...");
-    fetchData(); // Panggil ulang fetchData
+  const handleRefresh = async () => {
+    setIsLoading(true);
+    await fetchData();
+    Swal.fire({
+      icon: "success",
+      title: "Berhasil!",
+      text: "Data berhasil dimuat ulang.",
+      toast: true,
+      position: "top-end",
+      showConfirmButton: false,
+      timer: 2000,
+      timerProgressBar: true,
+    });
+  };
+
+  // Fungsi untuk delete
+  const handleDeleteClick = (id) => {
+    Swal.fire({
+      title: "Apakah Anda yakin?",
+      text: "Data item hibah yang dihapus tidak dapat dikembalikan!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Ya, hapus!",
+      cancelButtonText: "Batal",
+      reverseButtons: true,
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setTableData((prevData) => prevData.filter((item) => item.id !== id));
+        Swal.fire({
+          icon: "success",
+          title: "Terhapus!",
+          text: "Data item hibah berhasil dihapus.",
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
+          timer: 2000,
+          timerProgressBar: true,
+        });
+      }
+    });
   };
 
   // Fungsi untuk menangani Export
@@ -100,15 +140,32 @@ const ItemHibahPage = () => {
       ];
 
       // Simulasi filter sederhana di frontend
-      const filteredData = dummyData.filter(item => {
-        const itemValues = Object.values(item).map(val => String(val).toLowerCase()).join(' ');
-        if (searchTerm && !itemValues.includes(searchTerm.toLowerCase())) return false;
+      const filteredData = dummyData.filter((item) => {
+        const itemValues = Object.values(item)
+          .map((val) => String(val).toLowerCase())
+          .join(" ");
+        if (searchTerm && !itemValues.includes(searchTerm.toLowerCase()))
+          return false;
 
         // Terapkan filter dari state
-        if (filters.asal && item.asal.toLowerCase() !== filters.asal.toLowerCase()) return false;
-        if (filters.semester && item.semester !== filters.semester) return false;
-        if (filters.statusVerifikasi && item.statusVerifikasi.toLowerCase() !== filters.statusVerifikasi.toLowerCase()) return false;
-        if (filters.kd_kondisi && item.kd_kondisi.toLowerCase() !== filters.kd_kondisi.toLowerCase()) return false;
+        if (
+          filters.asal &&
+          item.asal.toLowerCase() !== filters.asal.toLowerCase()
+        )
+          return false;
+        if (filters.semester && item.semester !== filters.semester)
+          return false;
+        if (
+          filters.statusVerifikasi &&
+          item.statusVerifikasi.toLowerCase() !==
+            filters.statusVerifikasi.toLowerCase()
+        )
+          return false;
+        if (
+          filters.kd_kondisi &&
+          item.kd_kondisi.toLowerCase() !== filters.kd_kondisi.toLowerCase()
+        )
+          return false;
 
         return true;
       });
@@ -117,9 +174,8 @@ const ItemHibahPage = () => {
       const paginatedData = filteredData.slice(0, showEntries);
 
       // Simulasi delay (untuk mensimulasikan loading API)
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
       setTableData(paginatedData);
-
     } catch (err) {
       console.error("Error fetching data:", err);
       setError("Gagal memuat data: " + err.message);
@@ -158,13 +214,20 @@ const ItemHibahPage = () => {
         {/* Kontainer Form Filter dan Tabel */}
         <div className="bg-white p-6 rounded-lg shadow-md">
           {/* Judul H1 di dalam container */}
-          <h1 className="text-2xl font-bold mb-6 text-gray-800">Daftar Item Barang Hibah</h1> {/* Judul diubah sesuai desain */}
-
+          <h1 className="text-2xl font-bold mb-6 text-gray-800">
+            Daftar Item Barang Hibah
+          </h1>{" "}
+          {/* Judul diubah sesuai desain */}
           {/* Form Filter - Baris Atas (3 Kolom) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4"> {/* Menggunakan mb-4 untuk jarak dengan baris bawah */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+            {" "}
+            {/* Menggunakan mb-4 untuk jarak dengan baris bawah */}
             {/* Asal */}
             <div>
-              <label htmlFor="asal" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="asal"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Asal
               </label>
               <select
@@ -180,10 +243,12 @@ const ItemHibahPage = () => {
                 <option value="Yayasan ABC">Yayasan ABC</option>
               </select>
             </div>
-
             {/* Semester */}
             <div>
-              <label htmlFor="semester" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="semester"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Semester
               </label>
               <select
@@ -198,10 +263,12 @@ const ItemHibahPage = () => {
                 <option value="2">2</option>
               </select>
             </div>
-
             {/* Status Verifikasi */}
             <div>
-              <label htmlFor="statusVerifikasi" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="statusVerifikasi"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Status Verifikasi
               </label>
               <select
@@ -218,13 +285,15 @@ const ItemHibahPage = () => {
               </select>
             </div>
           </div>
-
           {/* Form Filter - Baris Bawah (1 Kolom) dan Tombol Refresh */}
           {/* Kita akan menggunakan grid 4 kolom di sini untuk menempatkan kd_kondisi dan Refresh */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 items-end">
             {/* kd_kondisi */}
             <div>
-              <label htmlFor="kd_kondisi" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="kd_kondisi"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 kd_kondisi
               </label>
               <select
@@ -242,16 +311,20 @@ const ItemHibahPage = () => {
             </div>
 
             {/* Tombol Refresh - memanfaatkan col-span untuk mendorongnya ke kanan */}
-            <div className="col-span-1 md:col-span-2 lg:col-span-3 flex justify-end"> {/* col-span-3 untuk mengambil sisa 3 kolom dan mendorong tombol ke kanan */}
+            <div className="col-span-1 md:col-span-2 lg:col-span-3 flex justify-end">
               <button
                 onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+                disabled={isLoading}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
-                <RefreshCw size={16} /> Refresh
+                <RefreshCw
+                  size={16}
+                  className={isLoading ? "animate-spin" : ""}
+                />
+                Refresh
               </button>
             </div>
           </div>
-
           {/* Kontrol Tabel: Show entries dan Search */}
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center gap-2 text-gray-700">
@@ -276,51 +349,99 @@ const ItemHibahPage = () => {
               />
               <input
                 type="text"
-                placeholder="Search"
+                placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
-
           {/* Tabel Item Hibah */}
           <div className="overflow-x-auto relative shadow-md sm:rounded-lg">
             <table className="w-full text-sm text-left text-gray-500">
               <thead className="text-xs text-gray-700 bg-gray-50">
                 <tr>
-                  <th scope="col" className="py-3 px-6">Action</th>
-                  <th scope="col" className="py-3 px-6">Asal</th>
-                  <th scope="col" className="py-3 px-6">Tujuan</th>
-                  <th scope="col" className="py-3 px-6">No. Berita Acara</th>
-                  <th scope="col" className="py-3 px-6">Tgl. Berita Acara</th>
-                  <th scope="col" className="py-3 px-6">Kode Barang</th>
-                  <th scope="col" className="py-3 px-6">Nama Barang</th>
-                  <th scope="col" className="py-3 px-6">Merk</th> {/* Diubah dari Merk/Type ke Merk */}
-                  <th scope="col" className="py-3 px-6">Jumlah Barang</th>
-                  <th scope="col" className="py-3 px-6">Nilai Total</th>
+                  <th scope="col" className="py-3 px-6">
+                    Action
+                  </th>
+                  <th scope="col" className="py-3 px-6">
+                    Asal
+                  </th>
+                  <th scope="col" className="py-3 px-6">
+                    Tujuan
+                  </th>
+                  <th scope="col" className="py-3 px-6">
+                    No. Berita Acara
+                  </th>
+                  <th scope="col" className="py-3 px-6">
+                    Tgl. Berita Acara
+                  </th>
+                  <th scope="col" className="py-3 px-6">
+                    Kode Barang
+                  </th>
+                  <th scope="col" className="py-3 px-6">
+                    Nama Barang
+                  </th>
+                  <th scope="col" className="py-3 px-6">
+                    Merk
+                  </th>{" "}
+                  {/* Diubah dari Merk/Type ke Merk */}
+                  <th scope="col" className="py-3 px-6">
+                    Jumlah Barang
+                  </th>
+                  <th scope="col" className="py-3 px-6">
+                    Nilai Total
+                  </th>
                   {/* Kolom Lampiran dan Status Verifikasi tidak ada di desain */}
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan="10" className="py-4 px-6 text-center text-gray-600">Memuat data...</td>
+                    <td
+                      colSpan="10"
+                      className="py-4 px-6 text-center text-gray-600"
+                    >
+                      <div className="flex items-center justify-center">
+                        <RefreshCw size={20} className="animate-spin mr-2" />
+                        Memuat data...
+                      </div>
+                    </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan="10" className="py-4 px-6 text-center text-red-600">Error: {error}</td>
+                    <td
+                      colSpan="10"
+                      className="py-4 px-6 text-center text-red-600"
+                    >
+                      Error: {error}
+                    </td>
                   </tr>
                 ) : tableData.length === 0 ? (
                   <tr>
-                    <td colSpan="10" className="py-4 px-6 text-center text-gray-500">No data available in table</td>
+                    <td
+                      colSpan="10"
+                      className="py-4 px-6 text-center text-gray-500"
+                    >
+                      No data available in table
+                    </td>
                   </tr>
                 ) : (
                   tableData.map((item) => (
-                    <tr key={item.id} className="bg-white border-b hover:bg-gray-50">
+                    <tr
+                      key={item.id}
+                      className="bg-white border-b hover:bg-gray-50"
+                    >
                       <td className="py-4 px-6">
-                        <button className="text-blue-600 hover:underline mr-2">Edit</button>
-                        <button className="text-red-600 hover:underline">Delete</button>
+                        <button className="text-blue-600 hover:underline cursor-pointer mr-2">
+                          Edit
+                        </button>
+                        <button
+                          className="text-red-600 hover:underline cursor-pointer"
+                          onClick={() => handleDeleteClick(item.id)}
+                        >
+                          Delete
+                        </button>
                       </td>
                       <td className="py-4 px-6">{item.asal}</td>
                       <td className="py-4 px-6">{item.tujuan}</td>
@@ -337,11 +458,11 @@ const ItemHibahPage = () => {
               </tbody>
             </table>
           </div>
-
           {/* Info Jumlah Entries dan Paginasi */}
           <div className="flex justify-between items-center mt-4 text-sm text-gray-700">
             <div>
-              Show {tableData.length > 0 ? 1 : 0} to {tableData.length} of {totalEntries} entries
+              Show {tableData.length > 0 ? 1 : 0} to {tableData.length} of{" "}
+              {totalEntries} entries
             </div>
             <div className="flex gap-2">
               <button
