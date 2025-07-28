@@ -10,6 +10,7 @@ import Swal from "sweetalert2";
 const UpbPage = () => {
   const [upbData, setUpbData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(true);
   const [totalRows, setTotalRows] = useState(0);
 
   // Filter and search state
@@ -143,7 +144,7 @@ const UpbPage = () => {
   useEffect(() => {
     const fetchUpbData = async () => {
       setLoading(true);
-
+      setRefreshing(true); // Spinner aktif juga saat fetch pertama kali
       try {
         const params = new URLSearchParams({
           page: paginationModel.page + 1,
@@ -178,6 +179,7 @@ const UpbPage = () => {
         setTotalRows(0);
       } finally {
         setLoading(false);
+        setRefreshing(false); // Matikan spinner setelah data selesai di-load
       }
     };
 
@@ -192,8 +194,43 @@ const UpbPage = () => {
   ]);
 
   // Event handlers
-  const handleRefresh = () => {
-    setRefreshTrigger((prev) => prev + 1);
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      setSearchTerm(""); // Reset pencarian
+      setSelectedBidang(""); // Reset filter bidang
+      setSelectedUnit(""); // Reset filter unit
+      setSelectedSubUnit(""); // Reset filter sub unit
+      setPaginationModel((prev) => ({ ...prev, page: 0 })); // Reset halaman
+      setRefreshTrigger((prev) => prev + 1);
+
+      // Simulasi delay agar animasi terlihat
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data berhasil dimuat ulang.",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Gagal memuat ulang data",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const handleExport = () => {
@@ -262,13 +299,13 @@ const UpbPage = () => {
 
   const handleDeleteClick = async (id) => {
     const result = await Swal.fire({
-      title: "Yakin ingin menghapus data ini?",
-      text: "Data yang dihapus tidak dapat dikembalikan.",
+      title: "Apakah Anda yakin?",
+      text: "Data yang dihapus tidak dapat dikembalikan!",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#e53935",
-      cancelButtonColor: "#aaa",
-      confirmButtonText: "Ya, hapus",
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Ya, hapus!",
       cancelButtonText: "Batal",
     });
 
@@ -430,9 +467,14 @@ const UpbPage = () => {
             <div className="flex gap-3">
               <button
                 onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+                disabled={refreshing}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
-                <RefreshCw size={16} /> Refresh
+                <RefreshCw
+                  size={16}
+                  className={refreshing ? "animate-spin" : ""}
+                />
+                Refresh
               </button>
               <button
                 onClick={handleOpenAddModal}
@@ -540,7 +582,7 @@ const UpbPage = () => {
             disableRowSelectionOnClick
             hideFooterSelectedRowCount
             height={500}
-            emptyRowsMessage="Tidak ada data UPB yang tersedia"
+            emptyRowsMessage="Tidak ada data tersedia"
           />
         </div>
       </div>

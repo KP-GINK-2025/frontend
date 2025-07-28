@@ -5,22 +5,23 @@ import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import AddJenisModal from "./AddJenisModal";
 import DataTable from "../../../../components/DataTable";
+import Swal from "sweetalert2"; // <-- Tambahkan import ini
 
 const JenisPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [jenisData, setJenisData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(true);
 
   // State untuk data filter Aset 1 dan Aset 2
-  const [asetSatuData, setAsetSatuData] = useState([]); // Data untuk dropdown Aset 1
-  const [selectedAsetSatu, setSelectedAsetSatu] = useState(""); // Nilai terpilih Aset 1
-
-  const [asetDuaData, setAsetDuaData] = useState([]); // Data untuk dropdown Aset 2
-  const [selectedAsetDua, setSelectedAsetDua] = useState(""); // Nilai terpilih Aset 2
+  const [asetSatuData, setAsetSatuData] = useState([]);
+  const [selectedAsetSatu, setSelectedAsetSatu] = useState("");
+  const [asetDuaData, setAsetDuaData] = useState([]);
+  const [selectedAsetDua, setSelectedAsetDua] = useState("");
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [editingJenis, setEditingJenis] = useState(null); // State untuk data yang sedang diedit
+  const [editingJenis, setEditingJenis] = useState(null);
 
   const [dataTablePaginationModel, setDataTablePaginationModel] =
     React.useState({
@@ -29,8 +30,9 @@ const JenisPage = () => {
     });
 
   const fetchData = async () => {
+    setLoading(true);
+    setRefreshing(true); // Spinner aktif juga saat fetch pertama kali
     try {
-      setLoading(true);
       const response = await api.get("/klasifikasi-aset/jenis-aset");
 
       const mappedJenis = response.data.data.map((item) => ({
@@ -67,11 +69,13 @@ const JenisPage = () => {
       console.error("Gagal fetch data jenis:", error);
     } finally {
       setLoading(false);
+      setRefreshing(false); // Matikan spinner setelah data selesai di-load
     }
   };
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line
   }, []);
 
   const filteredData = jenisData.filter((item) => {
@@ -94,22 +98,56 @@ const JenisPage = () => {
     console.log("Exporting jenis data...");
   };
 
-  const handleRefresh = () => {
+  // Ubah handleRefresh agar ada animasi, SweetAlert2, dan loading table
+  const handleRefresh = async () => {
+    setRefreshing(true);
     setLoading(true);
-    setSearchTerm("");
-    setSelectedAsetSatu(""); // Reset filter Aset 1
-    setSelectedAsetDua(""); // Reset filter Aset 2
-    fetchData();
+    try {
+      setSearchTerm("");
+      setSelectedAsetSatu("");
+      setSelectedAsetDua("");
+      setDataTablePaginationModel((prev) => ({
+        ...prev,
+        page: 0,
+      }));
+      // Simulasi delay agar animasi terlihat
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      await fetchData();
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data berhasil dimuat ulang.",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Gagal memuat ulang data",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } finally {
+      setRefreshing(false);
+      setLoading(false);
+    }
   };
 
   const handleOpenAddModal = () => {
-    setEditingJenis(null); // Reset editing state saat ingin menambah baru
+    setEditingJenis(null);
     setIsAddModalOpen(true);
   };
 
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
-    setEditingJenis(null); // Reset editing state saat modal ditutup
+    setEditingJenis(null);
   };
 
   const handleSaveNewJenis = (jenisToSave) => {
@@ -138,9 +176,31 @@ const JenisPage = () => {
     }
   };
 
-  const handleDeleteClick = (id) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus data ini?")) {
+  // Tambahkan SweetAlert2 pada tombol delete
+  const handleDeleteClick = async (id) => {
+    const result = await Swal.fire({
+      title: "Apakah Anda yakin?",
+      text: "Data yang dihapus tidak dapat dikembalikan!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Ya, hapus!",
+      cancelButtonText: "Batal",
+    });
+
+    if (result.isConfirmed) {
       setJenisData((prevData) => prevData.filter((item) => item.id !== id));
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data berhasil dihapus.",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
       console.log("Menghapus Jenis dengan ID:", id);
     }
   };
@@ -222,9 +282,14 @@ const JenisPage = () => {
             <div className="flex gap-3">
               <button
                 onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 cursor-pointer"
+                disabled={refreshing}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-md flex items-center gap-2 cursor-pointer"
               >
-                <RefreshCw size={16} /> Refresh
+                <RefreshCw
+                  size={16}
+                  className={refreshing ? "animate-spin" : ""}
+                />
+                Refresh
               </button>
               <button
                 onClick={handleOpenAddModal}
@@ -277,21 +342,18 @@ const JenisPage = () => {
             </div>
           </div>
 
-          {/* DataTable Component */}
-          {loading ? (
-            <div className="text-center py-8 text-gray-500">Loading...</div>
-          ) : (
-            <DataTable
-              rows={filteredData}
-              columns={columns}
-              initialPageSize={entriesPerPage}
-              pageSizeOptions={[5, 10, 25, 50, 100]}
-              height={500}
-              emptyRowsMessage="No Jenis data available"
-              paginationModel={dataTablePaginationModel}
-              onPaginationModelChange={setDataTablePaginationModel}
-            />
-          )}
+          {/* DataTable Component dengan loading */}
+          <DataTable
+            rows={filteredData}
+            columns={columns}
+            initialPageSize={entriesPerPage}
+            pageSizeOptions={[5, 10, 25, 50, 100]}
+            height={500}
+            emptyRowsMessage="Tidak ada data tersedia"
+            paginationModel={dataTablePaginationModel}
+            onPaginationModelChange={setDataTablePaginationModel}
+            loading={loading || refreshing} // <-- Loading table saat loading/refreshing
+          />
         </div>
       </div>
 
