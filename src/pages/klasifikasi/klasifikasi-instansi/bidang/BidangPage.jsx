@@ -12,6 +12,7 @@ const BidangPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [bidangData, setBidangData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(true);
   const [rowCount, setRowCount] = useState(0); // Total jumlah baris dari API
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -52,9 +53,10 @@ const BidangPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      setRefreshing(true); // Spinner aktif juga saat fetch pertama kali
       try {
         const params = new URLSearchParams();
-        params.append("page", dataTablePaginationModel.page + 1); // API biasanya 1-indexed
+        params.append("page", dataTablePaginationModel.page + 1);
         params.append("per_page", dataTablePaginationModel.pageSize);
         if (debouncedSearchTerm) {
           params.append("search", debouncedSearchTerm);
@@ -67,15 +69,16 @@ const BidangPage = () => {
         setRowCount(response.data.meta.total);
       } catch (error) {
         console.error("Gagal fetch data bidang:", error);
-        setBidangData([]); // Reset data jika gagal
-        setRowCount(0); // Reset total jika gagal
+        setBidangData([]);
+        setRowCount(0);
       } finally {
         setLoading(false);
+        setRefreshing(false); // Matikan spinner setelah data selesai di-load
       }
     };
 
     fetchData();
-  }, [dataTablePaginationModel, debouncedSearchTerm, refreshTrigger]); // Dependencies yang memicu re-fetch
+  }, [dataTablePaginationModel, debouncedSearchTerm, refreshTrigger]);
 
   // --- Handler Fungsi ---
 
@@ -84,8 +87,40 @@ const BidangPage = () => {
     // Implementasi logika ekspor data di sini
   };
 
-  const handleRefresh = () => {
-    setRefreshTrigger((c) => c + 1);
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      setSearchTerm(""); // Reset pencarian jika ingin seperti LraPage
+      setDataTablePaginationModel((prev) => ({ ...prev, page: 0 })); // Reset halaman
+      setRefreshTrigger((c) => c + 1);
+
+      // Simulasi delay agar animasi terlihat (opsional, bisa dihapus jika tidak perlu)
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data berhasil dimuat ulang.",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Gagal memuat ulang data",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const handleOpenAddModal = () => {
@@ -150,13 +185,13 @@ const BidangPage = () => {
 
   const handleDeleteClick = async (id) => {
     const result = await Swal.fire({
-      title: "Yakin ingin menghapus data ini?",
-      text: "Data yang dihapus tidak dapat dikembalikan.",
+      title: "Apakah Anda yakin?",
+      text: "Data yang dihapus tidak dapat dikembalikan!",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#e53935",
-      cancelButtonColor: "#aaa",
-      confirmButtonText: "Ya, hapus",
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Ya, hapus!",
       cancelButtonText: "Batal",
     });
 
@@ -280,9 +315,14 @@ const BidangPage = () => {
             <div className="flex gap-3">
               <button
                 onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+                disabled={refreshing}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
-                <RefreshCw size={16} /> Refresh
+                <RefreshCw
+                  size={16}
+                  className={refreshing ? "animate-spin" : ""}
+                />
+                Refresh
               </button>
               <button
                 onClick={handleOpenAddModal}
@@ -342,7 +382,7 @@ const BidangPage = () => {
             paginationModel={dataTablePaginationModel}
             onPaginationModelChange={setDataTablePaginationModel}
             height={500}
-            emptyRowsMessage="Tidak ada data bidang yang tersedia"
+            emptyRowsMessage="Tidak ada data tersedia"
             disableRowSelectionOnClick // Menambahkan ini agar baris tidak terpilih saat diklik
             hideFooterSelectedRowCount // Menambahkan ini untuk menyembunyikan hitungan baris yang dipilih di footer
           />

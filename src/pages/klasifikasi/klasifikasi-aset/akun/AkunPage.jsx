@@ -5,12 +5,14 @@ import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import AddAkunModal from "./AddAkunModal";
 import DataTable from "../../../../components/DataTable";
+import Swal from "sweetalert2"; // <-- Tambahkan import ini
 
 const AkunPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [asetSatuData, setAsetSatuData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingAset, setEditingAset] = useState(null);
 
@@ -22,6 +24,7 @@ const AkunPage = () => {
 
   const fetchData = async () => {
     setLoading(true);
+    setRefreshing(true); // Spinner aktif juga saat fetch pertama kali
     try {
       const response = await api.get("/klasifikasi-aset/akun-aset", {
         params: {
@@ -42,11 +45,13 @@ const AkunPage = () => {
       console.error("Gagal mengambil data akun aset:", error);
     } finally {
       setLoading(false);
+      setRefreshing(false); // Matikan spinner setelah data selesai di-load
     }
   };
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line
   }, [searchTerm, entriesPerPage]);
 
   const filteredData = asetSatuData.filter((item) => {
@@ -66,10 +71,44 @@ const AkunPage = () => {
     console.log("Exporting data...");
   };
 
-  const handleRefresh = () => {
+  // Ubah handleRefresh agar ada animasi, SweetAlert2, dan loading table
+  const handleRefresh = async () => {
+    setRefreshing(true);
     setLoading(true);
-    setSearchTerm("");
-    fetchData();
+    try {
+      setSearchTerm("");
+      setDataTablePaginationModel((prev) => ({
+        ...prev,
+        page: 0,
+      }));
+      // Simulasi delay agar animasi terlihat
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      await fetchData();
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data berhasil dimuat ulang.",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Gagal memuat ulang data",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } finally {
+      setRefreshing(false);
+      setLoading(false);
+    }
   };
 
   const handleOpenAddModal = () => {
@@ -125,12 +164,42 @@ const AkunPage = () => {
   };
 
   const handleDeleteClick = async (id) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus data ini?")) {
+    const result = await Swal.fire({
+      title: "Apakah Anda yakin?",
+      text: "Data yang dihapus tidak dapat dikembalikan!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Ya, hapus!",
+      cancelButtonText: "Batal",
+    });
+
+    if (result.isConfirmed) {
       try {
         await api.delete(`/klasifikasi-aset/akun-aset/${id}`);
-        console.log("Akun aset berhasil dihapus:", id);
+        Swal.fire({
+          icon: "success",
+          title: "Berhasil!",
+          text: "Data berhasil dihapus.",
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
+          timer: 2000,
+          timerProgressBar: true,
+        });
         fetchData(); // refresh data
       } catch (error) {
+        Swal.fire({
+          icon: "error",
+          title: "Error!",
+          text: "Gagal menghapus data",
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
+          timer: 2000,
+          timerProgressBar: true,
+        });
         console.error("Gagal menghapus data:", error);
       }
     }
@@ -211,13 +280,18 @@ const AkunPage = () => {
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-gray-800">
               Daftar Klasifikasi Aset 1
-            </h1>{" "}
+            </h1>
             <div className="flex gap-3">
               <button
                 onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+                disabled={refreshing}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
-                <RefreshCw size={16} /> Refresh
+                <RefreshCw
+                  size={16}
+                  className={refreshing ? "animate-spin" : ""}
+                />
+                Refresh
               </button>
               <button
                 onClick={handleOpenAddModal}
@@ -267,24 +341,18 @@ const AkunPage = () => {
             </div>
           </div>
 
-          {loading ? (
-            <div className="text-center py-8 text-gray-500">Loading...</div>
-          ) : filteredData.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              No Aset 1 data available
-            </div>
-          ) : (
-            <DataTable
-              rows={filteredData}
-              columns={columns}
-              initialPageSize={entriesPerPage}
-              pageSizeOptions={[5, 10, 25, 50, 100]}
-              height={500}
-              emptyRowsMessage="No Aset 1 data available"
-              paginationModel={dataTablePaginationModel}
-              onPaginationModelChange={setDataTablePaginationModel}
-            />
-          )}
+          {/* Tampilkan loading pada tabel */}
+          <DataTable
+            rows={filteredData}
+            columns={columns}
+            initialPageSize={entriesPerPage}
+            pageSizeOptions={[5, 10, 25, 50, 100]}
+            height={500}
+            emptyRowsMessage="Tidak ada data tersedia"
+            paginationModel={dataTablePaginationModel}
+            onPaginationModelChange={setDataTablePaginationModel}
+            loading={loading || refreshing} // <-- Loading table saat loading/refreshing
+          />
         </div>
       </div>
 
