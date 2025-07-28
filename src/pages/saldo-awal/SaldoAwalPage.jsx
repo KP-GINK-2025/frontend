@@ -6,11 +6,79 @@ import AddNeracaAsetModal from "./AddNeracaAsetModal";
 import DataTable from "../../components/DataTable";
 import Swal from "sweetalert2";
 
-const SaldoAwalPage = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [entriesPerPage, setEntriesPerPage] = useState(10);
-  // const [currentPage, setCurrentPage] = useState(1); // Dihapus, karena DataTable yang mengatur pagination
+// Constants
+const ENTRIES_PER_PAGE_OPTIONS = [5, 10, 25, 50, 100];
+const DEFAULT_ENTRIES_PER_PAGE = 10;
 
+const INITIAL_FILTERS = {
+  tahun: "",
+  semester: "",
+  subRincianAset: "",
+  unit: "",
+  subUnit: "",
+  upb: "",
+  kualifikasiAset: "",
+  kelompokAset: "",
+  jenisAset: "",
+  objekAset: "",
+};
+
+// Utility Components
+const FilterSelect = ({
+  label,
+  value,
+  onChange,
+  options,
+  valueKey = "id",
+  labelKey = "nama",
+}) => (
+  <select
+    value={value}
+    onChange={(e) => onChange(e.target.value)}
+    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+  >
+    <option value="">{label}</option>
+    {options.map((option) => (
+      <option
+        key={typeof option === "string" ? option : option[valueKey]}
+        value={typeof option === "string" ? option : option[labelKey]}
+      >
+        {typeof option === "string" ? option : option[labelKey]}
+      </option>
+    ))}
+  </select>
+);
+
+const ActionButtons = ({ onEdit, onDelete }) => (
+  <div className="flex gap-2 items-center">
+    <button
+      onClick={onEdit}
+      className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors cursor-pointer"
+    >
+      Edit
+    </button>
+    <button
+      onClick={onDelete}
+      className="text-red-600 hover:text-red-800 text-sm font-medium transition-colors cursor-pointer"
+    >
+      Delete
+    </button>
+  </div>
+);
+
+const SaldoAwalPage = () => {
+  // State management
+  const [searchTerm, setSearchTerm] = useState("");
+  const [entriesPerPage, setEntriesPerPage] = useState(
+    DEFAULT_ENTRIES_PER_PAGE
+  );
+  const [filters, setFilters] = useState(INITIAL_FILTERS);
+  const [loading, setLoading] = useState(true);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingSaldoAwal, setEditingSaldoAwal] = useState(null);
+  const [error, setError] = useState(null);
+
+  // Dropdown data states
   const [tahunData, setTahunData] = useState([]);
   const [semesterData, setSemesterData] = useState([]);
   const [subRincianAsetData, setSubRincianAsetData] = useState([]);
@@ -21,32 +89,22 @@ const SaldoAwalPage = () => {
   const [kelompokAsetData, setKelompokAsetData] = useState([]);
   const [jenisAsetData, setJenisAsetData] = useState([]);
   const [objekAsetData, setObjekAsetData] = useState([]);
-  const [saldoAwalData, setSaldoAwalData] = useState([]); // Data utama untuk tabel
+  const [saldoAwalData, setSaldoAwalData] = useState([]);
 
-  const [selectedTahun, setSelectedTahun] = useState("");
-  const [selectedSemester, setSelectedSemester] = useState("");
-  const [selectedSubRincianAset, setSelectedSubRincianAset] = useState("");
-  const [selectedUnit, setSelectedUnit] = useState("");
-  const [selectedSubUnit, setSelectedSubUnit] = useState("");
-  const [selectedUpb, setSelectedUpb] = useState("");
-  const [selectedKualifikasiAset, setSelectedKualifikasiAset] = useState("");
-  const [selectedKelompokAset, setSelectedKelompokAset] = useState("");
-  const [selectedJenisAset, setSelectedJenisAset] = useState("");
-  const [selectedObjekAset, setSelectedObjekAset] = useState("");
+  const [dataTablePaginationModel, setDataTablePaginationModel] = useState({
+    page: 0,
+    pageSize: DEFAULT_ENTRIES_PER_PAGE,
+  });
 
-  const [loading, setLoading] = useState(true);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [editingSaldoAwal, setEditingSaldoAwal] = useState(null); // State untuk data yang sedang diedit
-
-  const [dataTablePaginationModel, setDataTablePaginationModel] =
-    React.useState({
-      page: 0,
-      pageSize: entriesPerPage,
-    });
-
-  const fetchData = () => {
+  // API Functions
+  const fetchData = async () => {
     setLoading(true);
-    setTimeout(() => {
+    setError(null);
+
+    try {
+      // Simulate API call with timeout
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
       // Dummy data untuk filter
       setTahunData(["2023", "2024", "2025"]);
       setSemesterData([
@@ -86,7 +144,7 @@ const SaldoAwalPage = () => {
         { id: 2, nama: "Laptop" },
       ]);
 
-      // Dummy data untuk Saldo Awal (pastikan ada 'id' dan properti sesuai kolom)
+      // Dummy data untuk Saldo Awal
       setSaldoAwalData([
         {
           id: 1,
@@ -134,86 +192,122 @@ const SaldoAwalPage = () => {
           nilaiBarang: 4500000,
         },
       ]);
+    } catch (err) {
+      console.error("Gagal mengambil data:", err);
+      setError(err.message || "Terjadi kesalahan saat mengambil data.");
+
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Gagal mengambil data saldo awal",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   };
 
+  // Effects
   useEffect(() => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    setDataTablePaginationModel((prev) => ({
+      ...prev,
+      pageSize: entriesPerPage,
+      page: 0,
+    }));
+  }, [entriesPerPage]);
+
+  // Data filtering
   const filteredData = saldoAwalData.filter((item) => {
     const matchesSearch =
       item.unit?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.upb?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.kualifikasiAset?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.jenisAset?.toLowerCase().includes(searchTerm.toLowerCase()) || // Menggunakan jenisAset
-      item.objekAset?.toLowerCase().includes(searchTerm.toLowerCase()) || // Menggunakan objekAset
-      // Jika ingin mencari di jumlahBarang atau nilaiBarang (sebagai string)
+      item.jenisAset?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.objekAset?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.jumlahBarang?.toString().includes(searchTerm.toLowerCase()) ||
       item.nilaiBarang?.toString().includes(searchTerm.toLowerCase());
 
-    const matchesTahun = selectedTahun === "" || item.tahun === selectedTahun;
-    const matchesSemester =
-      selectedSemester === "" || item.semester === selectedSemester;
-    const matchesSubRincianAset =
-      selectedSubRincianAset === "" ||
-      item.subRincianAset === selectedSubRincianAset;
-    const matchesUnit = selectedUnit === "" || item.unit === selectedUnit;
-    const matchesSubUnit =
-      selectedSubUnit === "" || item.subUnit === selectedSubUnit;
-    const matchesUpb = selectedUpb === "" || item.upb === selectedUpb;
-    const matchesKualifikasiAset =
-      selectedKualifikasiAset === "" ||
-      item.kualifikasiAset === selectedKualifikasiAset;
-    const matchesKelompokAset =
-      selectedKelompokAset === "" || item.kelompokAset === selectedKelompokAset;
-    const matchesJenisAset =
-      selectedJenisAset === "" || item.jenisAset === selectedJenisAset;
-    const matchesObjekAset =
-      selectedObjekAset === "" || item.objekAset === selectedObjekAset;
+    const filterChecks = [
+      !filters.tahun || item.tahun === filters.tahun,
+      !filters.semester || item.semester === filters.semester,
+      !filters.subRincianAset || item.subRincianAset === filters.subRincianAset,
+      !filters.unit || item.unit === filters.unit,
+      !filters.subUnit || item.subUnit === filters.subUnit,
+      !filters.upb || item.upb === filters.upb,
+      !filters.kualifikasiAset ||
+        item.kualifikasiAset === filters.kualifikasiAset,
+      !filters.kelompokAset || item.kelompokAset === filters.kelompokAset,
+      !filters.jenisAset || item.jenisAset === filters.jenisAset,
+      !filters.objekAset || item.objekAset === filters.objekAset,
+    ];
 
-    return (
-      matchesSearch &&
-      matchesTahun &&
-      matchesSemester &&
-      matchesSubRincianAset &&
-      matchesUnit &&
-      matchesSubUnit &&
-      matchesUpb &&
-      matchesKualifikasiAset &&
-      matchesKelompokAset &&
-      matchesJenisAset &&
-      matchesObjekAset
-    );
+    return matchesSearch && filterChecks.every(Boolean);
   });
 
-  const handleExport = () => console.log("Exporting Saldo Awal...");
+  // Event handlers
+  const handleFilterChange = (filterType, value) => {
+    setFilters((prev) => ({ ...prev, [filterType]: value }));
+  };
 
-  const handleRefresh = () => {
-    setLoading(true);
-    setSearchTerm("");
-    setSelectedTahun("");
-    setSelectedSemester("");
-    setSelectedSubRincianAset("");
-    setSelectedUnit("");
-    setSelectedSubUnit("");
-    setSelectedUpb("");
-    setSelectedKualifikasiAset("");
-    setSelectedKelompokAset("");
-    setSelectedJenisAset("");
-    setSelectedObjekAset("");
-    fetchData();
+  const handleExport = () => {
+    Swal.fire({
+      icon: "info",
+      title: "Export Data",
+      text: "Fitur export sedang dalam pengembangan",
+      toast: true,
+      position: "top-end",
+      showConfirmButton: false,
+      timer: 2000,
+      timerProgressBar: true,
+    });
+  };
+
+  const handleRefresh = async () => {
+    try {
+      setSearchTerm("");
+      setFilters(INITIAL_FILTERS);
+      await fetchData();
+
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data berhasil dimuat ulang.",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Gagal memuat ulang data",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    }
   };
 
   const handleOpenAddModal = () => {
-    setEditingSaldoAwal(null); // Reset editing state
+    setEditingSaldoAwal(null);
     setIsAddModalOpen(true);
   };
 
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
-    setEditingSaldoAwal(null); // Reset editing state
+    setEditingSaldoAwal(null);
   };
 
   const handleSaveNewSaldoAwal = (saldoAwalToSave) => {
@@ -224,14 +318,34 @@ const SaldoAwalPage = () => {
           item.id === saldoAwalToSave.id ? saldoAwalToSave : item
         )
       );
-      console.log("Update Saldo Awal:", saldoAwalToSave);
+
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data saldo awal berhasil diperbarui",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
     } else {
       // Mode Tambah Baru
       setSaldoAwalData((prevData) => [
         ...prevData,
         { id: Date.now(), ...saldoAwalToSave },
       ]);
-      console.log("Menyimpan Saldo Awal baru:", saldoAwalToSave);
+
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data saldo awal baru berhasil ditambahkan",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
     }
     handleCloseAddModal();
   };
@@ -259,20 +373,36 @@ const SaldoAwalPage = () => {
         setSaldoAwalData((prevData) =>
           prevData.filter((item) => item.id !== id)
         );
+
         Swal.fire({
           icon: "success",
           title: "Terhapus!",
           text: "Data saldo awal berhasil dihapus.",
-          timer: 1500,
+          toast: true,
+          position: "top-end",
           showConfirmButton: false,
+          timer: 2000,
+          timerProgressBar: true,
         });
       }
     });
   };
 
-  // Data kolom untuk MUI DataGrid
+  // Table columns configuration
   const columns = [
-    { field: "id", headerName: "ID", width: 70 }, // ID diperlukan oleh DataTable
+    {
+      field: "no",
+      headerName: "No",
+      width: 70,
+      sortable: false,
+      renderCell: (params) => {
+        return (
+          params.api.getRowIndexRelativeToVisibleRows(params.id) +
+          1 +
+          dataTablePaginationModel.page * dataTablePaginationModel.pageSize
+        );
+      },
+    },
     { field: "tahun", headerName: "Tahun", width: 100 },
     { field: "semester", headerName: "Semester", width: 120 },
     { field: "subRincianAset", headerName: "Sub Rincian Aset", width: 180 },
@@ -295,7 +425,6 @@ const SaldoAwalPage = () => {
       type: "number",
       width: 150,
       valueFormatter: (params) => {
-        // Format nilaiBarang sebagai mata uang (contoh: Rp 15.000.000)
         if (params.value == null) {
           return "";
         }
@@ -308,41 +437,35 @@ const SaldoAwalPage = () => {
       width: 150,
       sortable: false,
       renderCell: (params) => (
-        <div className="flex gap-2 items-center">
-          <button
-            onClick={() => handleEditClick(params.row.id)}
-            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => handleDeleteClick(params.row.id)}
-            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
-          >
-            Delete
-          </button>
-        </div>
+        <ActionButtons
+          onEdit={() => handleEditClick(params.row.id)}
+          onDelete={() => handleDeleteClick(params.row.id)}
+        />
       ),
     },
   ];
 
   return (
-    <div className="min-h-screen bg-[#f7f7f7]">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
 
       <div className="px-8 py-8">
         <Breadcrumbs />
 
+        {/* Export Button */}
         <div className="flex justify-end mb-4">
           <button
             onClick={handleExport}
             className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
           >
-            <Download size={16} /> Export
+            <Download size={16} />
+            Export
           </button>
         </div>
 
+        {/* Main Content */}
         <div className="bg-white rounded-lg shadow-sm p-6">
+          {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-gray-800">Saldo Awal</h1>
             <div className="flex gap-3">
@@ -361,165 +484,90 @@ const SaldoAwalPage = () => {
                 onClick={handleOpenAddModal}
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
-                <Plus size={16} /> Add Saldo Awal
+                <Plus size={16} />
+                Add Saldo Awal
               </button>
             </div>
           </div>
 
-          {/* Filter Section - Menggunakan grid untuk dropdown yang banyak */}
-          {/* Baris Pertama Filter: Tahun, Semester, Sub Rincian Aset, Unit, Sub Unit */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-            <select
-              value={selectedTahun}
-              onChange={(e) => setSelectedTahun(e.target.value)}
-              className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-            >
-              <option value=""> -- Tahun -- </option>
-              {tahunData.map((tahun, i) => (
-                <option key={i} value={tahun}>
-                  {tahun}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={selectedSemester}
-              onChange={(e) => setSelectedSemester(e.target.value)}
-              className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-            >
-              <option value=""> -- Semester -- </option>
-              {semesterData.map((semester) => (
-                <option key={semester.id} value={semester.nama}>
-                  {semester.nama}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={selectedSubRincianAset}
-              onChange={(e) => setSelectedSubRincianAset(e.target.value)}
-              className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-            >
-              <option value=""> -- Sub Rincian Aset -- </option>
-              {subRincianAsetData.map((item) => (
-                <option key={item.id} value={item.nama}>
-                  {item.nama}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={selectedUnit}
-              onChange={(e) => setSelectedUnit(e.target.value)}
-              className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-            >
-              <option value=""> -- Unit -- </option>
-              {unitData.map((unit) => (
-                <option key={unit.id} value={unit.nama}>
-                  {unit.nama}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={selectedSubUnit}
-              onChange={(e) => setSelectedSubUnit(e.target.value)}
-              className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-            >
-              <option value=""> -- Sub Unit -- </option>
-              {subUnitData.map((subUnit) => (
-                <option key={subUnit.id} value={subUnit.nama}>
-                  {subUnit.nama}
-                </option>
-              ))}
-            </select>
+          {/* Filters - Row 1 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+            <FilterSelect
+              label="-- Tahun --"
+              value={filters.tahun}
+              onChange={(value) => handleFilterChange("tahun", value)}
+              options={tahunData}
+            />
+            <FilterSelect
+              label="-- Semester --"
+              value={filters.semester}
+              onChange={(value) => handleFilterChange("semester", value)}
+              options={semesterData}
+            />
+            <FilterSelect
+              label="-- Sub Rincian Aset --"
+              value={filters.subRincianAset}
+              onChange={(value) => handleFilterChange("subRincianAset", value)}
+              options={subRincianAsetData}
+            />
+            <FilterSelect
+              label="-- Unit --"
+              value={filters.unit}
+              onChange={(value) => handleFilterChange("unit", value)}
+              options={unitData}
+            />
+            <FilterSelect
+              label="-- Sub Unit --"
+              value={filters.subUnit}
+              onChange={(value) => handleFilterChange("subUnit", value)}
+              options={subUnitData}
+            />
           </div>
 
-          {/* Baris Kedua Filter: UPB, Kualifikasi Aset, Kelompok Aset, Jenis Aset, Objek Aset */}
+          {/* Filters - Row 2 */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-            <select
-              value={selectedUpb}
-              onChange={(e) => setSelectedUpb(e.target.value)}
-              className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-            >
-              <option value=""> -- UPB -- </option>
-              {upbData.map((upb) => (
-                <option key={upb.id} value={upb.nama}>
-                  {upb.nama}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={selectedKualifikasiAset}
-              onChange={(e) => setSelectedKualifikasiAset(e.target.value)}
-              className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-            >
-              <option value=""> -- Kualifikasi Aset -- </option>
-              {kualifikasiAsetData.map((item) => (
-                <option key={item.id} value={item.nama}>
-                  {item.nama}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={selectedKelompokAset}
-              onChange={(e) => setSelectedKelompokAset(e.target.value)}
-              className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-            >
-              <option value=""> -- Kelompok Aset -- </option>
-              {kelompokAsetData.map((item) => (
-                <option key={item.id} value={item.nama}>
-                  {item.nama}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={selectedJenisAset}
-              onChange={(e) => setSelectedJenisAset(e.target.value)}
-              className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-            >
-              <option value=""> -- Jenis Aset -- </option>
-              {jenisAsetData.map((item) => (
-                <option key={item.id} value={item.nama}>
-                  {item.nama}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={selectedObjekAset}
-              onChange={(e) => setSelectedObjekAset(e.target.value)}
-              className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
-            >
-              <option value=""> -- Objek Aset -- </option>
-              {objekAsetData.map((item) => (
-                <option key={item.id} value={item.nama}>
-                  {item.nama}
-                </option>
-              ))}
-            </select>
+            <FilterSelect
+              label="-- UPB --"
+              value={filters.upb}
+              onChange={(value) => handleFilterChange("upb", value)}
+              options={upbData}
+            />
+            <FilterSelect
+              label="-- Kualifikasi Aset --"
+              value={filters.kualifikasiAset}
+              onChange={(value) => handleFilterChange("kualifikasiAset", value)}
+              options={kualifikasiAsetData}
+            />
+            <FilterSelect
+              label="-- Kelompok Aset --"
+              value={filters.kelompokAset}
+              onChange={(value) => handleFilterChange("kelompokAset", value)}
+              options={kelompokAsetData}
+            />
+            <FilterSelect
+              label="-- Jenis Aset --"
+              value={filters.jenisAset}
+              onChange={(value) => handleFilterChange("jenisAset", value)}
+              options={jenisAsetData}
+            />
+            <FilterSelect
+              label="-- Objek Aset --"
+              value={filters.objekAset}
+              onChange={(value) => handleFilterChange("objekAset", value)}
+              options={objekAsetData}
+            />
           </div>
 
-          {/* Baris Show entries dan Search Box */}
-          <div className="flex justify-between items-center mb-6 text-sm text-gray-600">
-            <div className="flex items-center gap-2">
+          {/* Controls */}
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
               <span>Show</span>
               <select
                 value={entriesPerPage}
-                onChange={(e) => {
-                  setEntriesPerPage(Number(e.target.value));
-                  setDataTablePaginationModel((prev) => ({
-                    ...prev,
-                    pageSize: Number(e.target.value),
-                    page: 0,
-                  }));
-                }}
+                onChange={(e) => setEntriesPerPage(Number(e.target.value))}
                 className="border border-gray-300 rounded px-2 py-1"
               >
-                {[5, 10, 25, 50, 100].map((n) => (
+                {ENTRIES_PER_PAGE_OPTIONS.map((n) => (
                   <option key={n} value={n}>
                     {n}
                   </option>
@@ -527,6 +575,7 @@ const SaldoAwalPage = () => {
               </select>
               <span>entries</span>
             </div>
+
             <div className="relative w-full md:w-64">
               <Search
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
@@ -542,20 +591,8 @@ const SaldoAwalPage = () => {
             </div>
           </div>
 
-          {/* DataTable Component */}
-          {loading ? (
-            <DataTable
-              rows={filteredData}
-              columns={columns}
-              initialPageSize={entriesPerPage}
-              pageSizeOptions={[5, 10, 25, 50, 100]}
-              height={500}
-              emptyRowsMessage="Tidak ada data tersedia"
-              paginationModel={dataTablePaginationModel}
-              onPaginationModelChange={setDataTablePaginationModel}
-              loading={true} // <-- ini yang penting
-            />
-          ) : error ? (
+          {/* Data Table */}
+          {error ? (
             <div className="text-center py-12">
               <div className="text-red-600 mb-2">⚠️ Error</div>
               <div className="text-gray-600">{error}</div>
@@ -566,18 +603,19 @@ const SaldoAwalPage = () => {
                 rows={filteredData}
                 columns={columns}
                 initialPageSize={entriesPerPage}
-                pageSizeOptions={[5, 10, 25, 50, 100]}
+                pageSizeOptions={ENTRIES_PER_PAGE_OPTIONS}
                 height={500}
                 emptyRowsMessage="Tidak ada data tersedia"
                 paginationModel={dataTablePaginationModel}
                 onPaginationModelChange={setDataTablePaginationModel}
-                loading={false} // <-- ini yang penting
+                loading={loading}
               />
             </div>
           )}
         </div>
       </div>
 
+      {/* Modal */}
       <AddNeracaAsetModal
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}

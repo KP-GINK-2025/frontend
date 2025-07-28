@@ -53,13 +53,6 @@ const FilterSelect = ({
   </select>
 );
 
-const LoadingSpinner = () => (
-  <div className="text-center py-12">
-    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-    <p className="mt-2 text-gray-500">Loading data...</p>
-  </div>
-);
-
 const ActionButtons = ({ onEdit, onDelete }) => (
   <div className="flex gap-2 items-center">
     <button
@@ -93,6 +86,7 @@ const DataRuanganPage = () => {
     page: 0,
     pageSize: DEFAULT_ENTRIES_PER_PAGE,
   });
+  const [error, setError] = useState(null);
 
   // API Functions
   const fetchDropdownData = useCallback(async () => {
@@ -113,11 +107,23 @@ const DataRuanganPage = () => {
       }));
     } catch (error) {
       console.error("Gagal mengambil data dropdown:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Gagal mengambil data dropdown",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
     }
   }, []);
 
   const fetchRuanganData = useCallback(async () => {
     setLoading(true);
+    setError(null);
+
     try {
       const response = await api.get("/data-ruangan");
       const data = response.data.data || [];
@@ -128,9 +134,21 @@ const DataRuanganPage = () => {
         ...new Set(data.map((item) => item.tahun).filter(Boolean)),
       ].sort();
       setDropdownData((prev) => ({ ...prev, tahun: uniqueYears }));
-    } catch (error) {
-      console.error("Gagal mengambil data ruangan:", error);
+    } catch (err) {
+      console.error("Gagal mengambil data ruangan:", err);
       setRuanganData([]);
+      setError(err.message || "Terjadi kesalahan saat mengambil data ruangan.");
+
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Gagal mengambil data ruangan",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
     } finally {
       setLoading(false);
     }
@@ -175,14 +193,47 @@ const DataRuanganPage = () => {
   };
 
   const handleExport = () => {
-    console.log("Exporting Data Ruangan...");
-    // TODO: Implement actual export functionality
+    Swal.fire({
+      icon: "info",
+      title: "Export Data",
+      text: "Fitur export sedang dalam pengembangan",
+      toast: true,
+      position: "top-end",
+      showConfirmButton: false,
+      timer: 2000,
+      timerProgressBar: true,
+    });
   };
 
-  const handleRefresh = () => {
-    setSearchTerm("");
-    setFilters(INITIAL_FILTERS);
-    fetchRuanganData();
+  const handleRefresh = async () => {
+    try {
+      setSearchTerm("");
+      setFilters(INITIAL_FILTERS);
+      await fetchRuanganData();
+
+      // SweetAlert2 untuk refresh berhasil
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data berhasil dimuat ulang.",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Gagal memuat ulang data",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    }
   };
 
   const handleOpenAddModal = () => {
@@ -203,12 +254,32 @@ const DataRuanganPage = () => {
           item.id === ruanganToSave.id ? ruanganToSave : item
         )
       );
-      console.log("Update Ruangan:", ruanganToSave);
+
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data ruangan berhasil diperbarui",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
     } else {
       // Add new mode
       const newRuangan = { id: Date.now(), ...ruanganToSave };
       setRuanganData((prevData) => [...prevData, newRuangan]);
-      console.log("Menyimpan Ruangan baru:", newRuangan);
+
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data ruangan baru berhasil ditambahkan",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
     }
     handleCloseAddModal();
   };
@@ -238,8 +309,11 @@ const DataRuanganPage = () => {
           icon: "success",
           title: "Terhapus!",
           text: "Data ruangan berhasil dihapus.",
-          timer: 1500,
+          toast: true,
+          position: "top-end",
           showConfirmButton: false,
+          timer: 2000,
+          timerProgressBar: true,
         });
       }
     });
@@ -483,19 +557,7 @@ const DataRuanganPage = () => {
           </div>
 
           {/* Data Table */}
-          {loading ? (
-            <DataTable
-              rows={filteredData}
-              columns={columns}
-              initialPageSize={entriesPerPage}
-              pageSizeOptions={[5, 10, 25, 50, 100]}
-              height={500}
-              emptyRowsMessage="Tidak ada data tersedia"
-              paginationModel={dataTablePaginationModel}
-              onPaginationModelChange={setDataTablePaginationModel}
-              loading={true} // <-- ini yang penting
-            />
-          ) : error ? (
+          {error ? (
             <div className="text-center py-12">
               <div className="text-red-600 mb-2">⚠️ Error</div>
               <div className="text-gray-600">{error}</div>
@@ -506,12 +568,12 @@ const DataRuanganPage = () => {
                 rows={filteredData}
                 columns={columns}
                 initialPageSize={entriesPerPage}
-                pageSizeOptions={[5, 10, 25, 50, 100]}
+                pageSizeOptions={ENTRIES_PER_PAGE_OPTIONS}
                 height={500}
                 emptyRowsMessage="Tidak ada data tersedia"
                 paginationModel={dataTablePaginationModel}
                 onPaginationModelChange={setDataTablePaginationModel}
-                loading={false} // <-- ini yang penting
+                loading={loading}
               />
             </div>
           )}

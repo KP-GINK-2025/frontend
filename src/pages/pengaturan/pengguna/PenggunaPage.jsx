@@ -157,7 +157,7 @@ const PenggunaPage = () => {
               <button
                 onClick={handleRefresh}
                 disabled={isLoading}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-md flex items-center gap-2 text-sm cursor-pointer"
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
                 <RefreshCw
                   size={16}
@@ -167,7 +167,7 @@ const PenggunaPage = () => {
               </button>
               <button
                 onClick={handleAddUser}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 text-sm cursor-pointer"
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
                 <Plus size={16} /> Add User
               </button>
