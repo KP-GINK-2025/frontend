@@ -346,6 +346,28 @@ const LraPage = () => {
   // Table columns configuration
   const columns = [
     {
+      field: "action",
+      headerName: "Action",
+      width: 150,
+      sortable: false,
+      renderCell: (params) => (
+        <div className="flex items-center gap-2 h-full">
+          <button
+            onClick={() => handleEditClick(params.row.id)}
+            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => handleDeleteClick(params.row.id)}
+            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
+          >
+            Delete
+          </button>
+        </div>
+      ),
+    },
+    {
       field: "no",
       headerName: "No",
       width: 70,
@@ -367,7 +389,6 @@ const LraPage = () => {
     {
       field: "nilaiTotal",
       headerName: "Nilai Total",
-      type: "number",
       width: 180,
       valueFormatter: (params) => {
         if (params.value == null) {
@@ -377,18 +398,6 @@ const LraPage = () => {
       },
     },
     { field: "keterangan", headerName: "Keterangan", flex: 1 },
-    {
-      field: "action",
-      headerName: "Action",
-      width: 150,
-      sortable: false,
-      renderCell: (params) => (
-        <ActionButtons
-          onEdit={() => handleEditClick(params.row.id)}
-          onDelete={() => handleDeleteClick(params.row.id)}
-        />
-      ),
-    },
   ];
 
   return (

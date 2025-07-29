@@ -6,6 +6,11 @@ import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import AddBidangModal from "./AddBidangModal";
 import DataTable from "../../../../components/DataTable";
 import Swal from "sweetalert2";
+import {
+  handleExport,
+  commonFormatters,
+  createExportConfig,
+} from "../../../../handlers/exportHandler";
 
 const BidangPage = () => {
   // --- State untuk Data dan Filter ---
@@ -15,6 +20,7 @@ const BidangPage = () => {
   const [refreshing, setRefreshing] = useState(true);
   const [rowCount, setRowCount] = useState(0); // Total jumlah baris dari API
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [exporting, setExporting] = useState(false); // State untuk loading export
 
   // --- State untuk Modal Add/Edit ---
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -82,9 +88,75 @@ const BidangPage = () => {
 
   // --- Handler Fungsi ---
 
-  const handleExport = () => {
-    console.log("Exporting data...");
-    // Implementasi logika ekspor data di sini
+  // Define export columns configuration
+  const exportColumns = [
+    { field: "no", headerName: "No" },
+    {
+      field: "provinsi",
+      headerName: "Kode Provinsi",
+      formatter: commonFormatters.nestedObject(
+        "kabupaten_kota.provinsi.kode_provinsi"
+      ),
+    },
+    {
+      field: "provinsi",
+      headerName: "Nama Provinsi",
+      formatter: commonFormatters.nestedObject(
+        "kabupaten_kota.provinsi.nama_provinsi"
+      ),
+    },
+    {
+      field: "kabupaten_kota",
+      headerName: "Kode Kabupaten/Kota",
+      formatter: commonFormatters.nestedObject(
+        "kabupaten_kota.kode_kabupaten_kota"
+      ),
+    },
+    {
+      field: "kabupaten_kota",
+      headerName: "Nama Kabupaten/Kota",
+      formatter: commonFormatters.nestedObject(
+        "kabupaten_kota.nama_kabupaten_kota"
+      ),
+    },
+    { field: "kode_bidang", headerName: "Kode Bidang" },
+    { field: "nama_bidang", headerName: "Nama Bidang" },
+    { field: "kode", headerName: "Kode" },
+  ];
+
+  // New export handler using the reusable function
+  const handleExportClick = async () => {
+    // Function to fetch all data for export
+    const fetchAllDataForExport = async () => {
+      try {
+        const params = new URLSearchParams();
+        params.append("page", 1);
+        params.append("per_page", 10000); // Get all data
+        if (debouncedSearchTerm) {
+          params.append("search", debouncedSearchTerm);
+        }
+
+        const response = await api.get(
+          `/klasifikasi-instansi/bidang?${params.toString()}`
+        );
+        return response.data.data;
+      } catch (error) {
+        console.error("Failed to fetch export data:", error);
+        throw error;
+      }
+    };
+
+    // Create export configuration
+    const exportConfig = {
+      fetchDataFunction: fetchAllDataForExport,
+      columns: exportColumns,
+      filename: "data-bidang",
+      sheetName: "Data Bidang",
+      setExporting: setExporting,
+    };
+
+    // Call the reusable export handler
+    await handleExport(exportConfig);
   };
 
   const handleRefresh = async () => {
@@ -221,6 +293,28 @@ const BidangPage = () => {
   // --- Konfigurasi Kolom DataTable ---
   const columns = [
     {
+      field: "action",
+      headerName: "Action",
+      width: 150,
+      sortable: false,
+      renderCell: (params) => (
+        <div className="flex items-center gap-2 h-full">
+          <button
+            onClick={() => handleEditClick(params.row.id)}
+            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => handleDeleteClick(params.row.id)}
+            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
+          >
+            Delete
+          </button>
+        </div>
+      ),
+    },
+    {
       field: "no",
       headerName: "No",
       width: 70,
@@ -268,28 +362,6 @@ const BidangPage = () => {
     },
     { field: "nama_bidang", headerName: "Nama Bidang", flex: 1, minWidth: 250 },
     { field: "kode", headerName: "Kode", width: 120 },
-    {
-      field: "action",
-      headerName: "Action",
-      width: 150,
-      sortable: false,
-      renderCell: (params) => (
-        <div className="flex gap-2 items-center">
-          <button
-            onClick={() => handleEditClick(params.row.id)}
-            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => handleDeleteClick(params.row.id)}
-            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
-          >
-            Delete
-          </button>
-        </div>
-      ),
-    },
   ];
 
   // --- Render UI ---
@@ -302,10 +374,12 @@ const BidangPage = () => {
 
         <div className="flex justify-end mt-4 mb-4">
           <button
-            onClick={handleExport}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+            onClick={handleExportClick} // Updated to use new handler
+            disabled={exporting}
+            className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
           >
-            <Download size={16} /> Export
+            <Download size={16} className={exporting ? "animate-pulse" : ""} />
+            {exporting ? "Exporting..." : "Export"}
           </button>
         </div>
 

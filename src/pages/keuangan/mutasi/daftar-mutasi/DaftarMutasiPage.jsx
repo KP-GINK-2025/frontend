@@ -307,7 +307,7 @@ const DaftarMutasiPage = () => {
       cancelButtonColor: "#3085d6",
       confirmButtonText: "Ya, hapus!",
       cancelButtonText: "Batal",
-      reverseButtons: true,
+      reverseButtons: false,
     });
 
     if (result.isConfirmed) {
@@ -327,6 +327,28 @@ const DaftarMutasiPage = () => {
 
   // Table columns definition
   const columns = [
+    {
+      field: "action",
+      headerName: "Action",
+      width: 150,
+      sortable: false,
+      renderCell: (params) => (
+        <div className="flex items-center gap-2 h-full">
+          <button
+            onClick={() => handleEditClick(params.row.id)}
+            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => handleDeleteClick(params.row.id)}
+            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
+          >
+            Delete
+          </button>
+        </div>
+      ),
+    },
     { field: "id", headerName: "ID", width: 70 },
     {
       field: "kualifikasiPerolehan",
@@ -385,28 +407,6 @@ const DaftarMutasiPage = () => {
       },
     },
     { field: "catatanVerifikasi", headerName: "Catatan Verifikasi", flex: 1 },
-    {
-      field: "action",
-      headerName: "Action",
-      width: 150,
-      sortable: false,
-      renderCell: (params) => (
-        <div className="flex gap-2 items-center">
-          <button
-            onClick={() => handleEditClick(params.row.id)}
-            className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors duration-200 hover:underline cursor-pointer"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => handleDeleteClick(params.row.id)}
-            className="text-red-600 hover:text-red-800 text-sm font-medium transition-colors duration-200 hover:underline cursor-pointer"
-          >
-            Delete
-          </button>
-        </div>
-      ),
-    },
   ];
 
   // Render filter dropdown
