@@ -1,18 +1,22 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../../../../components/Navbar";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { RefreshCw, Plus, Download, Search } from "lucide-react";
+import DataTable from "../../../../components/DataTable";
 import Swal from "sweetalert2";
+import * as XLSX from "xlsx";
 
 const DaftarHibahPage = () => {
-  // Search and pagination states
+  // --- State untuk Data dan Filter ---
   const [searchTerm, setSearchTerm] = useState("");
-  const [entriesPerPage, setEntriesPerPage] = useState(10);
-
-  // Main data state
   const [daftarHibahData, setDaftarHibahData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(true);
+  const [rowCount, setRowCount] = useState(0); // Total jumlah baris dari API
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [exporting, setExporting] = useState(false); // State untuk loading export
 
-  // Filter dropdown data states
+  // --- State untuk Filter Dropdown ---
   const [filterOptions, setFilterOptions] = useState({
     asal: [],
     semester: [],
@@ -26,11 +30,34 @@ const DaftarHibahPage = () => {
     statusVerifikasi: "",
   });
 
-  // UI states
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // --- State untuk Paginasi DataTable ---
+  const [dataTablePaginationModel, setDataTablePaginationModel] = useState({
+    page: 0, // Halaman saat ini (0-indexed)
+    pageSize: 10, // Jumlah baris per halaman
+  });
 
-  // Mock data
+  // --- OPTIMISASI: Debounce search term ---
+  // State untuk menyimpan search term yang di-debounce
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300); // Tunggu 300ms setelah user berhenti mengetik
+
+    return () => {
+      clearTimeout(timer); // Bersihkan timer jika searchTerm berubah sebelum 300ms
+    };
+  }, [searchTerm]);
+
+  // Reset halaman ke 0 ketika debouncedSearchTerm berubah
+  useEffect(() => {
+    if (debouncedSearchTerm !== searchTerm) {
+      setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
+    }
+  }, [debouncedSearchTerm, searchTerm]);
+
+  // Mock data functions
   const getMockData = () => [
     {
       id: 1,
@@ -92,15 +119,41 @@ const DaftarHibahPage = () => {
       statusVerifikasi: "Menunggu",
       semester: "1",
     },
+    {
+      id: 6,
+      asal: "Kementerian C",
+      tujuan: "Dinas Pariwisata",
+      noBeritaAcara: "BA/Hibah/006/2024",
+      tglBeritaAcara: "2024-06-15",
+      totalBarang: 20,
+      totalHarga: 100000000,
+      lampiran: "Doc_Hibah_006.pdf",
+      statusVerifikasi: "Diverifikasi",
+      semester: "2",
+    },
+    {
+      id: 7,
+      asal: "Yayasan XYZ",
+      tujuan: "Dinas Kebudayaan",
+      noBeritaAcara: "BA/Hibah/007/2024",
+      tglBeritaAcara: "2024-07-22",
+      totalBarang: 8,
+      totalHarga: 30000000,
+      lampiran: "Doc_Hibah_007.pdf",
+      statusVerifikasi: "Menunggu",
+      semester: "2",
+    },
   ];
 
   const getMockFilterOptions = () => ({
     asal: [
       { id: 1, nama: "Kementerian A" },
       { id: 2, nama: "Kementerian B" },
-      { id: 3, nama: "Swasta XYZ" },
-      { id: 4, nama: "Swasta ABC" },
-      { id: 5, nama: "Yayasan ABC" },
+      { id: 3, nama: "Kementerian C" },
+      { id: 4, nama: "Swasta XYZ" },
+      { id: 5, nama: "Swasta ABC" },
+      { id: 6, nama: "Yayasan ABC" },
+      { id: 7, nama: "Yayasan XYZ" },
     ],
     semester: [
       { id: 1, nama: "1" },
@@ -113,118 +166,258 @@ const DaftarHibahPage = () => {
     ],
   });
 
-  // Reset filters to initial state
-  const resetFilters = () => {
-    setFilters({
-      asal: "",
-      semester: "",
-      statusVerifikasi: "",
-    });
-  };
+  // --- EFEK UTAMA UNTUK FETCH DATA ---
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setRefreshing(true);
+      try {
+        // Simulate API delay
+        await new Promise((resolve) => setTimeout(resolve, 800));
 
-  // Fetch data function with proper loading state management
-  const fetchData = useCallback(async (showSuccessMessage = false) => {
-    setLoading(true);
-    setError(null);
+        // Simulate API parameters
+        const params = new URLSearchParams();
+        params.append("page", dataTablePaginationModel.page + 1);
+        params.append("per_page", dataTablePaginationModel.pageSize);
+        if (debouncedSearchTerm) {
+          params.append("search", debouncedSearchTerm);
+        }
+        if (filters.asal) {
+          params.append("asal", filters.asal);
+        }
+        if (filters.semester) {
+          params.append("semester", filters.semester);
+        }
+        if (filters.statusVerifikasi) {
+          params.append("status_verifikasi", filters.statusVerifikasi);
+        }
+
+        // Get mock data and apply filters
+        let mockData = getMockData();
+
+        // Apply search filter
+        if (debouncedSearchTerm) {
+          mockData = mockData.filter((item) =>
+            [
+              item.asal,
+              item.tujuan,
+              item.noBeritaAcara,
+              item.tglBeritaAcara,
+              item.totalBarang?.toString(),
+              item.totalHarga?.toString(),
+              item.lampiran,
+              item.statusVerifikasi,
+            ].some((field) =>
+              field?.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+            )
+          );
+        }
+
+        // Apply dropdown filters
+        if (filters.asal) {
+          mockData = mockData.filter((item) => item.asal === filters.asal);
+        }
+        if (filters.semester) {
+          mockData = mockData.filter(
+            (item) => item.semester === filters.semester
+          );
+        }
+        if (filters.statusVerifikasi) {
+          mockData = mockData.filter(
+            (item) => item.statusVerifikasi === filters.statusVerifikasi
+          );
+        }
+
+        // Apply pagination
+        const startIndex =
+          dataTablePaginationModel.page * dataTablePaginationModel.pageSize;
+        const paginatedData = mockData.slice(
+          startIndex,
+          startIndex + dataTablePaginationModel.pageSize
+        );
+
+        setDaftarHibahData(paginatedData);
+        setRowCount(mockData.length);
+        setFilterOptions(getMockFilterOptions());
+      } catch (error) {
+        console.error("Gagal fetch data hibah:", error);
+        setDaftarHibahData([]);
+        setRowCount(0);
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    };
+
+    fetchData();
+  }, [dataTablePaginationModel, debouncedSearchTerm, refreshTrigger, filters]);
+
+  // --- Handler Fungsi ---
+  const handleExport = async () => {
+    setExporting(true);
 
     try {
-      // Simulate API delay
+      // Simulate fetching all data for export
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Set filter dropdown options
-      setFilterOptions(getMockFilterOptions());
+      let allData = getMockData();
 
-      // Set main table data
-      setDaftarHibahData(getMockData());
+      // Apply current filters to export data
+      if (debouncedSearchTerm) {
+        allData = allData.filter((item) =>
+          [
+            item.asal,
+            item.tujuan,
+            item.noBeritaAcara,
+            item.tglBeritaAcara,
+            item.totalBarang?.toString(),
+            item.totalHarga?.toString(),
+            item.lampiran,
+            item.statusVerifikasi,
+          ].some((field) =>
+            field?.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+          )
+        );
+      }
 
-      // Show success message if requested
-      if (showSuccessMessage) {
+      if (filters.asal) {
+        allData = allData.filter((item) => item.asal === filters.asal);
+      }
+      if (filters.semester) {
+        allData = allData.filter((item) => item.semester === filters.semester);
+      }
+      if (filters.statusVerifikasi) {
+        allData = allData.filter(
+          (item) => item.statusVerifikasi === filters.statusVerifikasi
+        );
+      }
+
+      if (allData.length === 0) {
         Swal.fire({
-          icon: "success",
-          title: "Berhasil!",
-          text: "Data berhasil dimuat ulang.",
+          icon: "warning",
+          title: "Tidak Ada Data",
+          text: "Tidak ada data untuk diekspor.",
           toast: true,
           position: "top-end",
           showConfirmButton: false,
           timer: 2000,
           timerProgressBar: true,
         });
+        return;
       }
-    } catch (err) {
-      console.error("Error fetching data:", err);
-      setError("Gagal memuat data: " + err.message);
 
-      if (showSuccessMessage) {
-        Swal.fire({
-          icon: "error",
-          title: "Gagal!",
-          text: "Terjadi kesalahan saat memuat data.",
-          toast: true,
-          position: "top-end",
-          showConfirmButton: false,
-          timer: 3000,
-          timerProgressBar: true,
-        });
-      }
+      // Format data untuk export
+      const exportData = allData.map((item, index) => ({
+        No: index + 1,
+        Asal: item.asal,
+        Tujuan: item.tujuan,
+        "No. Berita Acara": item.noBeritaAcara,
+        "Tgl. Berita Acara": item.tglBeritaAcara,
+        "Total Barang": item.totalBarang,
+        "Total Harga": item.totalHarga,
+        Lampiran: item.lampiran,
+        "Status Verifikasi": item.statusVerifikasi,
+        Semester: item.semester,
+      }));
+
+      // Buat worksheet dan workbook
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+
+      // Set column widths
+      const columnWidths = [
+        { wch: 5 }, // No
+        { wch: 20 }, // Asal
+        { wch: 20 }, // Tujuan
+        { wch: 20 }, // No. Berita Acara
+        { wch: 15 }, // Tgl. Berita Acara
+        { wch: 12 }, // Total Barang
+        { wch: 15 }, // Total Harga
+        { wch: 20 }, // Lampiran
+        { wch: 15 }, // Status Verifikasi
+        { wch: 10 }, // Semester
+      ];
+      worksheet["!cols"] = columnWidths;
+
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Data Hibah");
+
+      // Generate filename dengan timestamp
+      const now = new Date();
+      const timestamp = now.toISOString().slice(0, 19).replace(/[:.]/g, "-");
+      const filename = `data-hibah-${timestamp}.xlsx`;
+
+      // Download file
+      XLSX.writeFile(workbook, filename);
+
+      // Tampilkan notifikasi sukses
+      Swal.fire({
+        icon: "success",
+        title: "Export Berhasil!",
+        text: `Data berhasil diekspor ke file ${filename}`,
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+      });
+    } catch (error) {
+      console.error("Gagal export data:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Export Gagal!",
+        text: "Terjadi kesalahan saat mengekspor data.",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+      });
     } finally {
-      setLoading(false);
+      setExporting(false);
     }
-  }, []);
-
-  // Initial data fetch
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  // Filter data based on search term and selected filters
-  const filteredData = daftarHibahData.filter((item) => {
-    const matchesSearch = [
-      item.asal,
-      item.tujuan,
-      item.noBeritaAcara,
-      item.tglBeritaAcara,
-      item.totalBarang?.toString(),
-      item.totalHarga?.toString(),
-      item.lampiran,
-      item.statusVerifikasi,
-    ].some((field) => field?.toLowerCase().includes(searchTerm.toLowerCase()));
-
-    const matchesFilters = Object.entries(filters).every(([key, value]) => {
-      if (!value) return true;
-      return item[key] === value;
-    });
-
-    return matchesSearch && matchesFilters;
-  });
-
-  // Handle filter changes
-  const handleFilterChange = (filterKey, value) => {
-    setFilters((prev) => ({ ...prev, [filterKey]: value }));
   };
 
-  // Handle refresh with proper loading state and SweetAlert
   const handleRefresh = async () => {
-    setSearchTerm("");
-    resetFilters();
-    await fetchData(true); // Pass true to show success message
-  };
+    setRefreshing(true);
+    try {
+      setSearchTerm("");
+      setFilters({
+        asal: "",
+        semester: "",
+        statusVerifikasi: "",
+      });
+      setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
+      setRefreshTrigger((c) => c + 1);
 
-  const handleExport = () => {
-    console.log("Exporting Daftar Hibah...");
-    Swal.fire({
-      icon: "info",
-      title: "Export",
-      text: "Fitur export sedang dalam pengembangan.",
-      toast: true,
-      position: "top-end",
-      showConfirmButton: false,
-      timer: 2000,
-      timerProgressBar: true,
-    });
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data berhasil dimuat ulang.",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Gagal memuat ulang data",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const handleAddHibah = () => {
-    console.log("Adding new Hibah...");
     Swal.fire({
       icon: "info",
       title: "Add Hibah",
@@ -238,7 +431,6 @@ const DaftarHibahPage = () => {
   };
 
   const handleEditClick = (id) => {
-    console.log("Edit hibah:", id);
     Swal.fire({
       icon: "info",
       title: "Edit Hibah",
@@ -251,8 +443,8 @@ const DaftarHibahPage = () => {
     });
   };
 
-  const handleDeleteClick = (id) => {
-    Swal.fire({
+  const handleDeleteClick = async (id) => {
+    const result = await Swal.fire({
       title: "Apakah Anda yakin?",
       text: "Data hibah yang dihapus tidak dapat dikembalikan!",
       icon: "warning",
@@ -261,24 +453,36 @@ const DaftarHibahPage = () => {
       cancelButtonColor: "#3085d6",
       confirmButtonText: "Ya, hapus!",
       cancelButtonText: "Batal",
-      reverseButtons: true,
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setDaftarHibahData((prevData) =>
-          prevData.filter((item) => item.id !== id)
-        );
-        Swal.fire({
-          icon: "success",
-          title: "Terhapus!",
-          text: "Data hibah berhasil dihapus.",
-          toast: true,
-          position: "top-end",
-          showConfirmButton: false,
-          timer: 2000,
-          timerProgressBar: true,
-        });
-      }
     });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      Swal.fire({
+        title: "Berhasil Delete",
+        text: "Data hibah berhasil dihapus.",
+        icon: "success",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+      handleRefresh(); // Refresh data
+    } catch (error) {
+      console.error("Gagal menghapus hibah:", error);
+      Swal.fire({
+        title: "Gagal",
+        text: "Terjadi kesalahan saat menghapus data.",
+        icon: "error",
+      });
+    }
+  };
+
+  // Handle filter changes
+  const handleFilterChange = (filterKey, value) => {
+    setFilters((prev) => ({ ...prev, [filterKey]: value }));
+    setDataTablePaginationModel((prev) => ({ ...prev, page: 0 })); // Reset to first page
   };
 
   // Format currency for display
@@ -289,12 +493,6 @@ const DaftarHibahPage = () => {
       minimumFractionDigits: 0,
     }).format(amount);
   };
-
-  // Pagination calculations
-  const totalEntries = filteredData.length;
-  const totalPages = Math.ceil(totalEntries / entriesPerPage);
-  const currentPage = 1; // For now, we'll keep it simple with page 1
-  const displayedData = filteredData.slice(0, entriesPerPage);
 
   // Filter dropdown component
   const FilterDropdown = ({
@@ -323,27 +521,159 @@ const DaftarHibahPage = () => {
     </div>
   );
 
+  // --- Konfigurasi Kolom DataTable ---
+  const columns = [
+    {
+      field: "action",
+      headerName: "Action",
+      width: 150,
+      sortable: false,
+      renderCell: (params) => (
+        <div className="flex items-center gap-2 h-full">
+          <button
+            onClick={() => handleEditClick(params.row.id)}
+            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => handleDeleteClick(params.row.id)}
+            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
+          >
+            Delete
+          </button>
+        </div>
+      ),
+    },
+    {
+      field: "no",
+      headerName: "No",
+      width: 70,
+      sortable: false,
+      renderCell: (params) => {
+        const index = daftarHibahData.findIndex(
+          (row) => row.id === params.row.id
+        );
+        return (
+          dataTablePaginationModel.page * dataTablePaginationModel.pageSize +
+          index +
+          1
+        );
+      },
+    },
+    {
+      field: "asal",
+      headerName: "Asal",
+      flex: 1,
+      minWidth: 180,
+    },
+    {
+      field: "tujuan",
+      headerName: "Tujuan",
+      flex: 1,
+      minWidth: 180,
+    },
+    {
+      field: "noBeritaAcara",
+      headerName: "No. Berita Acara",
+      flex: 1,
+      minWidth: 180,
+    },
+    {
+      field: "tglBeritaAcara",
+      headerName: "Tgl. Berita Acara",
+      width: 150,
+    },
+    {
+      field: "totalBarang",
+      headerName: "Total Barang",
+      width: 120,
+      renderCell: (params) => <div className="text-center">{params.value}</div>,
+    },
+    {
+      field: "totalHarga",
+      headerName: "Total Harga",
+      width: 150,
+      renderCell: (params) => (
+        <div className="text-green-600 font-medium">
+          {formatCurrency(params.value)}
+        </div>
+      ),
+    },
+    {
+      field: "lampiran",
+      headerName: "Lampiran",
+      width: 150,
+      renderCell: (params) => (
+        <span className="text-blue-600 hover:text-blue-800 cursor-pointer">
+          {params.value}
+        </span>
+      ),
+    },
+    {
+      field: "statusVerifikasi",
+      headerName: "Status Verifikasi",
+      width: 150,
+      renderCell: (params) => (
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-medium ${
+            params.value === "Diverifikasi"
+              ? "bg-green-100 text-green-800"
+              : params.value === "Menunggu"
+              ? "bg-yellow-100 text-yellow-800"
+              : "bg-red-100 text-red-800"
+          }`}
+        >
+          {params.value}
+        </span>
+      ),
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#f7f7f7]">
       <Navbar />
-      <div className="px-4 md:px-8 py-6 md:py-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-          <Breadcrumbs />
+
+      <div className="px-8 py-8">
+        <Breadcrumbs />
+
+        <div className="flex justify-end mt-4 mb-4">
           <button
             onClick={handleExport}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors font-medium cursor-pointer"
+            disabled={exporting}
+            className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
           >
-            <Download size={16} /> Export
+            <Download size={16} className={exporting ? "animate-pulse" : ""} />
+            {exporting ? "Exporting..." : "Export"}
           </button>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">
-            Daftar Hibah
-          </h1>
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold text-gray-800">Daftar Hibah</h1>
+            <div className="flex gap-3">
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+              >
+                <RefreshCw
+                  size={16}
+                  className={refreshing ? "animate-spin" : ""}
+                />
+                Refresh
+              </button>
+              <button
+                onClick={handleAddHibah}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+              >
+                <Plus size={16} /> Add Hibah
+              </button>
+            </div>
+          </div>
 
-          {/* Filters and Action Buttons */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 items-end">
+          {/* Filter Section */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <FilterDropdown
               label="Asal"
               value={filters.asal}
@@ -366,45 +696,31 @@ const DaftarHibahPage = () => {
                 handleFilterChange("statusVerifikasi", value)
               }
             />
-
-            {/* Action Buttons */}
-            <div className="flex gap-2 justify-end">
-              <button
-                onClick={handleRefresh}
-                disabled={loading}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors font-medium cursor-pointer"
-              >
-                <RefreshCw
-                  size={16}
-                  className={loading ? "animate-spin" : ""}
-                />
-                Refresh
-              </button>
-              <button
-                onClick={handleAddHibah}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors font-medium cursor-pointer"
-              >
-                <Plus size={16} /> Add Hibah
-              </button>
-            </div>
           </div>
 
-          {/* Table Controls */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 text-sm text-gray-600">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
             <div className="flex items-center gap-2">
-              <span>Show</span>
+              <span className="text-gray-600 text-sm">Show</span>
               <select
-                value={entriesPerPage}
-                onChange={(e) => setEntriesPerPage(Number(e.target.value))}
-                className="border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                value={dataTablePaginationModel.pageSize}
+                onChange={(e) => {
+                  setDataTablePaginationModel((prev) => ({
+                    ...prev,
+                    pageSize: Number(e.target.value),
+                    page: 0,
+                  }));
+                }}
+                className="border border-gray-300 rounded px-3 py-1 text-sm cursor-pointer"
               >
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
+                {[5, 10, 25, 50, 75, 100].map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
               </select>
-              <span>entries</span>
+              <span className="text-gray-600 text-sm">entries</span>
             </div>
+
             <div className="relative w-full md:w-64">
               <Search
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
@@ -415,167 +731,26 @@ const DaftarHibahPage = () => {
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
 
-          {/* Data Table */}
-          {error ? (
-            <div className="text-center py-12 bg-red-50 rounded-lg border border-red-200">
-              <div className="text-red-600 text-lg mb-2">⚠️ Error</div>
-              <div className="text-gray-600 mb-4">{error}</div>
-              <button
-                onClick={() => fetchData()}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md transition-colors"
-              >
-                Coba Lagi
-              </button>
-            </div>
-          ) : (
-            <div className="overflow-x-auto shadow-md rounded-lg border border-gray-200">
-              <table className="w-full text-sm text-left text-gray-500">
-                <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-                  <tr>
-                    <th scope="col" className="py-3 px-6">
-                      Action
-                    </th>
-                    <th scope="col" className="py-3 px-6">
-                      Asal
-                    </th>
-                    <th scope="col" className="py-3 px-6">
-                      Tujuan
-                    </th>
-                    <th scope="col" className="py-3 px-6">
-                      No. Berita Acara
-                    </th>
-                    <th scope="col" className="py-3 px-6">
-                      Tgl. Berita Acara
-                    </th>
-                    <th scope="col" className="py-3 px-6">
-                      Total Barang
-                    </th>
-                    <th scope="col" className="py-3 px-6">
-                      Total Harga
-                    </th>
-                    <th scope="col" className="py-3 px-6">
-                      Lampiran
-                    </th>
-                    <th scope="col" className="py-3 px-6">
-                      Status Verifikasi
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                    <tr>
-                      <td
-                        colSpan="9"
-                        className="py-8 px-6 text-center text-gray-600"
-                      >
-                        <div className="flex items-center justify-center">
-                          <RefreshCw size={20} className="animate-spin mr-2" />
-                          Memuat data...
-                        </div>
-                      </td>
-                    </tr>
-                  ) : displayedData.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan="9"
-                        className="py-8 px-6 text-center text-gray-500"
-                      >
-                        Tidak ada data tersedia
-                      </td>
-                    </tr>
-                  ) : (
-                    displayedData.map((item) => (
-                      <tr
-                        key={item.id}
-                        className="bg-white border-b hover:bg-gray-50 transition-colors"
-                      >
-                        <td className="py-4 px-6">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleEditClick(item.id)}
-                              className="text-blue-600 hover:text-blue-800 font-medium transition-colors hover:underline cursor-pointer"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteClick(item.id)}
-                              className="text-red-600 hover:text-red-800 font-medium transition-colors hover:underline cursor-pointer"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6 font-medium text-gray-900">
-                          {item.asal}
-                        </td>
-                        <td className="py-4 px-6">{item.tujuan}</td>
-                        <td className="py-4 px-6">{item.noBeritaAcara}</td>
-                        <td className="py-4 px-6">{item.tglBeritaAcara}</td>
-                        <td className="py-4 px-6 text-center">
-                          {item.totalBarang}
-                        </td>
-                        <td className="py-4 px-6 font-medium text-green-600">
-                          {formatCurrency(item.totalHarga)}
-                        </td>
-                        <td className="py-4 px-6">
-                          <span className="text-blue-600 hover:text-blue-800 cursor-pointer">
-                            {item.lampiran}
-                          </span>
-                        </td>
-                        <td className="py-4 px-6">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              item.statusVerifikasi === "Diverifikasi"
-                                ? "bg-green-100 text-green-800"
-                                : item.statusVerifikasi === "Menunggu"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-red-100 text-red-800"
-                            }`}
-                          >
-                            {item.statusVerifikasi}
-                          </span>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Pagination Info */}
-          {!loading && !error && (
-            <div className="flex flex-col md:flex-row justify-between items-center mt-4 text-sm text-gray-700 gap-4">
-              <div>
-                Menampilkan {displayedData.length > 0 ? 1 : 0} sampai{" "}
-                {displayedData.length} dari {totalEntries} entri
-                {filteredData.length !== daftarHibahData.length &&
-                  ` (difilter dari ${daftarHibahData.length} total entri)`}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  className="py-1 px-3 border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  disabled={currentPage === 1}
-                >
-                  Previous
-                </button>
-                <span className="py-1 px-3 border border-gray-300 rounded-md bg-blue-50 text-blue-600">
-                  {currentPage}
-                </span>
-                <button
-                  className="py-1 px-3 border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  disabled={currentPage === totalPages || totalPages === 0}
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
+          <DataTable
+            rows={daftarHibahData}
+            columns={columns}
+            rowCount={rowCount}
+            loading={loading}
+            paginationMode="server"
+            filterMode="server"
+            pageSizeOptions={[5, 10, 25, 50, 75, 100]}
+            paginationModel={dataTablePaginationModel}
+            onPaginationModelChange={setDataTablePaginationModel}
+            height={500}
+            emptyRowsMessage="Tidak ada data tersedia"
+            disableRowSelectionOnClick
+            hideFooterSelectedRowCount
+          />
         </div>
       </div>
     </div>

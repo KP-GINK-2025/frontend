@@ -389,7 +389,7 @@ const DaftarBelanjaPage = () => {
       cancelButtonColor: "#3085d6",
       confirmButtonText: "Ya, hapus!",
       cancelButtonText: "Batal",
-      reverseButtons: true,
+      reverseButtons: false,
     }).then((result) => {
       if (result.isConfirmed) {
         setDaftarBelanjaData((prevData) =>
@@ -411,6 +411,28 @@ const DaftarBelanjaPage = () => {
 
   // Table columns configuration
   const columns = [
+    {
+      field: "action",
+      headerName: "Action",
+      width: 150,
+      sortable: false,
+      renderCell: (params) => (
+        <div className="flex items-center gap-2 h-full">
+          <button
+            onClick={() => handleEditClick(params.row.id)}
+            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => handleDeleteClick(params.row.id)}
+            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
+          >
+            Delete
+          </button>
+        </div>
+      ),
+    },
     { field: "id", headerName: "ID", width: 70 },
     { field: "upb", headerName: "UPB", width: 120 },
     {
@@ -453,28 +475,6 @@ const DaftarBelanjaPage = () => {
     },
     { field: "statusTotalHarga", headerName: "Status Total Harga", width: 150 },
     { field: "statusVerifikasi", headerName: "Status Verifikasi", width: 150 },
-    {
-      field: "action",
-      headerName: "Action",
-      width: 150,
-      sortable: false,
-      renderCell: (params) => (
-        <div className="flex gap-2 items-center">
-          <button
-            onClick={() => handleEditClick(params.row.id)}
-            className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors hover:underline cursor-pointer"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => handleDeleteClick(params.row.id)}
-            className="text-red-600 hover:text-red-800 text-sm font-medium transition-colors hover:underline cursor-pointer"
-          >
-            Delete
-          </button>
-        </div>
-      ),
-    },
   ];
 
   // Filter dropdown component
