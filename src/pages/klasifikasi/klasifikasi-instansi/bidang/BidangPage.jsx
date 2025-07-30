@@ -13,29 +13,28 @@ import {
 } from "../../../../handlers/exportHandler";
 
 const BidangPage = () => {
-  // --- State untuk Data dan Filter ---
   const [searchTerm, setSearchTerm] = useState("");
   const [bidangData, setBidangData] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const [rowCount, setRowCount] = useState(0);
+
   const [refreshing, setRefreshing] = useState(true);
-  const [rowCount, setRowCount] = useState(0); // Total jumlah baris dari API
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [exporting, setExporting] = useState(false); // State untuk loading export
 
-  // --- State untuk Modal Add/Edit ---
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingBidang, setEditingBidang] = useState(null);
 
-  // --- State untuk Paginasi DataTable ---
+  // Pagination state
   const [dataTablePaginationModel, setDataTablePaginationModel] = useState({
-    page: 0, // Halaman saat ini (0-indexed)
-    pageSize: 10, // Jumlah baris per halaman
+    page: 0,
+    pageSize: 10,
   });
 
-  // --- OPTIMISASI: Debounce search term ---
-  // State untuk menyimpan search term yang di-debounce
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
+  // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
@@ -46,16 +45,14 @@ const BidangPage = () => {
     };
   }, [searchTerm]);
 
-  // Reset halaman ke 0 ketika debouncedSearchTerm berubah
+  // Reset pagination when filters change
   useEffect(() => {
-    // Pastikan ini hanya memicu reset halaman jika debouncedSearchTerm benar-benar berubah
-    // dan bukan saat inisialisasi awal jika searchTerm kosong
     if (debouncedSearchTerm !== searchTerm) {
       setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
     }
   }, [debouncedSearchTerm, searchTerm]);
 
-  // --- EFEK UTAMA UNTUK FETCH DATA ---
+  // Fetch bidang
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -64,6 +61,7 @@ const BidangPage = () => {
         const params = new URLSearchParams();
         params.append("page", dataTablePaginationModel.page + 1);
         params.append("per_page", dataTablePaginationModel.pageSize);
+
         if (debouncedSearchTerm) {
           params.append("search", debouncedSearchTerm);
         }
@@ -71,6 +69,7 @@ const BidangPage = () => {
         const response = await api.get(
           `/klasifikasi-instansi/bidang?${params.toString()}`
         );
+
         setBidangData(response.data.data);
         setRowCount(response.data.meta.total);
       } catch (error) {
@@ -196,17 +195,16 @@ const BidangPage = () => {
   };
 
   const handleOpenAddModal = () => {
-    setEditingBidang(null); // Pastikan modal dalam mode 'add'
+    setEditingBidang(null);
     setIsAddModalOpen(true);
   };
 
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
-    setEditingBidang(null); // Reset editing state
-    // Tidak perlu memanggil handleRefresh di sini, karena onSave akan memanggilnya
+    setEditingBidang(null);
   };
 
-  const handleSaveNewBidang = async (bidangToSave) => {
+  const handleSaveBidang = async (bidangToSave) => {
     try {
       if (bidangToSave.id) {
         // Mode Edit
@@ -230,20 +228,32 @@ const BidangPage = () => {
           showConfirmButton: false,
         });
       }
-      handleCloseAddModal(); // Tutup modal
-      handleRefresh(); // Panggil refresh untuk mengambil data terbaru
-    } catch (error) {
-      console.error(
-        "Gagal simpan bidang:",
-        error.response?.data || error.message
-      );
-      Swal.fire({
-        title: "Gagal",
-        text: "Data tidak dapat disimpan.",
-        icon: "error",
-        timer: 1500,
-        showConfirmButton: false,
-      });
+      handleCloseAddModal();
+      handleRefresh();
+    } catch (err) {
+      console.error("Gagal menyimpan:", err);
+
+      const errorData = err.response?.data;
+
+      if (errorData?.errors) {
+        const errorMessages = Object.values(errorData.errors).flat().join("\n");
+        Swal.fire({
+          title: "Gagal",
+          text: errorMessages,
+          icon: "error",
+        });
+      } else {
+        Swal.fire({
+          title: "Gagal",
+          text: "Terjadi kesalahan saat menyimpan data.",
+          icon: "error",
+          buttonsStyling: false,
+          customClass: {
+            confirmButton:
+              "bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500",
+          },
+        });
+      }
     }
   };
 
@@ -279,7 +289,7 @@ const BidangPage = () => {
         timer: 1500,
         showConfirmButton: false,
       });
-      handleRefresh(); // Refresh data
+      handleRefresh();
     } catch (error) {
       console.error("Gagal menghapus bidang:", error);
       Swal.fire({
@@ -290,7 +300,7 @@ const BidangPage = () => {
     }
   };
 
-  // --- Konfigurasi Kolom DataTable ---
+  // Table columns configuration
   const columns = [
     {
       field: "action",
@@ -320,7 +330,6 @@ const BidangPage = () => {
       width: 70,
       sortable: false,
       renderCell: (params) => {
-        // Menggunakan dataTablePaginationModel untuk perhitungan nomor
         const index = bidangData.findIndex((row) => row.id === params.row.id);
         return (
           dataTablePaginationModel.page * dataTablePaginationModel.pageSize +
@@ -335,7 +344,6 @@ const BidangPage = () => {
       flex: 1,
       minWidth: 250,
       renderCell: (params) => {
-        // === PERBAIKAN DI SINI ===
         const provinsi = params.row.kabupaten_kota?.provinsi;
         return provinsi
           ? `${provinsi.kode_provinsi} - ${provinsi.nama_provinsi}`
@@ -348,7 +356,6 @@ const BidangPage = () => {
       flex: 1,
       minWidth: 250,
       renderCell: (params) => {
-        // === PERBAIKAN DI SINI ===
         const kabKot = params.row.kabupaten_kota;
         return kabKot
           ? `${kabKot.kode_kabupaten_kota} - ${kabKot.nama_kabupaten_kota}`
@@ -466,7 +473,7 @@ const BidangPage = () => {
       <AddBidangModal
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
-        onSave={handleSaveNewBidang}
+        onSave={handleSaveBidang}
         initialData={editingBidang}
       />
     </div>

@@ -78,7 +78,8 @@ const SubUnitPage = () => {
 
         setBidangList(sortedBidang);
       } catch (error) {
-        console.error("Failed to fetch bidang list:", error);
+        console.error("Gagal mendapatkan bidang list:", error);
+        setBidangList([]);
       }
     };
 
@@ -116,7 +117,8 @@ const SubUnitPage = () => {
 
         setUnitList(sortedUnit);
       } catch (error) {
-        console.error("Failed to fetch unit list:", error);
+        console.error("Gagal mendapatkan unit list:", error);
+        setUnitList([]);
       } finally {
         setLoadingUnits(false);
       }
@@ -153,7 +155,7 @@ const SubUnitPage = () => {
         setSubUnitData(response.data.data);
         setTotalRows(response.data.meta.total);
       } catch (error) {
-        console.error("Failed to fetch subunit data:", error);
+        console.error("Gagal mendapatkan subunit data:", error);
         setSubUnitData([]);
         setTotalRows(0);
       } finally {
@@ -325,7 +327,7 @@ const SubUnitPage = () => {
     setEditingSubUnit(null);
   };
 
-  const handleSaveUnit = async (subUnitToSave) => {
+  const handleSaveSubUnit = async (subUnitToSave) => {
     const payload = {
       unit_id: subUnitToSave.unit_id,
       kode_sub_unit: subUnitToSave.kode_sub_unit,
@@ -358,18 +360,30 @@ const SubUnitPage = () => {
       }
       handleRefresh();
       handleCloseAddModal();
-    } catch (error) {
-      console.error(
-        "Gagal simpan bidang:",
-        error.response?.data || error.message
-      );
-      Swal.fire({
-        title: "Gagal",
-        text: "Data tidak dapat disimpan.",
-        icon: "error",
-        timer: 1500,
-        showConfirmButton: false,
-      });
+    } catch (err) {
+      console.error("Gagal menyimpan:", err);
+
+      const errorData = err.response?.data;
+
+      if (errorData?.errors) {
+        const errorMessages = Object.values(errorData.errors).flat().join("\n");
+        Swal.fire({
+          title: "Gagal",
+          text: errorMessages,
+          icon: "error",
+        });
+      } else {
+        Swal.fire({
+          title: "Gagal",
+          text: "Terjadi kesalahan saat menyimpan data.",
+          icon: "error",
+          buttonsStyling: false,
+          customClass: {
+            confirmButton:
+              "bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500",
+          },
+        });
+      }
     }
   };
 
@@ -564,37 +578,33 @@ const SubUnitPage = () => {
             {/* Left: Filters */}
             <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end">
               {/* Bidang Filter */}
-              <div className="flex items-center gap-2">
-                <select
-                  value={selectedBidang}
-                  onChange={(e) => {
-                    setSelectedBidang(e.target.value);
-                    setSelectedUnit(""); // PENTING: Reset pilihan unit saat bidang berubah
-                  }}
-                  className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto cursor-pointer"
-                >
-                  <option value="">-- Semua Bidang --</option>
-                  {bidangList.map((bidang) => (
-                    <option key={bidang.id} value={bidang.id}>
-                      {bidang.kode_bidang} - {bidang.nama_bidang}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <select
+                value={selectedBidang}
+                onChange={(e) => {
+                  setSelectedBidang(e.target.value);
+                  setSelectedUnit("");
+                }}
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto cursor-pointer"
+              >
+                <option value="">-- Semua Bidang --</option>
+                {bidangList.map((bidang) => (
+                  <option key={bidang.id} value={bidang.id}>
+                    {bidang.kode_bidang} - {bidang.nama_bidang}
+                  </option>
+                ))}
+              </select>
 
               {/* Unit Filter */}
               <select
                 value={selectedUnit}
-                onChange={(e) => setSelectedUnit(e.target.value)}
+                onChange={(e) => {
+                  setSelectedUnit(e.target.value);
+                }}
                 className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto cursor-pointer"
-                disabled={!selectedBidang || loadingUnits} // Non-aktifkan jika bidang belum dipilih atau sedang loading
+                disabled={!selectedBidang || loadingUnits}
               >
                 <option value="">
-                  {loadingUnits
-                    ? "Memuat Unit..."
-                    : unitList.length > 0
-                    ? "-- Semua Unit --"
-                    : "-- Pilih Bidang Dahulu --"}
+                  {loadingUnits ? "Memuat..." : "-- Semua Unit --"}
                 </option>
                 {unitList.map((unit) => (
                   <option key={unit.id} value={unit.id}>
@@ -665,7 +675,7 @@ const SubUnitPage = () => {
       <AddSubUnitModal
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
-        onSave={handleSaveUnit}
+        onSave={handleSaveSubUnit}
         initialData={editingSubUnit}
       />
     </div>

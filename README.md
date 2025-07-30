@@ -1,17 +1,19 @@
 # E-Rekon - Frontend
 
+**E-Rekon** is a web-based system for asset recording, management, and reporting.
+
 ## Technologies Used
 
-- **React**: A declarative and efficient JavaScript library for building user interfaces.
-- **Vite**: A next-generation frontend build tool that provides an incredibly fast development experience.
-- **Tailwind CSS**: A utility-first CSS framework that lets you build custom designs rapidly directly in your markup.
-- **React Router DOM**: A collection of navigational components that compose declaratively with your application.
-- **Axios**: Axios is a promise-based HTTP Client for node.js and the browser.
-- **Material UI**: MUI offers a comprehensive suite of free UI tools to help you ship new features faster.
-- **Lucide Icons**: A beautiful & consistent icon toolkit based on Feather Icons.
-- **React Select**: A flexible and beautiful Select Input control for ReactJS with multiselect, autocomplete, async and creatable support.
-- **SweetAlert2**: A beautiful, responsive, customizable, accessible (WAI-ARIA) replacement for JavaScript's popup boxes
-- **Framer Motion**: An open source, production-ready animation library
+- 🚀 **React** – A declarative and efficient JavaScript library for building user interfaces.
+- ⚡ **Vite** – Fast frontend build tool with hot module replacement.
+- 🎨 **Tailwind CSS** – A utility-first CSS framework.
+- 🔀 **React Router DOM** – Declarative routing for React.
+- 📦 **Axios** – Promise-based HTTP client.
+- 🧩 **Material UI (MUI)** – UI components for faster development.
+- 🖼️ **Lucide Icons** – Beautiful, consistent open-source icons.
+- 🔽 **React Select** – Flexible select input with async & multi-select support.
+- 📢 **SweetAlert2** – Customizable and accessible popup box library.
+- 🧿 **Framer Motion** – Production-ready animation library for React.
 
 ## Getting Started
 
@@ -21,8 +23,8 @@ To run this project in your local environment, follow these steps:
 
 Make sure you have the following installed:
 
-- [Node.js](https://nodejs.org/) (LTS version recommended)
-- [npm](https://www.npmjs.com/) or [Yarn](https://yarnpkg.com/)
+- [Node.js](https://nodejs.org/) (version 22 or higher, LTS version recommended)
+- [npm](https://www.npmjs.com/)
 
 ### Installation
 
@@ -33,73 +35,11 @@ Make sure you have the following installed:
    cd frontend
    ```
 
-2. Install dependencies:
+2. Install all dependencies:
 
    ```bash
    npm install
-   # or
-   yarn install
    ```
-
-3. Install Tailwind CSS:
-
-   ```bash
-   npm install tailwindcss @tailwindcss/vite
-   ```
-
-4. Install React Router DOM:
-
-   ```bash
-   npm install react-router-dom
-   # or
-   yarn add react-router-dom
-   ```
-
-5. Install Axios:
-
-   ```bash
-   npm install axios
-   # or
-   yarn add axios
-   ```
-
-6. Install Material UI:
-
-   ```bash
-   npm install @mui/material @emotion/react @emotion/styled @mui/x-data-grid
-   # or
-   yarn add @mui/material @emotion/react @emotion/styled @mui/x-data-grid
-   ```
-
-7. Install Lucide Icons:
-
-   ```bash
-   npm install lucide-react
-   # or
-   yarn add lucide-react
-   ```
-
-8. Install React Select:
-
-   ```bash
-   npm install react-select
-   # or
-   yarn add react-select
-   ```
-
-9. Install SweetAlert2:
-
-   ```bash
-   npm install sweetalert2
-   ```
-
-10. Install Framer Motion:
-
-    ```bash
-    npm install framer-motion
-    # or
-    yarn add framer-motion
-    ```
 
 ### Running the Application
 
@@ -107,8 +47,6 @@ Once all dependencies are installed, run the application in development mode:
 
 ```bash
 npm run dev
-# or
-yarn dev
 ```
 
 This will start the development server, and the application will be available at:
