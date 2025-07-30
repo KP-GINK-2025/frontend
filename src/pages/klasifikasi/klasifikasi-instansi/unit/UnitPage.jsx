@@ -5,6 +5,7 @@ import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import DataTable from "../../../../components/DataTable";
 import AddUnitModal from "./AddUnitModal";
+import Buttons from "../../../../components/Buttons";
 import Swal from "sweetalert2";
 
 const UnitPage = () => {
@@ -326,12 +327,9 @@ const UnitPage = () => {
 
         {/* Export Button */}
         <div className="flex justify-end mt-4 mb-4">
-          <button
-            onClick={handleExport}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
-          >
+          <Buttons variant="danger" onClick={handleExport}>
             <Download size={16} /> Export
-          </button>
+          </Buttons>
         </div>
 
         {/* Main Content */}
@@ -340,18 +338,12 @@ const UnitPage = () => {
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-gray-800">Daftar Unit</h1>
             <div className="flex gap-3">
-              <button
-                onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
-              >
+              <Buttons variant="info" onClick={handleRefresh}>
                 <RefreshCw size={16} /> Refresh
-              </button>
-              <button
-                onClick={handleOpenAddModal}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
-              >
+              </Buttons>
+              <Buttons variant="success" onClick={handleOpenAddModal}>
                 <Plus size={16} /> Add Unit
-              </button>
+              </Buttons>
             </div>
           </div>
 
