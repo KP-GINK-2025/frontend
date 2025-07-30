@@ -6,11 +6,18 @@ import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import DataTable from "../../../../components/DataTable";
 import AddUpbModal from "./AddUpbModal";
 import Swal from "sweetalert2";
+// Import the export handler
+import {
+  handleExport as exportHandler,
+  commonFormatters,
+  createExportConfig,
+} from "../../../../handlers/exportHandler";
 
 const UpbPage = () => {
   const [upbData, setUpbData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(true);
+  const [exporting, setExporting] = useState(false); // Add exporting state
   const [totalRows, setTotalRows] = useState(0);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -144,7 +151,7 @@ const UpbPage = () => {
   useEffect(() => {
     const fetchUpbData = async () => {
       setLoading(true);
-      setRefreshing(true); // Spinner aktif juga saat fetch pertama kali
+      setRefreshing(true);
       try {
         const params = new URLSearchParams({
           page: paginationModel.page + 1,
@@ -179,7 +186,7 @@ const UpbPage = () => {
         setTotalRows(0);
       } finally {
         setLoading(false);
-        setRefreshing(false); // Matikan spinner setelah data selesai di-load
+        setRefreshing(false);
       }
     };
 
@@ -193,18 +200,51 @@ const UpbPage = () => {
     refreshTrigger,
   ]);
 
+  // Fetch all upb data for export
+  const fetchAllUpbData = async () => {
+    try {
+      const params = new URLSearchParams({
+        per_page: 10000, // Large number to get all data
+      });
+
+      if (debouncedSearchTerm) {
+        params.append("search", debouncedSearchTerm);
+      }
+
+      if (selectedBidang) {
+        params.append("bidang_id", selectedBidang);
+      }
+
+      if (selectedUnit) {
+        params.append("unit_id", selectedUnit);
+      }
+
+      if (selectedSubUnit) {
+        params.append("sub_unit_id", selectedSubUnit);
+      }
+
+      const response = await api.get(
+        `/klasifikasi-instansi/upb?${params.toString()}`
+      );
+
+      return response.data.data;
+    } catch (error) {
+      console.error("Failed to fetch all upb data:", error);
+      throw error;
+    }
+  };
+
   // Event handlers
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      setSearchTerm(""); // Reset pencarian
-      setSelectedBidang(""); // Reset filter bidang
-      setSelectedUnit(""); // Reset filter unit
-      setSelectedSubUnit(""); // Reset filter sub unit
-      setPaginationModel((prev) => ({ ...prev, page: 0 })); // Reset halaman
+      setSearchTerm("");
+      setSelectedBidang("");
+      setSelectedUnit("");
+      setSelectedSubUnit("");
+      setPaginationModel((prev) => ({ ...prev, page: 0 }));
       setRefreshTrigger((prev) => prev + 1);
 
-      // Simulasi delay agar animasi terlihat
       await new Promise((resolve) => setTimeout(resolve, 800));
 
       Swal.fire({
@@ -233,8 +273,93 @@ const UpbPage = () => {
     }
   };
 
-  const handleExport = () => {
-    console.log("Exporting subunit data...");
+  // Updated export handler
+  const handleExport = async () => {
+    // Define export columns configuration
+    const exportColumns = [
+      {
+        field: "no",
+        headerName: "No",
+        formatter: (value, item, index) => index + 1,
+      },
+      {
+        field: "provinsi",
+        headerName: "Provinsi",
+        formatter: (value, item) => {
+          const provinsi =
+            item.sub_unit?.unit?.bidang?.kabupaten_kota?.provinsi;
+          return provinsi
+            ? `${provinsi.kode_provinsi} - ${provinsi.nama_provinsi}`
+            : "N/A";
+        },
+      },
+      {
+        field: "kabupaten_kota",
+        headerName: "Kabupaten/Kota",
+        formatter: (value, item) => {
+          const kabKot = item.sub_unit?.unit?.bidang?.kabupaten_kota;
+          return kabKot
+            ? `${kabKot.kode_kabupaten_kota} - ${kabKot.nama_kabupaten_kota}`
+            : "N/A";
+        },
+      },
+      {
+        field: "bidang",
+        headerName: "Bidang",
+        formatter: (value, item) => {
+          const bidang = item.sub_unit?.unit?.bidang;
+          return bidang
+            ? `${bidang.kode_bidang} - ${bidang.nama_bidang}`
+            : "N/A";
+        },
+      },
+      {
+        field: "unit",
+        headerName: "Unit",
+        formatter: (value, item) => {
+          const unit = item.sub_unit?.unit;
+          return unit ? `${unit.kode_unit} - ${unit.nama_unit}` : "N/A";
+        },
+      },
+      {
+        field: "sub_unit",
+        headerName: "Sub Unit",
+        formatter: (value, item) => {
+          const subUnit = item.sub_unit;
+          return subUnit
+            ? `${subUnit.kode_sub_unit} - ${subUnit.nama_sub_unit}`
+            : "N/A";
+        },
+      },
+      {
+        field: "kode_upb",
+        headerName: "Kode UPB",
+      },
+      {
+        field: "nama_upb",
+        headerName: "Nama UPB",
+      },
+      {
+        field: "kode",
+        headerName: "Kode",
+      },
+    ];
+
+    // Create export configuration
+    const exportConfig = {
+      fetchDataFunction: fetchAllUpbData,
+      columns: exportColumns,
+      filename: "daftar-upb",
+      sheetName: "Data UPB",
+      setExporting,
+    };
+
+    // Execute export
+    try {
+      await exportHandler(exportConfig);
+    } catch (error) {
+      console.error("Export failed:", error);
+    }
   };
 
   const handleOpenAddModal = () => {
@@ -452,9 +577,11 @@ const UpbPage = () => {
         <div className="flex justify-end mt-4 mb-4">
           <button
             onClick={handleExport}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+            disabled={exporting}
+            className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
           >
-            <Download size={16} /> Export
+            <Download size={16} className={exporting ? "animate-pulse" : ""} />
+            {exporting ? "Exporting..." : "Export"}
           </button>
         </div>
 

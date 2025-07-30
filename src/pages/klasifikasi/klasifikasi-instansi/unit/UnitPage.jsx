@@ -6,13 +6,20 @@ import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import DataTable from "../../../../components/DataTable";
 import AddUnitModal from "./AddUnitModal";
 import Swal from "sweetalert2";
+import {
+  handleExport as exportHandler,
+  commonFormatters,
+  createExportConfig,
+} from "../../../../handlers/exportHandler";
 
 const UnitPage = () => {
   const [unitData, setUnitData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(true);
+  const [exporting, setExporting] = useState(false); // Add exporting state
   const [totalRows, setTotalRows] = useState(0);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [allUnitData, setAllUnitData] = useState([]); // Store all data for export
 
   // Filter and search state
   const [searchTerm, setSearchTerm] = useState("");
@@ -79,7 +86,7 @@ const UnitPage = () => {
   useEffect(() => {
     const fetchUnitData = async () => {
       setLoading(true);
-      setRefreshing(true); // Spinner aktif juga saat fetch pertama kali
+      setRefreshing(true);
       try {
         const params = new URLSearchParams({
           page: paginationModel.page + 1,
@@ -106,23 +113,48 @@ const UnitPage = () => {
         setTotalRows(0);
       } finally {
         setLoading(false);
-        setRefreshing(false); // Matikan spinner setelah data selesai di-load
+        setRefreshing(false);
       }
     };
 
     fetchUnitData();
   }, [paginationModel, debouncedSearchTerm, selectedBidang, refreshTrigger]);
 
+  // Fetch all unit data for export
+  const fetchAllUnitData = async () => {
+    try {
+      const params = new URLSearchParams({
+        per_page: 10000, // Large number to get all data
+      });
+
+      if (debouncedSearchTerm) {
+        params.append("search", debouncedSearchTerm);
+      }
+
+      if (selectedBidang) {
+        params.append("bidang_id", selectedBidang);
+      }
+
+      const response = await api.get(
+        `/klasifikasi-instansi/unit?${params.toString()}`
+      );
+
+      return response.data.data;
+    } catch (error) {
+      console.error("Failed to fetch all unit data:", error);
+      throw error;
+    }
+  };
+
   // Event handlers
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      setSearchTerm(""); // Reset pencarian
-      setSelectedBidang(""); // Reset filter bidang
-      setPaginationModel((prev) => ({ ...prev, page: 0 })); // Reset halaman
+      setSearchTerm("");
+      setSelectedBidang("");
+      setPaginationModel((prev) => ({ ...prev, page: 0 }));
       setRefreshTrigger((prev) => prev + 1);
 
-      // Simulasi delay agar animasi terlihat
       await new Promise((resolve) => setTimeout(resolve, 800));
 
       Swal.fire({
@@ -151,8 +183,74 @@ const UnitPage = () => {
     }
   };
 
-  const handleExport = () => {
-    console.log("Exporting unit data...");
+  // Updated export handler
+  const handleExport = async () => {
+    // Define export columns configuration
+    const exportColumns = [
+      {
+        field: "no",
+        headerName: "No",
+        formatter: (value, item, index) => index + 1,
+      },
+      {
+        field: "provinsi",
+        headerName: "Provinsi",
+        formatter: (value, item) => {
+          const provinsi = item.bidang?.kabupaten_kota?.provinsi;
+          return provinsi
+            ? `${provinsi.kode_provinsi} - ${provinsi.nama_provinsi}`
+            : "N/A";
+        },
+      },
+      {
+        field: "kabupaten_kota",
+        headerName: "Kabupaten/Kota",
+        formatter: (value, item) => {
+          const kabKot = item.bidang?.kabupaten_kota;
+          return kabKot
+            ? `${kabKot.kode_kabupaten_kota} - ${kabKot.nama_kabupaten_kota}`
+            : "N/A";
+        },
+      },
+      {
+        field: "bidang",
+        headerName: "Bidang",
+        formatter: (value, item) => {
+          const bidang = item.bidang;
+          return bidang
+            ? `${bidang.kode_bidang} - ${bidang.nama_bidang}`
+            : "N/A";
+        },
+      },
+      {
+        field: "kode_unit",
+        headerName: "Kode Unit",
+      },
+      {
+        field: "nama_unit",
+        headerName: "Nama Unit",
+      },
+      {
+        field: "kode",
+        headerName: "Kode",
+      },
+    ];
+
+    // Create export configuration
+    const exportConfig = {
+      fetchDataFunction: fetchAllUnitData,
+      columns: exportColumns,
+      filename: "daftar-unit",
+      sheetName: "Data Unit",
+      setExporting,
+    };
+
+    // Execute export
+    try {
+      await exportHandler(exportConfig);
+    } catch (error) {
+      console.error("Export failed:", error);
+    }
   };
 
   const handleOpenAddModal = () => {
@@ -350,9 +448,11 @@ const UnitPage = () => {
         <div className="flex justify-end mt-4 mb-4">
           <button
             onClick={handleExport}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+            disabled={exporting}
+            className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
           >
-            <Download size={16} /> Export
+            <Download size={16} className={exporting ? "animate-pulse" : ""} />
+            {exporting ? "Exporting..." : "Export"}
           </button>
         </div>
 
