@@ -5,12 +5,14 @@ import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import AddObjekModal from "./AddObjekModal";
 import DataTable from "../../../../components/DataTable";
+import Swal from "sweetalert2"; // <-- Tambahkan import ini
 
 const ObjekPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [objekData, setObjekData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(true);
 
   // State untuk data filter Aset 1 2 3
   const [asetSatuData, setAsetSatuData] = useState([]);
@@ -33,10 +35,9 @@ const ObjekPage = () => {
 
   const fetchData = async () => {
     setLoading(true);
+    setRefreshing(true); // Spinner aktif juga saat fetch pertama kali
     try {
       const response = await api.get("/klasifikasi-aset/objek-aset");
-      console.log("API Response:", response.data);
-
       const mappedObjek = response.data.data.map((item) => ({
         id: item.id,
         aset1: item.jenis_aset?.kelompok_aset?.akun_aset
@@ -53,7 +54,7 @@ const ObjekPage = () => {
         kode: item.kode,
       }));
 
-      setObjekData(mappedObjek); // <- penting agar datanya muncul di tabel
+      setObjekData(mappedObjek);
 
       // Dropdown filter
       const asetSatuSet = new Set();
@@ -79,11 +80,13 @@ const ObjekPage = () => {
       console.error("Gagal fetch data aset 4:", error);
     } finally {
       setLoading(false);
+      setRefreshing(false); // Matikan spinner setelah data selesai di-load
     }
   };
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line
   }, []);
 
   const filteredData = objekData.filter((item) => {
@@ -99,7 +102,7 @@ const ObjekPage = () => {
       selectedAsetSatu === "" || item.aset1 === selectedAsetSatu;
     const matchesAsetDua =
       selectedAsetDua === "" || item.aset2 === selectedAsetDua;
-    const matchesAsetTiga = // Filter Aset 3
+    const matchesAsetTiga =
       selectedAsetTiga === "" || item.aset3 === selectedAsetTiga;
 
     return (
@@ -111,13 +114,47 @@ const ObjekPage = () => {
     console.log("Exporting objek data...");
   };
 
-  const handleRefresh = () => {
+  // Ubah handleRefresh agar ada animasi, SweetAlert2, dan loading table
+  const handleRefresh = async () => {
+    setRefreshing(true);
     setLoading(true);
-    setSearchTerm("");
-    setSelectedAsetSatu("");
-    setSelectedAsetDua("");
-    setSelectedAsetTiga("");
-    fetchData();
+    try {
+      setSearchTerm("");
+      setSelectedAsetSatu("");
+      setSelectedAsetDua("");
+      setSelectedAsetTiga("");
+      setDataTablePaginationModel((prev) => ({
+        ...prev,
+        page: 0,
+      }));
+      // Simulasi delay agar animasi terlihat
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      await fetchData();
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data berhasil dimuat ulang.",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Gagal memuat ulang data",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } finally {
+      setRefreshing(false);
+      setLoading(false);
+    }
   };
 
   const handleOpenAddModal = () => {
@@ -156,15 +193,59 @@ const ObjekPage = () => {
     }
   };
 
-  const handleDeleteClick = (id) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus data ini?")) {
+  // Tambahkan SweetAlert2 pada tombol delete
+  const handleDeleteClick = async (id) => {
+    const result = await Swal.fire({
+      title: "Apakah Anda yakin?",
+      text: "Data yang dihapus tidak dapat dikembalikan!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Ya, hapus!",
+      cancelButtonText: "Batal",
+    });
+
+    if (result.isConfirmed) {
       setObjekData((prevData) => prevData.filter((item) => item.id !== id));
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data berhasil dihapus.",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
       console.log("Menghapus Objek dengan ID:", id);
     }
   };
 
   // Data kolom untuk MUI DataGrid
   const columns = [
+    {
+      field: "action",
+      headerName: "Action",
+      width: 150,
+      sortable: false,
+      renderCell: (params) => (
+        <div className="flex items-center gap-2 h-full">
+          <button
+            onClick={() => handleEditClick(params.row.id)}
+            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => handleDeleteClick(params.row.id)}
+            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
+          >
+            Delete
+          </button>
+        </div>
+      ),
+    },
     {
       field: "no",
       headerName: "No",
@@ -189,28 +270,6 @@ const ObjekPage = () => {
     },
     { field: "namaAset4", headerName: "Nama Aset 4", flex: 1 },
     { field: "kode", headerName: "Kode", width: 150 },
-    {
-      field: "action",
-      headerName: "Action",
-      width: 150,
-      sortable: false,
-      renderCell: (params) => (
-        <div className="flex gap-2 items-center">
-          <button
-            onClick={() => handleEditClick(params.row.id)}
-            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => handleDeleteClick(params.row.id)}
-            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
-          >
-            Delete
-          </button>
-        </div>
-      ),
-    },
   ];
 
   return (
@@ -238,9 +297,14 @@ const ObjekPage = () => {
             <div className="flex gap-3">
               <button
                 onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 cursor-pointer"
+                disabled={refreshing}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-md flex items-center gap-2 cursor-pointer"
               >
-                <RefreshCw size={16} /> Refresh
+                <RefreshCw
+                  size={16}
+                  className={refreshing ? "animate-spin" : ""}
+                />
+                Refresh
               </button>
               <button
                 onClick={handleOpenAddModal}
@@ -285,29 +349,26 @@ const ObjekPage = () => {
               />
               <input
                 type="text"
-                placeholder="Search"
+                placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
 
-          {/* DataTable Component */}
-          {loading ? (
-            <div className="text-center py-8 text-gray-500">Loading...</div>
-          ) : (
-            <DataTable
-              rows={filteredData}
-              columns={columns}
-              initialPageSize={entriesPerPage}
-              pageSizeOptions={[5, 10, 25, 50, 100]}
-              height={500}
-              emptyRowsMessage="No Objek data available"
-              paginationModel={dataTablePaginationModel}
-              onPaginationModelChange={setDataTablePaginationModel}
-            />
-          )}
+          {/* DataTable Component dengan loading */}
+          <DataTable
+            rows={filteredData}
+            columns={columns}
+            initialPageSize={entriesPerPage}
+            pageSizeOptions={[5, 10, 25, 50, 100]}
+            height={500}
+            emptyRowsMessage="Tidak ada data tersedia"
+            paginationModel={dataTablePaginationModel}
+            onPaginationModelChange={setDataTablePaginationModel}
+            loading={loading || refreshing} // <-- Loading table saat loading/refreshing
+          />
         </div>
       </div>
 

@@ -6,11 +6,20 @@ import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import DataTable from "../../../../components/DataTable";
 import AddUpbModal from "./AddUpbModal";
 import Swal from "sweetalert2";
+// Import the export handler
+import {
+  handleExport as exportHandler,
+  commonFormatters,
+  createExportConfig,
+} from "../../../../handlers/exportHandler";
 
 const UpbPage = () => {
   const [upbData, setUpbData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(true);
+  const [exporting, setExporting] = useState(false); // Add exporting state
   const [totalRows, setTotalRows] = useState(0);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Filter and search state
   const [searchTerm, setSearchTerm] = useState("");
@@ -33,7 +42,6 @@ const UpbPage = () => {
     page: 0,
     pageSize: 10,
   });
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Debounce search input
   useEffect(() => {
@@ -166,7 +174,7 @@ const UpbPage = () => {
   useEffect(() => {
     const fetchUpbData = async () => {
       setLoading(true);
-
+      setRefreshing(true);
       try {
         const params = new URLSearchParams({
           page: paginationModel.page + 1,
@@ -197,6 +205,7 @@ const UpbPage = () => {
         setTotalRows(0);
       } finally {
         setLoading(false);
+        setRefreshing(false);
       }
     };
 
@@ -210,13 +219,166 @@ const UpbPage = () => {
     refreshTrigger,
   ]);
 
-  // Event handlers
-  const handleRefresh = () => {
-    setRefreshTrigger((prev) => prev + 1);
+  // Fetch all upb data for export
+  const fetchAllUpbData = async () => {
+    try {
+      const params = new URLSearchParams({
+        per_page: 10000, // Large number to get all data
+      });
+
+      if (debouncedSearchTerm) {
+        params.append("search", debouncedSearchTerm);
+      }
+
+      if (selectedBidang) {
+        params.append("bidang_id", selectedBidang);
+      }
+
+      if (selectedUnit) {
+        params.append("unit_id", selectedUnit);
+      }
+
+      if (selectedSubUnit) {
+        params.append("sub_unit_id", selectedSubUnit);
+      }
+
+      const response = await api.get(
+        `/klasifikasi-instansi/upb?${params.toString()}`
+      );
+
+      return response.data.data;
+    } catch (error) {
+      console.error("Failed to fetch all upb data:", error);
+      throw error;
+    }
   };
 
-  const handleExport = () => {
-    console.log("Exporting subunit data...");
+  // Event handlers
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      setSearchTerm("");
+      setSelectedBidang("");
+      setSelectedUnit("");
+      setSelectedSubUnit("");
+      setPaginationModel((prev) => ({ ...prev, page: 0 }));
+      setRefreshTrigger((prev) => prev + 1);
+
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data berhasil dimuat ulang.",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Gagal memuat ulang data",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Updated export handler
+  const handleExport = async () => {
+    // Define export columns configuration
+    const exportColumns = [
+      {
+        field: "no",
+        headerName: "No",
+        formatter: (value, item, index) => index + 1,
+      },
+      {
+        field: "provinsi",
+        headerName: "Provinsi",
+        formatter: (value, item) => {
+          const provinsi =
+            item.sub_unit?.unit?.bidang?.kabupaten_kota?.provinsi;
+          return provinsi
+            ? `${provinsi.kode_provinsi} - ${provinsi.nama_provinsi}`
+            : "N/A";
+        },
+      },
+      {
+        field: "kabupaten_kota",
+        headerName: "Kabupaten/Kota",
+        formatter: (value, item) => {
+          const kabKot = item.sub_unit?.unit?.bidang?.kabupaten_kota;
+          return kabKot
+            ? `${kabKot.kode_kabupaten_kota} - ${kabKot.nama_kabupaten_kota}`
+            : "N/A";
+        },
+      },
+      {
+        field: "bidang",
+        headerName: "Bidang",
+        formatter: (value, item) => {
+          const bidang = item.sub_unit?.unit?.bidang;
+          return bidang
+            ? `${bidang.kode_bidang} - ${bidang.nama_bidang}`
+            : "N/A";
+        },
+      },
+      {
+        field: "unit",
+        headerName: "Unit",
+        formatter: (value, item) => {
+          const unit = item.sub_unit?.unit;
+          return unit ? `${unit.kode_unit} - ${unit.nama_unit}` : "N/A";
+        },
+      },
+      {
+        field: "sub_unit",
+        headerName: "Sub Unit",
+        formatter: (value, item) => {
+          const subUnit = item.sub_unit;
+          return subUnit
+            ? `${subUnit.kode_sub_unit} - ${subUnit.nama_sub_unit}`
+            : "N/A";
+        },
+      },
+      {
+        field: "kode_upb",
+        headerName: "Kode UPB",
+      },
+      {
+        field: "nama_upb",
+        headerName: "Nama UPB",
+      },
+      {
+        field: "kode",
+        headerName: "Kode",
+      },
+    ];
+
+    // Create export configuration
+    const exportConfig = {
+      fetchDataFunction: fetchAllUpbData,
+      columns: exportColumns,
+      filename: "daftar-upb",
+      sheetName: "Data UPB",
+      setExporting,
+    };
+
+    // Execute export
+    try {
+      await exportHandler(exportConfig);
+    } catch (error) {
+      console.error("Export failed:", error);
+    }
   };
 
   const handleOpenAddModal = () => {
@@ -296,13 +458,13 @@ const UpbPage = () => {
 
   const handleDeleteClick = async (id) => {
     const result = await Swal.fire({
-      title: "Yakin ingin menghapus data ini?",
-      text: "Data yang dihapus tidak dapat dikembalikan.",
+      title: "Apakah Anda yakin?",
+      text: "Data yang dihapus tidak dapat dikembalikan!",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#e53935",
-      cancelButtonColor: "#aaa",
-      confirmButtonText: "Ya, hapus",
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Ya, hapus!",
       cancelButtonText: "Batal",
     });
 
@@ -337,7 +499,7 @@ const UpbPage = () => {
       width: 150,
       sortable: false,
       renderCell: (params) => (
-        <div className="flex gap-2 items-center">
+        <div className="flex items-center gap-2 h-full">
           <button
             onClick={() => handleEditClick(params.row.id)}
             className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
@@ -449,9 +611,11 @@ const UpbPage = () => {
         <div className="flex justify-end mt-4 mb-4">
           <button
             onClick={handleExport}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+            disabled={exporting}
+            className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
           >
-            <Download size={16} /> Export
+            <Download size={16} className={exporting ? "animate-pulse" : ""} />
+            {exporting ? "Exporting..." : "Export"}
           </button>
         </div>
 
@@ -463,9 +627,14 @@ const UpbPage = () => {
             <div className="flex gap-3">
               <button
                 onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+                disabled={refreshing}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
-                <RefreshCw size={16} /> Refresh
+                <RefreshCw
+                  size={16}
+                  className={refreshing ? "animate-spin" : ""}
+                />
+                Refresh
               </button>
               <button
                 onClick={handleOpenAddModal}
@@ -568,10 +737,10 @@ const UpbPage = () => {
               />
               <input
                 type="text"
-                placeholder="Search"
+                placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
@@ -590,7 +759,7 @@ const UpbPage = () => {
             disableRowSelectionOnClick
             hideFooterSelectedRowCount
             height={500}
-            emptyRowsMessage="Tidak ada data UPB yang tersedia"
+            emptyRowsMessage="Tidak ada data tersedia"
           />
         </div>
       </div>

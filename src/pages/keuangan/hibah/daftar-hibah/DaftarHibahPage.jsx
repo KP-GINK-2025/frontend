@@ -1,225 +1,667 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../../../../components/Navbar";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { RefreshCw, Plus, Download, Search } from "lucide-react";
+import DataTable from "../../../../components/DataTable";
+import Swal from "sweetalert2";
+import * as XLSX from "xlsx";
 
 const DaftarHibahPage = () => {
-  // State untuk menyimpan nilai filter
+  // --- State untuk Data dan Filter ---
+  const [searchTerm, setSearchTerm] = useState("");
+  const [daftarHibahData, setDaftarHibahData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(true);
+  const [rowCount, setRowCount] = useState(0); // Total jumlah baris dari API
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [exporting, setExporting] = useState(false); // State untuk loading export
+
+  // --- State untuk Filter Dropdown ---
+  const [filterOptions, setFilterOptions] = useState({
+    asal: [],
+    semester: [],
+    statusVerifikasi: [],
+  });
+
+  // Selected filter states
   const [filters, setFilters] = useState({
     asal: "",
     semester: "",
     statusVerifikasi: "",
   });
 
-  // State untuk jumlah entries yang ditampilkan
-  const [showEntries, setShowEntries] = useState(10);
-  // State untuk pencarian
-  const [searchTerm, setSearchTerm] = useState("");
-  // State untuk data tabel
-  const [tableData, setTableData] = useState([]);
-  // State untuk loading
-  const [isLoading, setIsLoading] = useState(true);
-  // State untuk error
-  const [error, setError] = useState(null);
+  // --- State untuk Paginasi DataTable ---
+  const [dataTablePaginationModel, setDataTablePaginationModel] = useState({
+    page: 0, // Halaman saat ini (0-indexed)
+    pageSize: 10, // Jumlah baris per halaman
+  });
 
-  // Fungsi untuk menangani perubahan filter
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters((prevFilters) => ({
-      ...prevFilters,
-      [name]: value,
-    }));
-  };
+  // --- OPTIMISASI: Debounce search term ---
+  // State untuk menyimpan search term yang di-debounce
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
-  // Fungsi untuk refresh data
-  const handleRefresh = () => {
-    console.log("Refreshing Daftar Hibah data...");
-    fetchData(); // Panggil ulang fetchData
-  };
-
-  // Fungsi untuk menambah hibah
-  const handleAddHibah = () => {
-    console.log("Adding new Hibah...");
-    alert("Fitur tambah Hibah akan diimplementasikan!");
-  };
-
-  // Fungsi untuk menangani Export
-  const handleExport = () => {
-    console.log("Exporting Daftar Hibah data...");
-    alert("Fitur export Daftar Hibah akan diimplementasikan!");
-  };
-
-  // Fungsi untuk Fetching Data, dibungkus useCallback untuk stabilitas
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      // --- SIMULASI FETCHING DATA DARI API ---
-      // Data dummy untuk simulasi agar tabel terisi
-      const dummyData = [
-        {
-          id: 1,
-          asal: "Kementerian A",
-          tujuan: "Dinas Pendidikan",
-          noBeritaAcara: "BA/Hibah/001/2024",
-          tglBeritaAcara: "2024-01-15",
-          totalBarang: 10,
-          totalHarga: "Rp 50.000.000",
-          lampiran: "Doc_Hibah_001.pdf",
-          statusVerifikasi: "Diverifikasi",
-          semester: "1"
-        },
-        {
-          id: 2,
-          asal: "Swasta XYZ",
-          tujuan: "Dinas Kesehatan",
-          noBeritaAcara: "BA/Hibah/002/2024",
-          tglBeritaAcara: "2024-02-20",
-          totalBarang: 3,
-          totalHarga: "Rp 15.000.000",
-          lampiran: "Doc_Hibah_002.pdf",
-          statusVerifikasi: "Menunggu",
-          semester: "1"
-        },
-        {
-          id: 3,
-          asal: "Yayasan ABC",
-          tujuan: "Dinas Sosial",
-          noBeritaAcara: "BA/Hibah/003/2024",
-          tglBeritaAcara: "2024-03-10",
-          totalBarang: 7,
-          totalHarga: "Rp 25.000.000",
-          lampiran: "Doc_Hibah_003.pdf",
-          statusVerifikasi: "Ditolak",
-          semester: "2"
-        },
-      ];
-
-      // Simulasi filter sederhana di frontend
-      const filteredData = dummyData.filter(item => {
-        const itemValues = Object.values(item).map(val => String(val).toLowerCase()).join(' ');
-        if (searchTerm && !itemValues.includes(searchTerm.toLowerCase())) return false;
-
-        // Terapkan filter dari state
-        if (filters.asal && item.asal.toLowerCase() !== filters.asal.toLowerCase()) return false;
-        if (filters.semester && item.semester !== filters.semester) return false;
-        if (filters.statusVerifikasi && item.statusVerifikasi.toLowerCase() !== filters.statusVerifikasi.toLowerCase()) return false;
-
-        return true;
-      });
-
-      // Simulasi paginasi
-      const paginatedData = filteredData.slice(0, showEntries);
-
-      // Simulasi delay (untuk mensimulasikan loading API)
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setTableData(paginatedData);
-
-    } catch (err) {
-      console.error("Error fetching data:", err);
-      setError("Gagal memuat data: " + err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [filters, showEntries, searchTerm, setTableData, setIsLoading, setError]);
-
-  // useEffect untuk memanggil fetchData saat komponen pertama kali dimuat
-  // atau saat filters, showEntries, atau searchTerm berubah
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300); // Tunggu 300ms setelah user berhenti mengetik
 
-  // Fungsi untuk Paginasi (placeholder)
-  const totalEntries = tableData.length;
-  const currentPage = 1;
-  const totalPages = Math.ceil(totalEntries / showEntries);
+    return () => {
+      clearTimeout(timer); // Bersihkan timer jika searchTerm berubah sebelum 300ms
+    };
+  }, [searchTerm]);
+
+  // Reset halaman ke 0 ketika debouncedSearchTerm berubah
+  useEffect(() => {
+    if (debouncedSearchTerm !== searchTerm) {
+      setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
+    }
+  }, [debouncedSearchTerm, searchTerm]);
+
+  // Mock data functions
+  const getMockData = () => [
+    {
+      id: 1,
+      asal: "Kementerian A",
+      tujuan: "Dinas Pendidikan",
+      noBeritaAcara: "BA/Hibah/001/2024",
+      tglBeritaAcara: "2024-01-15",
+      totalBarang: 10,
+      totalHarga: 50000000,
+      lampiran: "Doc_Hibah_001.pdf",
+      statusVerifikasi: "Diverifikasi",
+      semester: "1",
+    },
+    {
+      id: 2,
+      asal: "Swasta XYZ",
+      tujuan: "Dinas Kesehatan",
+      noBeritaAcara: "BA/Hibah/002/2024",
+      tglBeritaAcara: "2024-02-20",
+      totalBarang: 3,
+      totalHarga: 15000000,
+      lampiran: "Doc_Hibah_002.pdf",
+      statusVerifikasi: "Menunggu",
+      semester: "1",
+    },
+    {
+      id: 3,
+      asal: "Yayasan ABC",
+      tujuan: "Dinas Sosial",
+      noBeritaAcara: "BA/Hibah/003/2024",
+      tglBeritaAcara: "2024-03-10",
+      totalBarang: 7,
+      totalHarga: 25000000,
+      lampiran: "Doc_Hibah_003.pdf",
+      statusVerifikasi: "Ditolak",
+      semester: "2",
+    },
+    {
+      id: 4,
+      asal: "Kementerian B",
+      tujuan: "Dinas Pekerjaan Umum",
+      noBeritaAcara: "BA/Hibah/004/2024",
+      tglBeritaAcara: "2024-04-12",
+      totalBarang: 15,
+      totalHarga: 75000000,
+      lampiran: "Doc_Hibah_004.pdf",
+      statusVerifikasi: "Diverifikasi",
+      semester: "2",
+    },
+    {
+      id: 5,
+      asal: "Swasta ABC",
+      tujuan: "Dinas Lingkungan Hidup",
+      noBeritaAcara: "BA/Hibah/005/2024",
+      tglBeritaAcara: "2024-05-08",
+      totalBarang: 5,
+      totalHarga: 12000000,
+      lampiran: "Doc_Hibah_005.pdf",
+      statusVerifikasi: "Menunggu",
+      semester: "1",
+    },
+    {
+      id: 6,
+      asal: "Kementerian C",
+      tujuan: "Dinas Pariwisata",
+      noBeritaAcara: "BA/Hibah/006/2024",
+      tglBeritaAcara: "2024-06-15",
+      totalBarang: 20,
+      totalHarga: 100000000,
+      lampiran: "Doc_Hibah_006.pdf",
+      statusVerifikasi: "Diverifikasi",
+      semester: "2",
+    },
+    {
+      id: 7,
+      asal: "Yayasan XYZ",
+      tujuan: "Dinas Kebudayaan",
+      noBeritaAcara: "BA/Hibah/007/2024",
+      tglBeritaAcara: "2024-07-22",
+      totalBarang: 8,
+      totalHarga: 30000000,
+      lampiran: "Doc_Hibah_007.pdf",
+      statusVerifikasi: "Menunggu",
+      semester: "2",
+    },
+  ];
+
+  const getMockFilterOptions = () => ({
+    asal: [
+      { id: 1, nama: "Kementerian A" },
+      { id: 2, nama: "Kementerian B" },
+      { id: 3, nama: "Kementerian C" },
+      { id: 4, nama: "Swasta XYZ" },
+      { id: 5, nama: "Swasta ABC" },
+      { id: 6, nama: "Yayasan ABC" },
+      { id: 7, nama: "Yayasan XYZ" },
+    ],
+    semester: [
+      { id: 1, nama: "1" },
+      { id: 2, nama: "2" },
+    ],
+    statusVerifikasi: [
+      { id: 1, nama: "Menunggu" },
+      { id: 2, nama: "Diverifikasi" },
+      { id: 3, nama: "Ditolak" },
+    ],
+  });
+
+  // --- EFEK UTAMA UNTUK FETCH DATA ---
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setRefreshing(true);
+      try {
+        // Simulate API delay
+        await new Promise((resolve) => setTimeout(resolve, 800));
+
+        // Simulate API parameters
+        const params = new URLSearchParams();
+        params.append("page", dataTablePaginationModel.page + 1);
+        params.append("per_page", dataTablePaginationModel.pageSize);
+        if (debouncedSearchTerm) {
+          params.append("search", debouncedSearchTerm);
+        }
+        if (filters.asal) {
+          params.append("asal", filters.asal);
+        }
+        if (filters.semester) {
+          params.append("semester", filters.semester);
+        }
+        if (filters.statusVerifikasi) {
+          params.append("status_verifikasi", filters.statusVerifikasi);
+        }
+
+        // Get mock data and apply filters
+        let mockData = getMockData();
+
+        // Apply search filter
+        if (debouncedSearchTerm) {
+          mockData = mockData.filter((item) =>
+            [
+              item.asal,
+              item.tujuan,
+              item.noBeritaAcara,
+              item.tglBeritaAcara,
+              item.totalBarang?.toString(),
+              item.totalHarga?.toString(),
+              item.lampiran,
+              item.statusVerifikasi,
+            ].some((field) =>
+              field?.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+            )
+          );
+        }
+
+        // Apply dropdown filters
+        if (filters.asal) {
+          mockData = mockData.filter((item) => item.asal === filters.asal);
+        }
+        if (filters.semester) {
+          mockData = mockData.filter(
+            (item) => item.semester === filters.semester
+          );
+        }
+        if (filters.statusVerifikasi) {
+          mockData = mockData.filter(
+            (item) => item.statusVerifikasi === filters.statusVerifikasi
+          );
+        }
+
+        // Apply pagination
+        const startIndex =
+          dataTablePaginationModel.page * dataTablePaginationModel.pageSize;
+        const paginatedData = mockData.slice(
+          startIndex,
+          startIndex + dataTablePaginationModel.pageSize
+        );
+
+        setDaftarHibahData(paginatedData);
+        setRowCount(mockData.length);
+        setFilterOptions(getMockFilterOptions());
+      } catch (error) {
+        console.error("Gagal fetch data hibah:", error);
+        setDaftarHibahData([]);
+        setRowCount(0);
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    };
+
+    fetchData();
+  }, [dataTablePaginationModel, debouncedSearchTerm, refreshTrigger, filters]);
+
+  // --- Handler Fungsi ---
+  const handleExport = async () => {
+    setExporting(true);
+
+    try {
+      // Simulate fetching all data for export
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      let allData = getMockData();
+
+      // Apply current filters to export data
+      if (debouncedSearchTerm) {
+        allData = allData.filter((item) =>
+          [
+            item.asal,
+            item.tujuan,
+            item.noBeritaAcara,
+            item.tglBeritaAcara,
+            item.totalBarang?.toString(),
+            item.totalHarga?.toString(),
+            item.lampiran,
+            item.statusVerifikasi,
+          ].some((field) =>
+            field?.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+          )
+        );
+      }
+
+      if (filters.asal) {
+        allData = allData.filter((item) => item.asal === filters.asal);
+      }
+      if (filters.semester) {
+        allData = allData.filter((item) => item.semester === filters.semester);
+      }
+      if (filters.statusVerifikasi) {
+        allData = allData.filter(
+          (item) => item.statusVerifikasi === filters.statusVerifikasi
+        );
+      }
+
+      if (allData.length === 0) {
+        Swal.fire({
+          icon: "warning",
+          title: "Tidak Ada Data",
+          text: "Tidak ada data untuk diekspor.",
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
+          timer: 2000,
+          timerProgressBar: true,
+        });
+        return;
+      }
+
+      // Format data untuk export
+      const exportData = allData.map((item, index) => ({
+        No: index + 1,
+        Asal: item.asal,
+        Tujuan: item.tujuan,
+        "No. Berita Acara": item.noBeritaAcara,
+        "Tgl. Berita Acara": item.tglBeritaAcara,
+        "Total Barang": item.totalBarang,
+        "Total Harga": item.totalHarga,
+        Lampiran: item.lampiran,
+        "Status Verifikasi": item.statusVerifikasi,
+        Semester: item.semester,
+      }));
+
+      // Buat worksheet dan workbook
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+
+      // Set column widths
+      const columnWidths = [
+        { wch: 5 }, // No
+        { wch: 20 }, // Asal
+        { wch: 20 }, // Tujuan
+        { wch: 20 }, // No. Berita Acara
+        { wch: 15 }, // Tgl. Berita Acara
+        { wch: 12 }, // Total Barang
+        { wch: 15 }, // Total Harga
+        { wch: 20 }, // Lampiran
+        { wch: 15 }, // Status Verifikasi
+        { wch: 10 }, // Semester
+      ];
+      worksheet["!cols"] = columnWidths;
+
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Data Hibah");
+
+      // Generate filename dengan timestamp
+      const now = new Date();
+      const timestamp = now.toISOString().slice(0, 19).replace(/[:.]/g, "-");
+      const filename = `data-hibah-${timestamp}.xlsx`;
+
+      // Download file
+      XLSX.writeFile(workbook, filename);
+
+      // Tampilkan notifikasi sukses
+      Swal.fire({
+        icon: "success",
+        title: "Export Berhasil!",
+        text: `Data berhasil diekspor ke file ${filename}`,
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+      });
+    } catch (error) {
+      console.error("Gagal export data:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Export Gagal!",
+        text: "Terjadi kesalahan saat mengekspor data.",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      setSearchTerm("");
+      setFilters({
+        asal: "",
+        semester: "",
+        statusVerifikasi: "",
+      });
+      setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
+      setRefreshTrigger((c) => c + 1);
+
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data berhasil dimuat ulang.",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Gagal memuat ulang data",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleAddHibah = () => {
+    Swal.fire({
+      icon: "info",
+      title: "Add Hibah",
+      text: "Fitur tambah hibah sedang dalam pengembangan.",
+      toast: true,
+      position: "top-end",
+      showConfirmButton: false,
+      timer: 2000,
+      timerProgressBar: true,
+    });
+  };
+
+  const handleEditClick = (id) => {
+    Swal.fire({
+      icon: "info",
+      title: "Edit Hibah",
+      text: "Fitur edit hibah sedang dalam pengembangan.",
+      toast: true,
+      position: "top-end",
+      showConfirmButton: false,
+      timer: 2000,
+      timerProgressBar: true,
+    });
+  };
+
+  const handleDeleteClick = async (id) => {
+    const result = await Swal.fire({
+      title: "Apakah Anda yakin?",
+      text: "Data hibah yang dihapus tidak dapat dikembalikan!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Ya, hapus!",
+      cancelButtonText: "Batal",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      Swal.fire({
+        title: "Berhasil Delete",
+        text: "Data hibah berhasil dihapus.",
+        icon: "success",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+      handleRefresh(); // Refresh data
+    } catch (error) {
+      console.error("Gagal menghapus hibah:", error);
+      Swal.fire({
+        title: "Gagal",
+        text: "Terjadi kesalahan saat menghapus data.",
+        icon: "error",
+      });
+    }
+  };
+
+  // Handle filter changes
+  const handleFilterChange = (filterKey, value) => {
+    setFilters((prev) => ({ ...prev, [filterKey]: value }));
+    setDataTablePaginationModel((prev) => ({ ...prev, page: 0 })); // Reset to first page
+  };
+
+  // Format currency for display
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  // Filter dropdown component
+  const FilterDropdown = ({
+    label,
+    value,
+    options,
+    onChange,
+    valueKey = "nama",
+  }) => (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        {label}
+      </label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+      >
+        <option value="">-- Pilih {label} --</option>
+        {options.map((option, index) => (
+          <option key={option.id || index} value={option[valueKey] || option}>
+            {option[valueKey] || option}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+
+  // --- Konfigurasi Kolom DataTable ---
+  const columns = [
+    {
+      field: "action",
+      headerName: "Action",
+      width: 150,
+      sortable: false,
+      renderCell: (params) => (
+        <div className="flex items-center gap-2 h-full">
+          <button
+            onClick={() => handleEditClick(params.row.id)}
+            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => handleDeleteClick(params.row.id)}
+            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
+          >
+            Delete
+          </button>
+        </div>
+      ),
+    },
+    {
+      field: "no",
+      headerName: "No",
+      width: 70,
+      sortable: false,
+      renderCell: (params) => {
+        const index = daftarHibahData.findIndex(
+          (row) => row.id === params.row.id
+        );
+        return (
+          dataTablePaginationModel.page * dataTablePaginationModel.pageSize +
+          index +
+          1
+        );
+      },
+    },
+    {
+      field: "asal",
+      headerName: "Asal",
+      flex: 1,
+      minWidth: 180,
+    },
+    {
+      field: "tujuan",
+      headerName: "Tujuan",
+      flex: 1,
+      minWidth: 180,
+    },
+    {
+      field: "noBeritaAcara",
+      headerName: "No. Berita Acara",
+      flex: 1,
+      minWidth: 180,
+    },
+    {
+      field: "tglBeritaAcara",
+      headerName: "Tgl. Berita Acara",
+      width: 150,
+    },
+    {
+      field: "totalBarang",
+      headerName: "Total Barang",
+      width: 120,
+      renderCell: (params) => <div className="text-center">{params.value}</div>,
+    },
+    {
+      field: "totalHarga",
+      headerName: "Total Harga",
+      width: 150,
+      renderCell: (params) => (
+        <div className="text-green-600 font-medium">
+          {formatCurrency(params.value)}
+        </div>
+      ),
+    },
+    {
+      field: "lampiran",
+      headerName: "Lampiran",
+      width: 150,
+      renderCell: (params) => (
+        <span className="text-blue-600 hover:text-blue-800 cursor-pointer">
+          {params.value}
+        </span>
+      ),
+    },
+    {
+      field: "statusVerifikasi",
+      headerName: "Status Verifikasi",
+      width: 150,
+      renderCell: (params) => (
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-medium ${
+            params.value === "Diverifikasi"
+              ? "bg-green-100 text-green-800"
+              : params.value === "Menunggu"
+              ? "bg-yellow-100 text-yellow-800"
+              : "bg-red-100 text-red-800"
+          }`}
+        >
+          {params.value}
+        </span>
+      ),
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-[#f7f7f7] font-sans">
+    <div className="min-h-screen bg-[#f7f7f7]">
       <Navbar />
+
       <div className="px-8 py-8">
-        <div className="flex justify-between items-center mb-6">
-          <Breadcrumbs />
-          {/* Breadcrumbs path sesuaikan dengan desain */}
-          {/* Contoh: <Breadcrumbs path={["Dashboard", "Keuangan", "Hibah", "Daftar Hibah"]} /> */}
+        <Breadcrumbs />
+
+        <div className="flex justify-end mt-4 mb-4">
           <button
             onClick={handleExport}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+            disabled={exporting}
+            className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
           >
-            <Download size={16} /> Export
+            <Download size={16} className={exporting ? "animate-pulse" : ""} />
+            {exporting ? "Exporting..." : "Export"}
           </button>
         </div>
 
-        {/* Kontainer Form Filter dan Tabel */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          {/* Judul H1 di dalam container */}
-          <h1 className="text-2xl font-bold mb-6 text-gray-800">Daftar Hibah</h1>
-
-          {/* Form Filter dan Tombol Aksi */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 items-end">
-            {/* Asal */}
-            <div>
-              <label htmlFor="asal" className="block text-sm font-medium text-gray-700 mb-1">
-                Asal
-              </label>
-              <select
-                id="asal"
-                name="asal"
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm"
-                value={filters.asal}
-                onChange={handleFilterChange}
-              >
-                <option value="">-- Pilih Asal --</option>
-                <option value="Kementerian A">Kementerian A</option>
-                <option value="Swasta XYZ">Swasta XYZ</option>
-                <option value="Yayasan ABC">Yayasan ABC</option>
-              </select>
-            </div>
-
-            {/* Semester */}
-            <div>
-              <label htmlFor="semester" className="block text-sm font-medium text-gray-700 mb-1">
-                Semester
-              </label>
-              <select
-                id="semester"
-                name="semester"
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm"
-                value={filters.semester}
-                onChange={handleFilterChange}
-              >
-                <option value="">-- Pilih Semester --</option>
-                <option value="1">1</option>
-                <option value="2">2</option>
-              </select>
-            </div>
-
-            {/* Status Verifikasi */}
-            <div>
-              <label htmlFor="statusVerifikasi" className="block text-sm font-medium text-gray-700 mb-1">
-                Status Verifikasi
-              </label>
-              <select
-                id="statusVerifikasi"
-                name="statusVerifikasi"
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm"
-                value={filters.statusVerifikasi}
-                onChange={handleFilterChange}
-              >
-                <option value="">-- Pilih Status --</option>
-                <option value="Menunggu">Menunggu</option>
-                <option value="Diverifikasi">Diverifikasi</option>
-                <option value="Ditolak">Ditolak</option>
-              </select>
-            </div>
-
-            {/* Tombol Refresh dan Add Hibah */}
-            <div className="col-span-1 flex justify-end gap-2">
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold text-gray-800">Daftar Hibah</h1>
+            <div className="flex gap-3">
               <button
                 onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+                disabled={refreshing}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
-                <RefreshCw size={16} /> Refresh
+                <RefreshCw
+                  size={16}
+                  className={refreshing ? "animate-spin" : ""}
+                />
+                Refresh
               </button>
               <button
                 onClick={handleAddHibah}
@@ -230,23 +672,55 @@ const DaftarHibahPage = () => {
             </div>
           </div>
 
-          {/* Kontrol Tabel: Show entries dan Search */}
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-2 text-gray-700">
-              Show
+          {/* Filter Section */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <FilterDropdown
+              label="Asal"
+              value={filters.asal}
+              options={filterOptions.asal}
+              onChange={(value) => handleFilterChange("asal", value)}
+            />
+
+            <FilterDropdown
+              label="Semester"
+              value={filters.semester}
+              options={filterOptions.semester}
+              onChange={(value) => handleFilterChange("semester", value)}
+            />
+
+            <FilterDropdown
+              label="Status Verifikasi"
+              value={filters.statusVerifikasi}
+              options={filterOptions.statusVerifikasi}
+              onChange={(value) =>
+                handleFilterChange("statusVerifikasi", value)
+              }
+            />
+          </div>
+
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-gray-600 text-sm">Show</span>
               <select
-                className="py-1 px-2 border border-gray-300 rounded-md text-sm"
-                value={showEntries}
-                onChange={(e) => setShowEntries(Number(e.target.value))}
+                value={dataTablePaginationModel.pageSize}
+                onChange={(e) => {
+                  setDataTablePaginationModel((prev) => ({
+                    ...prev,
+                    pageSize: Number(e.target.value),
+                    page: 0,
+                  }));
+                }}
+                className="border border-gray-300 rounded px-3 py-1 text-sm cursor-pointer"
               >
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
+                {[5, 10, 25, 50, 75, 100].map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
               </select>
-              entries
+              <span className="text-gray-600 text-sm">entries</span>
             </div>
-            {/* Search input dengan ikon */}
+
             <div className="relative w-full md:w-64">
               <Search
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
@@ -254,85 +728,29 @@ const DaftarHibahPage = () => {
               />
               <input
                 type="text"
-                placeholder="Search"
+                placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
 
-          {/* Tabel Daftar Hibah */}
-          <div className="overflow-x-auto relative shadow-md sm:rounded-lg">
-            <table className="w-full text-sm text-left text-gray-500">
-              <thead className="text-xs text-gray-700 bg-gray-50">
-                <tr>
-                  <th scope="col" className="py-3 px-6">Action</th>
-                  <th scope="col" className="py-3 px-6">Asal</th>
-                  <th scope="col" className="py-3 px-6">Tujuan</th>
-                  <th scope="col" className="py-3 px-6">No. Berita Acara</th>
-                  <th scope="col" className="py-3 px-6">Tgl. Berita Acara</th>
-                  <th scope="col" className="py-3 px-6">Total Barang</th>
-                  <th scope="col" className="py-3 px-6">Total Harga</th>
-                  <th scope="col" className="py-3 px-6">Lampiran</th>
-                  <th scope="col" className="py-3 px-6">Status Verifikasi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {isLoading ? (
-                  <tr>
-                    <td colSpan="9" className="py-4 px-6 text-center text-gray-600">Memuat data...</td>
-                  </tr>
-                ) : error ? (
-                  <tr>
-                    <td colSpan="9" className="py-4 px-6 text-center text-red-600">Error: {error}</td>
-                  </tr>
-                ) : tableData.length === 0 ? (
-                  <tr>
-                    <td colSpan="9" className="py-4 px-6 text-center text-gray-500">No data available in table</td>
-                  </tr>
-                ) : (
-                  tableData.map((item) => (
-                    <tr key={item.id} className="bg-white border-b hover:bg-gray-50">
-                      <td className="py-4 px-6">
-                        <button className="text-blue-600 hover:underline mr-2">Edit</button>
-                        <button className="text-red-600 hover:underline">Delete</button>
-                      </td>
-                      <td className="py-4 px-6">{item.asal}</td>
-                      <td className="py-4 px-6">{item.tujuan}</td>
-                      <td className="py-4 px-6">{item.noBeritaAcara}</td>
-                      <td className="py-4 px-6">{item.tglBeritaAcara}</td>
-                      <td className="py-4 px-6">{item.totalBarang}</td>
-                      <td className="py-4 px-6">{item.totalHarga}</td>
-                      <td className="py-4 px-6">{item.lampiran}</td>
-                      <td className="py-4 px-6">{item.statusVerifikasi}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Info Jumlah Entries dan Paginasi */}
-          <div className="flex justify-between items-center mt-4 text-sm text-gray-700">
-            <div>
-              Show {tableData.length > 0 ? 1 : 0} to {tableData.length} of {totalEntries} entries
-            </div>
-            <div className="flex gap-2">
-              <button
-                className="py-1 px-3 border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50 cursor-pointer"
-                disabled={currentPage === 1}
-              >
-                Previous
-              </button>
-              <button
-                className="py-1 px-3 border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50 cursor-pointer"
-                disabled={currentPage === totalPages || totalPages === 0}
-              >
-                Next
-              </button>
-            </div>
-          </div>
+          <DataTable
+            rows={daftarHibahData}
+            columns={columns}
+            rowCount={rowCount}
+            loading={loading}
+            paginationMode="server"
+            filterMode="server"
+            pageSizeOptions={[5, 10, 25, 50, 75, 100]}
+            paginationModel={dataTablePaginationModel}
+            onPaginationModelChange={setDataTablePaginationModel}
+            height={500}
+            emptyRowsMessage="Tidak ada data tersedia"
+            disableRowSelectionOnClick
+            hideFooterSelectedRowCount
+          />
         </div>
       </div>
     </div>

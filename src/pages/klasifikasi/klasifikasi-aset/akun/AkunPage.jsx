@@ -13,7 +13,7 @@ const AkunPage = () => {
   const [loading, setLoading] = useState(true);
   const [rowCount, setRowCount] = useState(0);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-
+  const [refreshing, setRefreshing] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingAkun, setEditingAkun] = useState(null);
 
@@ -79,8 +79,45 @@ const AkunPage = () => {
     console.log("Exporting data...");
   };
 
-  const handleRefresh = () => {
+  // Ubah handleRefresh agar ada animasi, SweetAlert2, dan loading table
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    setLoading(true);
     setRefreshTrigger((c) => c + 1);
+    try {
+      setSearchTerm("");
+      setDataTablePaginationModel((prev) => ({
+        ...prev,
+        page: 0,
+      }));
+      // Simulasi delay agar animasi terlihat
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      await fetchData();
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data berhasil dimuat ulang.",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Gagal memuat ulang data",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } finally {
+      setRefreshing(false);
+      setLoading(false);
+    }
   };
 
   const handleOpenAddModal = () => {
@@ -156,36 +193,43 @@ const AkunPage = () => {
 
   const handleDeleteClick = async (id) => {
     const result = await Swal.fire({
-      title: "Yakin ingin menghapus data ini?",
-      text: "Data yang dihapus tidak dapat dikembalikan.",
+      title: "Apakah Anda yakin?",
+      text: "Data yang dihapus tidak dapat dikembalikan!",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#e53935",
-      cancelButtonColor: "#aaa",
-      confirmButtonText: "Ya, hapus",
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Ya, hapus!",
       cancelButtonText: "Batal",
     });
-
     if (!result.isConfirmed) return;
-
-    try {
-      await api.delete(`/klasifikasi-aset/akun-aset/${id}`);
-      console.log("Berhasil menghapus akun dengan ID:", id);
-      Swal.fire({
-        title: "Berhasil Delete",
-        text: "Data berhasil dihapus.",
-        icon: "success",
-        timer: 1500,
-        showConfirmButton: false,
-      });
-      handleRefresh();
-    } catch (error) {
-      console.error("Gagal menghapus akun:", error);
-      Swal.fire({
-        title: "Gagal",
-        text: "Terjadi kesalahan saat menghapus data.",
-        icon: "error",
-      });
+    if (result.isConfirmed) {
+      try {
+        await api.delete(`/klasifikasi-aset/akun-aset/${id}`);
+        Swal.fire({
+          icon: "success",
+          title: "Berhasil!",
+          text: "Data berhasil dihapus.",
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
+          timer: 2000,
+          timerProgressBar: true,
+        });
+        fetchData(); // refresh data
+      } catch (error) {
+        Swal.fire({
+          icon: "error",
+          title: "Error!",
+          text: "Gagal menghapus data",
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
+          timer: 2000,
+          timerProgressBar: true,
+        });
+        console.error("Gagal menghapus data:", error);
+      }
     }
   };
 
@@ -197,7 +241,7 @@ const AkunPage = () => {
       width: 150,
       sortable: false,
       renderCell: (params) => (
-        <div className="flex gap-2 items-center">
+        <div className="flex items-center gap-2 h-full">
           <button
             onClick={() => handleEditClick(params.row.id)}
             className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
@@ -264,9 +308,14 @@ const AkunPage = () => {
             <div className="flex gap-3">
               <button
                 onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+                disabled={refreshing}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
-                <RefreshCw size={16} /> Refresh
+                <RefreshCw
+                  size={16}
+                  className={refreshing ? "animate-spin" : ""}
+                />
+                Refresh
               </button>
               <button
                 onClick={handleOpenAddModal}
@@ -310,7 +359,7 @@ const AkunPage = () => {
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -319,7 +368,7 @@ const AkunPage = () => {
             rows={akunData}
             columns={columns}
             rowCount={rowCount}
-            loading={loading}
+            loading={loading || refreshing}
             paginationMode="server"
             filterMode="server" // Ini sebenarnya dikontrol oleh cara Anda mem-fetch data dengan 'search' param
             pageSizeOptions={[5, 10, 25, 50, 75, 100]}

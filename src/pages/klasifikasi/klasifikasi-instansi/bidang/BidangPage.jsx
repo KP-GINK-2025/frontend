@@ -6,13 +6,22 @@ import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import AddBidangModal from "./AddBidangModal";
 import DataTable from "../../../../components/DataTable";
 import Swal from "sweetalert2";
+import {
+  handleExport,
+  commonFormatters,
+  createExportConfig,
+} from "../../../../handlers/exportHandler";
 
 const BidangPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [bidangData, setBidangData] = useState([]);
   const [loading, setLoading] = useState(true);
+
   const [rowCount, setRowCount] = useState(0);
+
+  const [refreshing, setRefreshing] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [exporting, setExporting] = useState(false); // State untuk loading export
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingBidang, setEditingBidang] = useState(null);
@@ -47,9 +56,10 @@ const BidangPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      setRefreshing(true); // Spinner aktif juga saat fetch pertama kali
       try {
         const params = new URLSearchParams();
-        params.append("page", dataTablePaginationModel.page + 1); // API biasanya 1-indexed
+        params.append("page", dataTablePaginationModel.page + 1);
         params.append("per_page", dataTablePaginationModel.pageSize);
 
         if (debouncedSearchTerm) {
@@ -68,19 +78,120 @@ const BidangPage = () => {
         setRowCount(0);
       } finally {
         setLoading(false);
+        setRefreshing(false); // Matikan spinner setelah data selesai di-load
       }
     };
 
     fetchData();
-  }, [dataTablePaginationModel, debouncedSearchTerm, refreshTrigger]); // Dependencies yang memicu re-fetch
+  }, [dataTablePaginationModel, debouncedSearchTerm, refreshTrigger]);
 
-  // Event handlers
-  const handleExport = () => {
-    console.log("Exporting data...");
+  // --- Handler Fungsi ---
+
+  // Define export columns configuration
+  const exportColumns = [
+    { field: "no", headerName: "No" },
+    {
+      field: "provinsi",
+      headerName: "Kode Provinsi",
+      formatter: commonFormatters.nestedObject(
+        "kabupaten_kota.provinsi.kode_provinsi"
+      ),
+    },
+    {
+      field: "provinsi",
+      headerName: "Nama Provinsi",
+      formatter: commonFormatters.nestedObject(
+        "kabupaten_kota.provinsi.nama_provinsi"
+      ),
+    },
+    {
+      field: "kabupaten_kota",
+      headerName: "Kode Kabupaten/Kota",
+      formatter: commonFormatters.nestedObject(
+        "kabupaten_kota.kode_kabupaten_kota"
+      ),
+    },
+    {
+      field: "kabupaten_kota",
+      headerName: "Nama Kabupaten/Kota",
+      formatter: commonFormatters.nestedObject(
+        "kabupaten_kota.nama_kabupaten_kota"
+      ),
+    },
+    { field: "kode_bidang", headerName: "Kode Bidang" },
+    { field: "nama_bidang", headerName: "Nama Bidang" },
+    { field: "kode", headerName: "Kode" },
+  ];
+
+  // New export handler using the reusable function
+  const handleExportClick = async () => {
+    // Function to fetch all data for export
+    const fetchAllDataForExport = async () => {
+      try {
+        const params = new URLSearchParams();
+        params.append("page", 1);
+        params.append("per_page", 10000); // Get all data
+        if (debouncedSearchTerm) {
+          params.append("search", debouncedSearchTerm);
+        }
+
+        const response = await api.get(
+          `/klasifikasi-instansi/bidang?${params.toString()}`
+        );
+        return response.data.data;
+      } catch (error) {
+        console.error("Failed to fetch export data:", error);
+        throw error;
+      }
+    };
+
+    // Create export configuration
+    const exportConfig = {
+      fetchDataFunction: fetchAllDataForExport,
+      columns: exportColumns,
+      filename: "data-bidang",
+      sheetName: "Data Bidang",
+      setExporting: setExporting,
+    };
+
+    // Call the reusable export handler
+    await handleExport(exportConfig);
   };
 
-  const handleRefresh = () => {
-    setRefreshTrigger((c) => c + 1);
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      setSearchTerm(""); // Reset pencarian jika ingin seperti LraPage
+      setDataTablePaginationModel((prev) => ({ ...prev, page: 0 })); // Reset halaman
+      setRefreshTrigger((c) => c + 1);
+
+      // Simulasi delay agar animasi terlihat (opsional, bisa dihapus jika tidak perlu)
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data berhasil dimuat ulang.",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Gagal memuat ulang data",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const handleOpenAddModal = () => {
@@ -156,13 +267,13 @@ const BidangPage = () => {
 
   const handleDeleteClick = async (id) => {
     const result = await Swal.fire({
-      title: "Yakin ingin menghapus data ini?",
-      text: "Data yang dihapus tidak dapat dikembalikan.",
+      title: "Apakah Anda yakin?",
+      text: "Data yang dihapus tidak dapat dikembalikan!",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#e53935",
-      cancelButtonColor: "#aaa",
-      confirmButtonText: "Ya, hapus",
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Ya, hapus!",
       cancelButtonText: "Batal",
     });
 
@@ -197,7 +308,7 @@ const BidangPage = () => {
       width: 150,
       sortable: false,
       renderCell: (params) => (
-        <div className="flex gap-2 items-center">
+        <div className="flex items-center gap-2 h-full">
           <button
             onClick={() => handleEditClick(params.row.id)}
             className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
@@ -270,10 +381,12 @@ const BidangPage = () => {
 
         <div className="flex justify-end mt-4 mb-4">
           <button
-            onClick={handleExport}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+            onClick={handleExportClick} // Updated to use new handler
+            disabled={exporting}
+            className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
           >
-            <Download size={16} /> Export
+            <Download size={16} className={exporting ? "animate-pulse" : ""} />
+            {exporting ? "Exporting..." : "Export"}
           </button>
         </div>
 
@@ -283,9 +396,14 @@ const BidangPage = () => {
             <div className="flex gap-3">
               <button
                 onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+                disabled={refreshing}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
-                <RefreshCw size={16} /> Refresh
+                <RefreshCw
+                  size={16}
+                  className={refreshing ? "animate-spin" : ""}
+                />
+                Refresh
               </button>
               <button
                 onClick={handleOpenAddModal}
@@ -329,7 +447,7 @@ const BidangPage = () => {
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -345,7 +463,7 @@ const BidangPage = () => {
             paginationModel={dataTablePaginationModel}
             onPaginationModelChange={setDataTablePaginationModel}
             height={500}
-            emptyRowsMessage="Tidak ada data bidang yang tersedia"
+            emptyRowsMessage="Tidak ada data tersedia"
             disableRowSelectionOnClick // Menambahkan ini agar baris tidak terpilih saat diklik
             hideFooterSelectedRowCount // Menambahkan ini untuk menyembunyikan hitungan baris yang dipilih di footer
           />

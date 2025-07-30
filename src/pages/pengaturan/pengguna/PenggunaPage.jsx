@@ -1,18 +1,51 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Navbar from "../../../components/Navbar";
 import Breadcrumbs from "../../../components/Breadcrumbs";
+import DataTable from "../../../components/DataTable";
 import { RefreshCw, Plus, Download, Search } from "lucide-react";
+import Swal from "sweetalert2";
 
 const PenggunaPage = () => {
+  const [penggunaData, setPenggunaData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [totalRows, setTotalRows] = useState(0);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Filter and search state
   const [searchTerm, setSearchTerm] = useState("");
-  const [showEntries, setShowEntries] = useState(10);
-  const [tableData, setTableData] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [selectedBlok, setSelectedBlok] = useState("");
   const [selectedGrup, setSelectedGrup] = useState("");
 
+  // Pagination state
+  const [paginationModel, setPaginationModel] = useState({
+    page: 0,
+    pageSize: 10,
+  });
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    if (debouncedSearchTerm || selectedBlok || selectedGrup) {
+      setPaginationModel((prev) => ({ ...prev, page: 0 }));
+    }
+  }, [debouncedSearchTerm, selectedBlok, selectedGrup]);
+
+  // Fetch pengguna data (mock data)
   const fetchData = useCallback(() => {
-    setIsLoading(true);
+    setLoading(true);
+    setRefreshing(true);
+
+    // Mock data
     const dummyUsers = [
       {
         id: 1,
@@ -34,46 +67,260 @@ const PenggunaPage = () => {
         grup: "Keuangan",
         upb: "UPB 2",
       },
+      {
+        id: 3,
+        username: "sekretaris03",
+        namaLengkap: "Sekretaris Tiga",
+        email: "sekretaris03@tanggamus.go.id",
+        terakhirLogin: "2025-07-07 14:15",
+        blok: "A",
+        grup: "Sekretaris",
+        upb: "UPB 1",
+      },
+      {
+        id: 4,
+        username: "kepala04",
+        namaLengkap: "Kepala Empat",
+        email: "kepala04@tanggamus.go.id",
+        terakhirLogin: "2025-07-06 09:45",
+        blok: "B",
+        grup: "Kepala",
+        upb: "UPB 3",
+      },
+      {
+        id: 5,
+        username: "staff05",
+        namaLengkap: "Staff Lima",
+        email: "staff05@tanggamus.go.id",
+        terakhirLogin: "2025-07-05 11:20",
+        blok: "A",
+        grup: "Staff",
+        upb: "UPB 2",
+      },
     ];
+
     setTimeout(() => {
-      setTableData(dummyUsers);
-      setIsLoading(false);
+      // Apply filters
+      let filteredData = dummyUsers;
+
+      // Search filter
+      if (debouncedSearchTerm) {
+        filteredData = filteredData.filter(
+          (item) =>
+            item.username
+              .toLowerCase()
+              .includes(debouncedSearchTerm.toLowerCase()) ||
+            item.namaLengkap
+              .toLowerCase()
+              .includes(debouncedSearchTerm.toLowerCase()) ||
+            item.email.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+        );
+      }
+
+      // Blok filter
+      if (selectedBlok) {
+        filteredData = filteredData.filter(
+          (item) => item.blok === selectedBlok
+        );
+      }
+
+      // Grup filter
+      if (selectedGrup) {
+        filteredData = filteredData.filter(
+          (item) => item.grup === selectedGrup
+        );
+      }
+
+      // Pagination
+      const startIndex = paginationModel.page * paginationModel.pageSize;
+      const endIndex = startIndex + paginationModel.pageSize;
+      const paginatedData = filteredData.slice(startIndex, endIndex);
+
+      setPenggunaData(paginatedData);
+      setTotalRows(filteredData.length);
+      setLoading(false);
+      setRefreshing(false);
     }, 500);
-  }, []);
+  }, [
+    paginationModel,
+    debouncedSearchTerm,
+    selectedBlok,
+    selectedGrup,
+    refreshTrigger,
+  ]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  const handleRefresh = () => {
-    fetchData();
-  };
+  // Event handlers
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      setSearchTerm(""); // Reset pencarian
+      setSelectedBlok(""); // Reset filter blok
+      setSelectedGrup(""); // Reset filter grup
+      setPaginationModel((prev) => ({ ...prev, page: 0 })); // Reset halaman
+      setRefreshTrigger((prev) => prev + 1);
 
-  const handleAddUser = () => {
-    alert("Fitur tambah user belum diimplementasikan.");
+      // Simulasi delay agar animasi terlihat
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data user berhasil dimuat ulang.",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Gagal memuat ulang data",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const handleExport = () => {
+    console.log("Exporting pengguna data...");
     alert("Fitur export belum diimplementasikan.");
   };
 
-  const filteredData = tableData.filter((item) => {
-    const matchesSearch =
-      item.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.namaLengkap.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesBlok = selectedBlok ? item.blok === selectedBlok : true;
-    const matchesGrup = selectedGrup ? item.grup === selectedGrup : true;
-    return matchesSearch && matchesBlok && matchesGrup;
-  });
+  const handleAddUser = () => {
+    console.log("Add user clicked");
+    alert("Fitur tambah user belum diimplementasikan.");
+  };
 
-  const paginatedData = filteredData.slice(0, showEntries);
+  const handleEditClick = (id) => {
+    console.log("Edit user with ID:", id);
+    alert(`Edit user dengan ID: ${id} belum diimplementasikan.`);
+  };
+
+  const handleDeleteClick = async (id) => {
+    const result = await Swal.fire({
+      title: "Apakah Anda yakin?",
+      text: "Data user yang dihapus tidak dapat dikembalikan!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Ya, hapus!",
+      cancelButtonText: "Batal",
+      reverseButtons: false,
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      // Mock delete - in real implementation, call API here
+      console.log("Deleting user with ID:", id);
+
+      Swal.fire({
+        icon: "success",
+        title: "Terhapus!",
+        text: "Data user berhasil dihapus.",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+
+      // Refresh data after delete
+      handleRefresh();
+    } catch (error) {
+      console.error("Gagal menghapus user:", error);
+      Swal.fire({
+        title: "Gagal",
+        text: "Terjadi kesalahan saat menghapus data.",
+        icon: "error",
+      });
+    }
+  };
+
+  // Table columns configuration
+  const columns = [
+    {
+      field: "action",
+      headerName: "Action",
+      width: 150,
+      sortable: false,
+      renderCell: (params) => (
+        <div className="flex items-center gap-2 h-full">
+          <button
+            onClick={() => handleEditClick(params.row.id)}
+            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => handleDeleteClick(params.row.id)}
+            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
+          >
+            Delete
+          </button>
+        </div>
+      ),
+    },
+    {
+      field: "username",
+      headerName: "Username",
+      width: 150,
+    },
+    {
+      field: "namaLengkap",
+      headerName: "Nama Lengkap",
+      flex: 1,
+      minWidth: 200,
+    },
+    {
+      field: "email",
+      headerName: "Email",
+      flex: 1,
+      minWidth: 250,
+    },
+    {
+      field: "terakhirLogin",
+      headerName: "Terakhir Login",
+      width: 160,
+    },
+    {
+      field: "blok",
+      headerName: "Blok",
+      width: 80,
+    },
+    {
+      field: "grup",
+      headerName: "Grup",
+      width: 120,
+    },
+    {
+      field: "upb",
+      headerName: "UPB",
+      width: 100,
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-[#f7f7f7] font-sans">
       <Navbar />
+
       <div className="px-8 py-8">
-        <div className="flex justify-between items-center mb-6">
-          <Breadcrumbs />
+        <Breadcrumbs />
+
+        {/* Export Button */}
+        <div className="flex justify-end mt-4 mb-4">
           <button
             onClick={handleExport}
             className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
@@ -82,69 +329,91 @@ const PenggunaPage = () => {
           </button>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow">
-          <h1 className="text-2xl font-bold text-gray-800 mb-6">Daftar User</h1>
-
-          {/* Filter Blok/Grup + Refresh/Add User */}
-          <div className="flex justify-between items-center flex-wrap gap-4 mb-4">
-            <div className="flex gap-4 items-center flex-wrap">
-              <div className="flex items-center gap-2 text-sm">
-                <label>Blok</label>
-                <select
-                  value={selectedBlok}
-                  onChange={(e) => setSelectedBlok(e.target.value)}
-                  className="border px-2 py-1 rounded"
-                >
-                  <option value="">Semua</option>
-                  <option value="A">Blok A</option>
-                  <option value="B">Blok B</option>
-                </select>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <label>Grup</label>
-                <select
-                  value={selectedGrup}
-                  onChange={(e) => setSelectedGrup(e.target.value)}
-                  className="border px-2 py-1 rounded"
-                >
-                  <option value="">Semua</option>
-                  <option value="Admin">Admin</option>
-                  <option value="Keuangan">Keuangan</option>
-                </select>
-              </div>
-            </div>
-            <div className="flex gap-2">
+        {/* Main Content */}
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold text-gray-800">Daftar User</h1>
+            <div className="flex gap-3">
               <button
                 onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 text-sm cursor-pointer"
+                disabled={refreshing}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
-                <RefreshCw size={16} /> Refresh
+                <RefreshCw
+                  size={16}
+                  className={refreshing ? "animate-spin" : ""}
+                />
+                Refresh
               </button>
               <button
                 onClick={handleAddUser}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 text-sm cursor-pointer"
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
                 <Plus size={16} /> Add User
               </button>
             </div>
           </div>
 
-          {/* Show entries + Search in same row */}
-          <div className="flex justify-between items-center flex-wrap gap-4 mb-4 text-sm text-gray-700">
-            <div className="flex items-center gap-2">
-              Show
-              <select
-                className="border px-2 py-1 rounded"
-                value={showEntries}
-                onChange={(e) => setShowEntries(Number(e.target.value))}
-              >
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-              </select>
-              entries
+          {/* Filters and Search */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-4">
+            {/* Left: Filters */}
+            <div className="flex flex-col gap-4 md:flex-row md:items-end">
+              {/* Blok Filter */}
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">Blok</label>
+                <select
+                  value={selectedBlok}
+                  onChange={(e) => setSelectedBlok(e.target.value)}
+                  className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto cursor-pointer"
+                >
+                  <option value="">-- Semua Blok --</option>
+                  <option value="A">Blok A</option>
+                  <option value="B">Blok B</option>
+                </select>
+              </div>
+
+              {/* Grup Filter */}
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">Grup</label>
+                <select
+                  value={selectedGrup}
+                  onChange={(e) => setSelectedGrup(e.target.value)}
+                  className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto cursor-pointer"
+                >
+                  <option value="">-- Semua Grup --</option>
+                  <option value="Admin">Admin</option>
+                  <option value="Keuangan">Keuangan</option>
+                  <option value="Sekretaris">Sekretaris</option>
+                  <option value="Kepala">Kepala</option>
+                  <option value="Staff">Staff</option>
+                </select>
+              </div>
+
+              {/* Page Size Selector */}
+              <div className="flex items-center gap-2 mt-2 md:mt-0">
+                <span className="text-gray-600 text-sm">Show</span>
+                <select
+                  value={paginationModel.pageSize}
+                  onChange={(e) =>
+                    setPaginationModel({
+                      page: 0,
+                      pageSize: Number(e.target.value),
+                    })
+                  }
+                  className="border border-gray-300 rounded px-3 py-1 text-sm cursor-pointer"
+                >
+                  {[5, 10, 25, 50, 75, 100].map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+                <span className="text-gray-600 text-sm">entries</span>
+              </div>
             </div>
+
+            {/* Right: Search */}
             <div className="relative w-full md:w-64">
               <Search
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
@@ -152,73 +421,30 @@ const PenggunaPage = () => {
               />
               <input
                 type="text"
-                placeholder="Search"
+                placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
 
-          {/* Table */}
-          <div className="overflow-x-auto relative shadow-md sm:rounded-lg">
-            <table className="w-full text-sm text-left text-gray-500">
-              <thead className="text-xs text-gray-700 bg-gray-50">
-                <tr>
-                  <th className="py-3 px-6">Action</th>
-                  <th className="py-3 px-6">Username</th>
-                  <th className="py-3 px-6">Nama Lengkap</th>
-                  <th className="py-3 px-6">Email</th>
-                  <th className="py-3 px-6">Terakhir Login</th>
-                  <th className="py-3 px-6">Blok</th>
-                  <th className="py-3 px-6">Grup</th>
-                  <th className="py-3 px-6">UPB</th>
-                </tr>
-              </thead>
-              <tbody>
-                {isLoading ? (
-                  <tr>
-                    <td colSpan="8" className="text-center py-4 text-gray-500">Memuat data...</td>
-                  </tr>
-                ) : paginatedData.length === 0 ? (
-                  <tr>
-                    <td colSpan="8" className="text-center py-4 text-gray-500">Tidak ada data tersedia</td>
-                  </tr>
-                ) : (
-                  paginatedData.map((item) => (
-                    <tr key={item.id} className="bg-white border-b hover:bg-gray-50">
-                      <td className="py-4 px-6">
-                        <button className="text-blue-600 hover:underline mr-2">Edit</button>
-                        <button className="text-red-600 hover:underline">Delete</button>
-                      </td>
-                      <td className="py-4 px-6">{item.username}</td>
-                      <td className="py-4 px-6">{item.namaLengkap}</td>
-                      <td className="py-4 px-6">{item.email}</td>
-                      <td className="py-4 px-6">{item.terakhirLogin}</td>
-                      <td className="py-4 px-6">{item.blok}</td>
-                      <td className="py-4 px-6">{item.grup}</td>
-                      <td className="py-4 px-6">{item.upb}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Info & Pagination */}
-          <div className="flex justify-between items-center mt-4 text-sm text-gray-700">
-            <div>
-              Show {paginatedData.length > 0 ? 1 : 0} to {paginatedData.length} of {filteredData.length} entries
-            </div>
-            <div className="flex gap-2">
-              <button className="py-1 px-3 border border-gray-300 rounded-md hover:bg-gray-100" disabled>
-                Previous
-              </button>
-              <button className="py-1 px-3 border border-gray-300 rounded-md hover:bg-gray-100" disabled>
-                Next
-              </button>
-            </div>
-          </div>
+          {/* Data Table */}
+          <DataTable
+            rows={penggunaData}
+            columns={columns}
+            rowCount={totalRows}
+            loading={loading}
+            paginationMode="server"
+            filterMode="server"
+            pageSizeOptions={[5, 10, 25, 50, 75, 100]}
+            paginationModel={paginationModel}
+            onPaginationModelChange={setPaginationModel}
+            disableRowSelectionOnClick
+            hideFooterSelectedRowCount
+            height={500}
+            emptyRowsMessage="Tidak ada data tersedia"
+          />
         </div>
       </div>
     </div>

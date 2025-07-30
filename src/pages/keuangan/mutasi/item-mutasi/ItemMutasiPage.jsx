@@ -3,6 +3,7 @@ import Navbar from "../../../../components/Navbar";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { RefreshCw, Download, Search } from "lucide-react";
 import DataTable from "../../../../components/DataTable";
+import Swal from "sweetalert2";
 
 const ItemMutasiPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -40,6 +41,9 @@ const ItemMutasiPage = () => {
     setLoading(true);
     setError(null);
     try {
+      // Simulate API delay
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
       // Dummy data untuk dropdown filter
       setKualifikasiPerolehanData([
         { id: 1, nama: "Dropping Pusat" },
@@ -225,8 +229,7 @@ const ItemMutasiPage = () => {
 
   const handleExport = () => console.log("Exporting Item Mutasi...");
 
-  const handleRefresh = () => {
-    setLoading(true);
+  const handleRefresh = async () => {
     setSearchTerm("");
     setSelectedKualifikasiPerolehan("");
     setSelectedAsal("");
@@ -236,7 +239,18 @@ const ItemMutasiPage = () => {
     setSelectedKualifikasiAset("");
     setSelectedKondisi("");
     setDataTablePaginationModel({ page: 0, pageSize: entriesPerPage });
-    fetchData();
+
+    await fetchData();
+
+    Swal.fire({
+      icon: "success",
+      title: "Berhasil!",
+      text: "Data berhasil dimuat ulang.",
+      toast: true,
+      position: "top-end",
+      showConfirmButton: false,
+      timer: 2000,
+    });
   };
 
   // Definisi kolom untuk DataTable
@@ -353,6 +367,7 @@ const ItemMutasiPage = () => {
                   setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
                 }}
                 className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
+                disabled={loading}
               >
                 <option value=""> -- Kualifikasi Perolehan -- </option>
                 {kualifikasiPerolehanData.map((k) => (
@@ -370,6 +385,7 @@ const ItemMutasiPage = () => {
                   setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
                 }}
                 className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
+                disabled={loading}
               >
                 <option value=""> -- Asal -- </option>
                 {asalData.map((a) => (
@@ -387,6 +403,7 @@ const ItemMutasiPage = () => {
                   setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
                 }}
                 className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
+                disabled={loading}
               >
                 <option value=""> -- Tujuan -- </option>
                 {tujuanData.map((t) => (
@@ -404,6 +421,7 @@ const ItemMutasiPage = () => {
                   setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
                 }}
                 className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
+                disabled={loading}
               >
                 <option value=""> -- Semester -- </option>
                 {semesterData.map((s) => (
@@ -421,6 +439,7 @@ const ItemMutasiPage = () => {
                   setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
                 }}
                 className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
+                disabled={loading}
               >
                 <option value=""> -- Status Verifikasi -- </option>
                 {statusVerifikasiData.map((s) => (
@@ -438,6 +457,7 @@ const ItemMutasiPage = () => {
                   setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
                 }}
                 className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
+                disabled={loading}
               >
                 <option value=""> -- Kualifikasi Aset -- </option>
                 {kualifikasiAsetData.map((k) => (
@@ -455,6 +475,7 @@ const ItemMutasiPage = () => {
                   setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
                 }}
                 className="w-full md:max-w-xs border border-gray-300 rounded px-3 py-2 text-sm"
+                disabled={loading}
               >
                 <option value=""> -- Kondisi -- </option>
                 {kondisiData.map((k) => (
@@ -465,13 +486,18 @@ const ItemMutasiPage = () => {
               </select>
             </div>
 
-            {/* Tombol Refresh (di kanan) */}
+            {/* Tombol Refresh */}
             <div className="flex gap-2 items-center lg:self-end">
               <button
                 onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+                disabled={loading}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
-                <RefreshCw size={16} /> Refresh
+                <RefreshCw
+                  size={16}
+                  className={loading ? "animate-spin" : ""}
+                />
+                Refresh
               </button>
             </div>
           </div>
@@ -491,6 +517,7 @@ const ItemMutasiPage = () => {
                   }));
                 }}
                 className="border border-gray-300 rounded px-2 py-1"
+                disabled={loading}
               >
                 <option value="5">5</option>
                 <option value="10">10</option>
@@ -507,31 +534,42 @@ const ItemMutasiPage = () => {
               />
               <input
                 type="text"
-                placeholder="Search"
+                placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={loading}
               />
             </div>
           </div>
 
           {/* DataTable Component */}
-          {loading ? (
-            <div className="text-center py-8 text-gray-500">Memuat data...</div>
-          ) : error ? (
-            <div className="text-center py-8 text-red-600">Error: {error}</div>
-          ) : (
-            <DataTable
-              rows={filteredData}
-              columns={columns}
-              initialPageSize={entriesPerPage}
-              pageSizeOptions={[5, 10, 25, 50, 100]}
-              height={500}
-              emptyRowsMessage="No data available in table"
-              paginationModel={dataTablePaginationModel}
-              onPaginationModelChange={setDataTablePaginationModel}
-            />
-          )}
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            {error ? (
+              <div className="text-center py-12">
+                <div className="text-red-600 mb-2">⚠️ Error</div>
+                <div className="text-gray-600">{error}</div>
+                <button
+                  onClick={fetchData}
+                  className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
+                >
+                  Coba Lagi
+                </button>
+              </div>
+            ) : (
+              <DataTable
+                rows={filteredData}
+                columns={columns}
+                initialPageSize={entriesPerPage}
+                pageSizeOptions={[5, 10, 25, 50, 100]}
+                height={500}
+                emptyRowsMessage="Tidak ada data tersedia"
+                paginationModel={dataTablePaginationModel}
+                onPaginationModelChange={setDataTablePaginationModel}
+                loading={loading}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>

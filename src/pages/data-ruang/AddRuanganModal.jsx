@@ -210,7 +210,7 @@ const AddRuanganModal = ({
                     <p className="mt-1 text-sm text-red-500">{errors.tahun}</p>
                   )}
                 </div>
-                {/* ...field lain tetap seperti sebelumnya... */}
+
                 {/* Bidang */}
                 <div className="mb-4">
                   <label className="block mb-2 text-sm font-medium text-gray-700">
@@ -236,7 +236,7 @@ const AddRuanganModal = ({
                     <p className="mt-1 text-sm text-red-500">{errors.bidang}</p>
                   )}
                 </div>
-                {/* ...field lain tetap seperti sebelumnya... */}
+
                 {/* Unit */}
                 <div className="mb-4">
                   <label className="block mb-2 text-sm font-medium text-gray-700">
@@ -332,7 +332,7 @@ const AddRuanganModal = ({
                     </p>
                   )}
                 </div>
-                {/* ...field lain tetap seperti sebelumnya... */}
+
                 {/* Provinsi */}
                 <div className="mb-4">
                   <label className="block mb-2 text-sm font-medium text-gray-700">
@@ -464,14 +464,14 @@ const AddRuanganModal = ({
               <button
                 type="button"
                 onClick={handleClose}
-                className="px-6 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors"
+                className="px-6 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors cursor-pointer"
               >
                 Batal
               </button>
               <button
                 type="submit"
                 onClick={handleSubmit}
-                className="px-6 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                className="px-6 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors cursor-pointer"
               >
                 {initialData ? "Simpan Perubahan" : "Simpan"}
               </button>

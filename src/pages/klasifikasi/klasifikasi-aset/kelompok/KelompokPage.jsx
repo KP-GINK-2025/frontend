@@ -5,12 +5,14 @@ import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import AddKelompokModal from "./AddKelompokModal";
 import DataTable from "../../../../components/DataTable";
+import Swal from "sweetalert2"; // <-- Tambahkan import ini
 
 const KelompokPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [kelompokData, setKelompokData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingKelompok, setEditingKelompok] = useState(null);
 
@@ -21,6 +23,7 @@ const KelompokPage = () => {
 
   const fetchData = async () => {
     setLoading(true);
+    setRefreshing(true); // Spinner aktif juga saat fetch pertama kali
     try {
       const response = await api.get("/klasifikasi-aset/kelompok-aset", {
         params: {
@@ -29,7 +32,6 @@ const KelompokPage = () => {
         },
       });
 
-      // For now, let's use mock data structure to test the columns
       const data = response.data.data.map((item) => ({
         id: item.id,
         aset1: item.akun_aset
@@ -47,11 +49,13 @@ const KelompokPage = () => {
       console.error("Gagal mengambil data kelompok aset:", error);
     } finally {
       setLoading(false);
+      setRefreshing(false); // Matikan spinner setelah data selesai di-load
     }
   };
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line
   }, [searchTerm, entriesPerPage]);
 
   const filteredData = kelompokData.filter((item) => {
@@ -73,10 +77,44 @@ const KelompokPage = () => {
     console.log("Exporting data...");
   };
 
-  const handleRefresh = () => {
+  // Ubah handleRefresh agar ada animasi, SweetAlert2, dan loading table
+  const handleRefresh = async () => {
+    setRefreshing(true);
     setLoading(true);
-    setSearchTerm("");
-    fetchData();
+    try {
+      setSearchTerm("");
+      setDataTablePaginationModel((prev) => ({
+        ...prev,
+        page: 0,
+      }));
+      // Simulasi delay agar animasi terlihat
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      await fetchData();
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data berhasil dimuat ulang.",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Gagal memuat ulang data",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } finally {
+      setRefreshing(false);
+      setLoading(false);
+    }
   };
 
   const handleOpenAddModal = () => {
@@ -135,13 +173,44 @@ const KelompokPage = () => {
     }
   };
 
+  // Tambahkan SweetAlert2 pada tombol delete
   const handleDeleteClick = async (id) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus data ini?")) {
+    const result = await Swal.fire({
+      title: "Apakah Anda yakin?",
+      text: "Data yang dihapus tidak dapat dikembalikan!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Ya, hapus!",
+      cancelButtonText: "Batal",
+    });
+
+    if (result.isConfirmed) {
       try {
         await api.delete(`/klasifikasi-aset/kelompok-aset/${id}`);
-        console.log("Kelompok aset berhasil dihapus:", id);
+        Swal.fire({
+          icon: "success",
+          title: "Berhasil!",
+          text: "Data berhasil dihapus.",
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
+          timer: 2000,
+          timerProgressBar: true,
+        });
         fetchData(); // refresh data
       } catch (error) {
+        Swal.fire({
+          icon: "error",
+          title: "Error!",
+          text: "Gagal menghapus data",
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
+          timer: 2000,
+          timerProgressBar: true,
+        });
         console.error("Gagal menghapus data:", error);
       }
     }
@@ -149,6 +218,28 @@ const KelompokPage = () => {
 
   // Data kolom untuk MUI DataGrid
   const columns = [
+    {
+      field: "action",
+      headerName: "Action",
+      width: 150,
+      sortable: false,
+      renderCell: (params) => (
+        <div className="flex items-center gap-2 h-full">
+          <button
+            onClick={() => handleEditClick(params.row.id)}
+            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => handleDeleteClick(params.row.id)}
+            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
+          >
+            Delete
+          </button>
+        </div>
+      ),
+    },
     {
       field: "no",
       headerName: "No",
@@ -187,28 +278,6 @@ const KelompokPage = () => {
       width: 150,
       renderCell: (params) => <div>{params.row.kode}</div>,
     },
-    {
-      field: "action",
-      headerName: "Action",
-      width: 150,
-      sortable: false,
-      renderCell: (params) => (
-        <div className="flex gap-2 items-center">
-          <button
-            onClick={() => handleEditClick(params.row.id)}
-            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => handleDeleteClick(params.row.id)}
-            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
-          >
-            Delete
-          </button>
-        </div>
-      ),
-    },
   ];
 
   return (
@@ -235,9 +304,14 @@ const KelompokPage = () => {
             <div className="flex gap-3">
               <button
                 onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+                disabled={refreshing}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
-                <RefreshCw size={16} /> Refresh
+                <RefreshCw
+                  size={16}
+                  className={refreshing ? "animate-spin" : ""}
+                />
+                Refresh
               </button>
               <button
                 onClick={handleOpenAddModal}
@@ -279,28 +353,26 @@ const KelompokPage = () => {
               />
               <input
                 type="text"
-                placeholder="Search"
+                placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
 
-          {loading ? (
-            <div className="text-center py-8 text-gray-500">Loading...</div>
-          ) : (
-            <DataTable
-              rows={filteredData}
-              columns={columns}
-              initialPageSize={entriesPerPage}
-              pageSizeOptions={[5, 10, 25, 50, 100]}
-              height={500}
-              emptyRowsMessage="No Kelompok Aset data available"
-              paginationModel={dataTablePaginationModel}
-              onPaginationModelChange={setDataTablePaginationModel}
-            />
-          )}
+          {/* Loading pada tabel */}
+          <DataTable
+            rows={filteredData}
+            columns={columns}
+            initialPageSize={entriesPerPage}
+            pageSizeOptions={[5, 10, 25, 50, 100]}
+            height={500}
+            emptyRowsMessage="Tidak ada data tersedia"
+            paginationModel={dataTablePaginationModel}
+            onPaginationModelChange={setDataTablePaginationModel}
+            loading={loading || refreshing} // <-- Loading table saat loading/refreshing
+          />
         </div>
       </div>
 

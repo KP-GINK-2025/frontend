@@ -6,11 +6,20 @@ import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import DataTable from "../../../../components/DataTable";
 import AddSubUnitModal from "./AddSubUnitModal";
 import Swal from "sweetalert2";
+// Import the export handler
+import {
+  handleExport as exportHandler,
+  commonFormatters,
+  createExportConfig,
+} from "../../../../handlers/exportHandler";
 
 const SubUnitPage = () => {
   const [subUnitData, setSubUnitData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(true);
+  const [exporting, setExporting] = useState(false); // Add exporting state
   const [totalRows, setTotalRows] = useState(0);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Filter and search state
   const [searchTerm, setSearchTerm] = useState("");
@@ -30,7 +39,6 @@ const SubUnitPage = () => {
     page: 0,
     pageSize: 10,
   });
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Debounce search input
   useEffect(() => {
@@ -123,7 +131,7 @@ const SubUnitPage = () => {
   useEffect(() => {
     const fetchSubUnitData = async () => {
       setLoading(true);
-
+      setRefreshing(true);
       try {
         const params = new URLSearchParams({
           page: paginationModel.page + 1,
@@ -135,10 +143,8 @@ const SubUnitPage = () => {
         }
 
         if (selectedUnit) {
-          // Jika unit dipilih, ini sudah paling spesifik
           params.append("unit_id", selectedUnit);
         } else if (selectedBidang) {
-          // Jika hanya bidang yang dipilih, baru gunakan bidang_id
           params.append("bidang_id", selectedBidang);
         }
 
@@ -154,6 +160,7 @@ const SubUnitPage = () => {
         setTotalRows(0);
       } finally {
         setLoading(false);
+        setRefreshing(false);
       }
     };
 
@@ -166,13 +173,148 @@ const SubUnitPage = () => {
     refreshTrigger,
   ]);
 
-  // Event handlers
-  const handleRefresh = () => {
-    setRefreshTrigger((prev) => prev + 1);
+  // Fetch all subunit data for export
+  const fetchAllSubUnitData = async () => {
+    try {
+      const params = new URLSearchParams({
+        per_page: 10000, // Large number to get all data
+      });
+
+      if (debouncedSearchTerm) {
+        params.append("search", debouncedSearchTerm);
+      }
+
+      if (selectedUnit) {
+        params.append("unit_id", selectedUnit);
+      } else if (selectedBidang) {
+        params.append("bidang_id", selectedBidang);
+      }
+
+      const response = await api.get(
+        `/klasifikasi-instansi/subunit?${params.toString()}`
+      );
+
+      return response.data.data;
+    } catch (error) {
+      console.error("Failed to fetch all subunit data:", error);
+      throw error;
+    }
   };
 
-  const handleExport = () => {
-    console.log("Exporting subunit data...");
+  // Event handlers
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      setSearchTerm("");
+      setSelectedBidang("");
+      setSelectedUnit("");
+      setPaginationModel((prev) => ({ ...prev, page: 0 }));
+      setRefreshTrigger((prev) => prev + 1);
+
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data berhasil dimuat ulang.",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Gagal memuat ulang data",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Updated export handler
+  const handleExport = async () => {
+    // Define export columns configuration
+    const exportColumns = [
+      {
+        field: "no",
+        headerName: "No",
+        formatter: (value, item, index) => index + 1,
+      },
+      {
+        field: "provinsi",
+        headerName: "Provinsi",
+        formatter: (value, item) => {
+          const provinsi = item.unit?.bidang?.kabupaten_kota?.provinsi;
+          return provinsi
+            ? `${provinsi.kode_provinsi} - ${provinsi.nama_provinsi}`
+            : "N/A";
+        },
+      },
+      {
+        field: "kabupaten_kota",
+        headerName: "Kabupaten/Kota",
+        formatter: (value, item) => {
+          const kabKot = item.unit?.bidang?.kabupaten_kota;
+          return kabKot
+            ? `${kabKot.kode_kabupaten_kota} - ${kabKot.nama_kabupaten_kota}`
+            : "N/A";
+        },
+      },
+      {
+        field: "bidang",
+        headerName: "Bidang",
+        formatter: (value, item) => {
+          const bidang = item.unit?.bidang;
+          return bidang
+            ? `${bidang.kode_bidang} - ${bidang.nama_bidang}`
+            : "N/A";
+        },
+      },
+      {
+        field: "unit",
+        headerName: "Unit",
+        formatter: (value, item) => {
+          const unit = item.unit;
+          return unit ? `${unit.kode_unit} - ${unit.nama_unit}` : "N/A";
+        },
+      },
+      {
+        field: "kode_sub_unit",
+        headerName: "Kode Sub Unit",
+      },
+      {
+        field: "nama_sub_unit",
+        headerName: "Nama Sub Unit",
+      },
+      {
+        field: "kode",
+        headerName: "Kode",
+      },
+    ];
+
+    // Create export configuration
+    const exportConfig = {
+      fetchDataFunction: fetchAllSubUnitData,
+      columns: exportColumns,
+      filename: "daftar-sub-unit",
+      sheetName: "Data Sub Unit",
+      setExporting,
+    };
+
+    // Execute export
+    try {
+      await exportHandler(exportConfig);
+    } catch (error) {
+      console.error("Export failed:", error);
+    }
   };
 
   const handleOpenAddModal = () => {
@@ -255,13 +397,13 @@ const SubUnitPage = () => {
 
   const handleDeleteClick = async (id) => {
     const result = await Swal.fire({
-      title: "Yakin ingin menghapus data ini?",
-      text: "Data yang dihapus tidak dapat dikembalikan.",
+      title: "Apakah Anda yakin?",
+      text: "Data yang dihapus tidak dapat dikembalikan!",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#e53935",
-      cancelButtonColor: "#aaa",
-      confirmButtonText: "Ya, hapus",
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Ya, hapus!",
       cancelButtonText: "Batal",
     });
 
@@ -296,7 +438,7 @@ const SubUnitPage = () => {
       width: 150,
       sortable: false,
       renderCell: (params) => (
-        <div className="flex gap-2 items-center">
+        <div className="flex items-center gap-2 h-full">
           <button
             onClick={() => handleEditClick(params.row.id)}
             className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
@@ -395,9 +537,11 @@ const SubUnitPage = () => {
         <div className="flex justify-end mt-4 mb-4">
           <button
             onClick={handleExport}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+            disabled={exporting}
+            className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
           >
-            <Download size={16} /> Export
+            <Download size={16} className={exporting ? "animate-pulse" : ""} />
+            {exporting ? "Exporting..." : "Export"}
           </button>
         </div>
 
@@ -411,9 +555,14 @@ const SubUnitPage = () => {
             <div className="flex gap-3">
               <button
                 onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+                disabled={refreshing}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
               >
-                <RefreshCw size={16} /> Refresh
+                <RefreshCw
+                  size={16}
+                  className={refreshing ? "animate-spin" : ""}
+                />
+                Refresh
               </button>
               <button
                 onClick={handleOpenAddModal}
@@ -495,10 +644,10 @@ const SubUnitPage = () => {
               />
               <input
                 type="text"
-                placeholder="Search"
+                placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
@@ -517,7 +666,7 @@ const SubUnitPage = () => {
             disableRowSelectionOnClick
             hideFooterSelectedRowCount
             height={500}
-            emptyRowsMessage="Tidak ada data sub unit yang tersedia"
+            emptyRowsMessage="Tidak ada data tersedia"
           />
         </div>
       </div>

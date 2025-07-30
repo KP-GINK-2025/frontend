@@ -7,11 +7,20 @@ import DataTable from "../../../../components/DataTable";
 import AddUnitModal from "./AddUnitModal";
 import Buttons from "../../../../components/Buttons";
 import Swal from "sweetalert2";
+import {
+  handleExport as exportHandler,
+  commonFormatters,
+  createExportConfig,
+} from "../../../../handlers/exportHandler";
 
 const UnitPage = () => {
   const [unitData, setUnitData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(true);
+  const [exporting, setExporting] = useState(false); // Add exporting state
   const [totalRows, setTotalRows] = useState(0);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [allUnitData, setAllUnitData] = useState([]); // Store all data for export
 
   // Filter and search state
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,7 +37,6 @@ const UnitPage = () => {
     page: 0,
     pageSize: 10,
   });
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Debounce search input
   useEffect(() => {
@@ -80,7 +88,7 @@ const UnitPage = () => {
   useEffect(() => {
     const fetchUnitData = async () => {
       setLoading(true);
-
+      setRefreshing(true);
       try {
         const params = new URLSearchParams({
           page: paginationModel.page + 1,
@@ -107,19 +115,144 @@ const UnitPage = () => {
         setTotalRows(0);
       } finally {
         setLoading(false);
+        setRefreshing(false);
       }
     };
 
     fetchUnitData();
   }, [paginationModel, debouncedSearchTerm, selectedBidang, refreshTrigger]);
 
-  // Event handlers
-  const handleRefresh = () => {
-    setRefreshTrigger((prev) => prev + 1);
+  // Fetch all unit data for export
+  const fetchAllUnitData = async () => {
+    try {
+      const params = new URLSearchParams({
+        per_page: 10000, // Large number to get all data
+      });
+
+      if (debouncedSearchTerm) {
+        params.append("search", debouncedSearchTerm);
+      }
+
+      if (selectedBidang) {
+        params.append("bidang_id", selectedBidang);
+      }
+
+      const response = await api.get(
+        `/klasifikasi-instansi/unit?${params.toString()}`
+      );
+
+      return response.data.data;
+    } catch (error) {
+      console.error("Failed to fetch all unit data:", error);
+      throw error;
+    }
   };
 
-  const handleExport = () => {
-    console.log("Exporting unit data...");
+  // Event handlers
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      setSearchTerm("");
+      setSelectedBidang("");
+      setPaginationModel((prev) => ({ ...prev, page: 0 }));
+      setRefreshTrigger((prev) => prev + 1);
+
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data berhasil dimuat ulang.",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Gagal memuat ulang data",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Updated export handler
+  const handleExport = async () => {
+    // Define export columns configuration
+    const exportColumns = [
+      {
+        field: "no",
+        headerName: "No",
+        formatter: (value, item, index) => index + 1,
+      },
+      {
+        field: "provinsi",
+        headerName: "Provinsi",
+        formatter: (value, item) => {
+          const provinsi = item.bidang?.kabupaten_kota?.provinsi;
+          return provinsi
+            ? `${provinsi.kode_provinsi} - ${provinsi.nama_provinsi}`
+            : "N/A";
+        },
+      },
+      {
+        field: "kabupaten_kota",
+        headerName: "Kabupaten/Kota",
+        formatter: (value, item) => {
+          const kabKot = item.bidang?.kabupaten_kota;
+          return kabKot
+            ? `${kabKot.kode_kabupaten_kota} - ${kabKot.nama_kabupaten_kota}`
+            : "N/A";
+        },
+      },
+      {
+        field: "bidang",
+        headerName: "Bidang",
+        formatter: (value, item) => {
+          const bidang = item.bidang;
+          return bidang
+            ? `${bidang.kode_bidang} - ${bidang.nama_bidang}`
+            : "N/A";
+        },
+      },
+      {
+        field: "kode_unit",
+        headerName: "Kode Unit",
+      },
+      {
+        field: "nama_unit",
+        headerName: "Nama Unit",
+      },
+      {
+        field: "kode",
+        headerName: "Kode",
+      },
+    ];
+
+    // Create export configuration
+    const exportConfig = {
+      fetchDataFunction: fetchAllUnitData,
+      columns: exportColumns,
+      filename: "daftar-unit",
+      sheetName: "Data Unit",
+      setExporting,
+    };
+
+    // Execute export
+    try {
+      await exportHandler(exportConfig);
+    } catch (error) {
+      console.error("Export failed:", error);
+    }
   };
 
   const handleOpenAddModal = () => {
@@ -199,13 +332,13 @@ const UnitPage = () => {
 
   const handleDeleteClick = async (id) => {
     const result = await Swal.fire({
-      title: "Yakin ingin menghapus data ini?",
-      text: "Data yang dihapus tidak dapat dikembalikan.",
+      title: "Apakah Anda yakin?",
+      text: "Data yang dihapus tidak dapat dikembalikan!",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#e53935",
-      cancelButtonColor: "#aaa",
-      confirmButtonText: "Ya, hapus",
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Ya, hapus!",
       cancelButtonText: "Batal",
     });
 
@@ -240,7 +373,7 @@ const UnitPage = () => {
       width: 150,
       sortable: false,
       renderCell: (params) => (
-        <div className="flex gap-2 items-center">
+        <div className="flex items-center gap-2 h-full">
           <button
             onClick={() => handleEditClick(params.row.id)}
             className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
@@ -398,10 +531,10 @@ const UnitPage = () => {
               />
               <input
                 type="text"
-                placeholder="Search"
+                placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
@@ -420,7 +553,7 @@ const UnitPage = () => {
             disableRowSelectionOnClick
             hideFooterSelectedRowCount
             height={500}
-            emptyRowsMessage="Tidak ada data unit yang tersedia"
+            emptyRowsMessage="Tidak ada data tersedia"
           />
         </div>
       </div>

@@ -160,7 +160,7 @@ const LoginPage = () => {
                 onChange={(e) => setUsername(e.target.value)}
                 onKeyDown={handleUsernameKeyDown}
                 ref={usernameInputRef}
-                className={`w-full pl-12 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B53C3C] focus:border-transparent ${
+                className={`w-full pl-12 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                   usernameError ? "border-[#B53C3C]" : "border-gray-300"
                 }`}
               />
@@ -181,7 +181,7 @@ const LoginPage = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyDown={handlePasswordKeyDown}
                 ref={passwordInputRef}
-                className={`w-full pl-12 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B53C3C] focus:border-transparent ${
+                className={`w-full pl-12 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                   passwordError ? "border-[#B53C3C]" : "border-gray-300"
                 }`}
               />
