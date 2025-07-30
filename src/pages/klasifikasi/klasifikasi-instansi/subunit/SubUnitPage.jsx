@@ -6,11 +6,18 @@ import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import DataTable from "../../../../components/DataTable";
 import AddSubUnitModal from "./AddSubUnitModal";
 import Swal from "sweetalert2";
+// Import the export handler
+import {
+  handleExport as exportHandler,
+  commonFormatters,
+  createExportConfig,
+} from "../../../../handlers/exportHandler";
 
 const SubUnitPage = () => {
   const [subUnitData, setSubUnitData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(true);
+  const [exporting, setExporting] = useState(false); // Add exporting state
   const [totalRows, setTotalRows] = useState(0);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -122,7 +129,7 @@ const SubUnitPage = () => {
   useEffect(() => {
     const fetchSubUnitData = async () => {
       setLoading(true);
-      setRefreshing(true); // Spinner aktif juga saat fetch pertama kali
+      setRefreshing(true);
       try {
         const params = new URLSearchParams({
           page: paginationModel.page + 1,
@@ -151,7 +158,7 @@ const SubUnitPage = () => {
         setTotalRows(0);
       } finally {
         setLoading(false);
-        setRefreshing(false); // Matikan spinner setelah data selesai di-load
+        setRefreshing(false);
       }
     };
 
@@ -164,17 +171,44 @@ const SubUnitPage = () => {
     refreshTrigger,
   ]);
 
+  // Fetch all subunit data for export
+  const fetchAllSubUnitData = async () => {
+    try {
+      const params = new URLSearchParams({
+        per_page: 10000, // Large number to get all data
+      });
+
+      if (debouncedSearchTerm) {
+        params.append("search", debouncedSearchTerm);
+      }
+
+      if (selectedUnit) {
+        params.append("unit_id", selectedUnit);
+      } else if (selectedBidang) {
+        params.append("bidang_id", selectedBidang);
+      }
+
+      const response = await api.get(
+        `/klasifikasi-instansi/subunit?${params.toString()}`
+      );
+
+      return response.data.data;
+    } catch (error) {
+      console.error("Failed to fetch all subunit data:", error);
+      throw error;
+    }
+  };
+
   // Event handlers
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      setSearchTerm(""); // Reset pencarian
-      setSelectedBidang(""); // Reset filter bidang
-      setSelectedUnit(""); // Reset filter unit
-      setPaginationModel((prev) => ({ ...prev, page: 0 })); // Reset halaman
+      setSearchTerm("");
+      setSelectedBidang("");
+      setSelectedUnit("");
+      setPaginationModel((prev) => ({ ...prev, page: 0 }));
       setRefreshTrigger((prev) => prev + 1);
 
-      // Simulasi delay agar animasi terlihat
       await new Promise((resolve) => setTimeout(resolve, 800));
 
       Swal.fire({
@@ -203,8 +237,82 @@ const SubUnitPage = () => {
     }
   };
 
-  const handleExport = () => {
-    console.log("Exporting subunit data...");
+  // Updated export handler
+  const handleExport = async () => {
+    // Define export columns configuration
+    const exportColumns = [
+      {
+        field: "no",
+        headerName: "No",
+        formatter: (value, item, index) => index + 1,
+      },
+      {
+        field: "provinsi",
+        headerName: "Provinsi",
+        formatter: (value, item) => {
+          const provinsi = item.unit?.bidang?.kabupaten_kota?.provinsi;
+          return provinsi
+            ? `${provinsi.kode_provinsi} - ${provinsi.nama_provinsi}`
+            : "N/A";
+        },
+      },
+      {
+        field: "kabupaten_kota",
+        headerName: "Kabupaten/Kota",
+        formatter: (value, item) => {
+          const kabKot = item.unit?.bidang?.kabupaten_kota;
+          return kabKot
+            ? `${kabKot.kode_kabupaten_kota} - ${kabKot.nama_kabupaten_kota}`
+            : "N/A";
+        },
+      },
+      {
+        field: "bidang",
+        headerName: "Bidang",
+        formatter: (value, item) => {
+          const bidang = item.unit?.bidang;
+          return bidang
+            ? `${bidang.kode_bidang} - ${bidang.nama_bidang}`
+            : "N/A";
+        },
+      },
+      {
+        field: "unit",
+        headerName: "Unit",
+        formatter: (value, item) => {
+          const unit = item.unit;
+          return unit ? `${unit.kode_unit} - ${unit.nama_unit}` : "N/A";
+        },
+      },
+      {
+        field: "kode_sub_unit",
+        headerName: "Kode Sub Unit",
+      },
+      {
+        field: "nama_sub_unit",
+        headerName: "Nama Sub Unit",
+      },
+      {
+        field: "kode",
+        headerName: "Kode",
+      },
+    ];
+
+    // Create export configuration
+    const exportConfig = {
+      fetchDataFunction: fetchAllSubUnitData,
+      columns: exportColumns,
+      filename: "daftar-sub-unit",
+      sheetName: "Data Sub Unit",
+      setExporting,
+    };
+
+    // Execute export
+    try {
+      await exportHandler(exportConfig);
+    } catch (error) {
+      console.error("Export failed:", error);
+    }
   };
 
   const handleOpenAddModal = () => {
@@ -415,9 +523,11 @@ const SubUnitPage = () => {
         <div className="flex justify-end mt-4 mb-4">
           <button
             onClick={handleExport}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+            disabled={exporting}
+            className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
           >
-            <Download size={16} /> Export
+            <Download size={16} className={exporting ? "animate-pulse" : ""} />
+            {exporting ? "Exporting..." : "Export"}
           </button>
         </div>
 
