@@ -5,6 +5,7 @@ import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import DataTable from "../../../../components/DataTable";
 import AddUnitModal from "./AddUnitModal";
+import Buttons from "../../../../components/Buttons";
 import Swal from "sweetalert2";
 import {
   handleExport as exportHandler,
@@ -75,7 +76,8 @@ const UnitPage = () => {
 
         setBidangList(sortedBidang);
       } catch (error) {
-        console.error("Failed to fetch bidang list:", error);
+        console.error("Gagal mendapatkan bidang list:", error);
+        setBidangList([]);
       }
     };
 
@@ -108,7 +110,7 @@ const UnitPage = () => {
         setUnitData(response.data.data);
         setTotalRows(response.data.meta.total);
       } catch (error) {
-        console.error("Failed to fetch unit data:", error);
+        console.error("Gagal mendapatkan unit data:", error);
         setUnitData([]);
         setTotalRows(0);
       } finally {
@@ -293,18 +295,30 @@ const UnitPage = () => {
       }
       handleRefresh();
       handleCloseAddModal();
-    } catch (error) {
-      console.error(
-        "Gagal simpan unit:",
-        error.response?.data || error.message
-      );
-      Swal.fire({
-        title: "Gagal",
-        text: "Data tidak dapat disimpan.",
-        icon: "error",
-        timer: 1500,
-        showConfirmButton: false,
-      });
+    } catch (err) {
+      console.error("Gagal menyimpan:", err);
+
+      const errorData = err.response?.data;
+
+      if (errorData?.errors) {
+        const errorMessages = Object.values(errorData.errors).flat().join("\n");
+        Swal.fire({
+          title: "Gagal",
+          text: errorMessages,
+          icon: "error",
+        });
+      } else {
+        Swal.fire({
+          title: "Gagal",
+          text: "Terjadi kesalahan saat menyimpan data.",
+          icon: "error",
+          buttonsStyling: false,
+          customClass: {
+            confirmButton:
+              "bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500",
+          },
+        });
+      }
     }
   };
 
@@ -446,14 +460,9 @@ const UnitPage = () => {
 
         {/* Export Button */}
         <div className="flex justify-end mt-4 mb-4">
-          <button
-            onClick={handleExport}
-            disabled={exporting}
-            className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
-          >
-            <Download size={16} className={exporting ? "animate-pulse" : ""} />
-            {exporting ? "Exporting..." : "Export"}
-          </button>
+          <Buttons variant="danger" onClick={handleExport}>
+            <Download size={16} /> Export
+          </Buttons>
         </div>
 
         {/* Main Content */}
@@ -462,23 +471,12 @@ const UnitPage = () => {
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-gray-800">Daftar Unit</h1>
             <div className="flex gap-3">
-              <button
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
-              >
-                <RefreshCw
-                  size={16}
-                  className={refreshing ? "animate-spin" : ""}
-                />
-                Refresh
-              </button>
-              <button
-                onClick={handleOpenAddModal}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
-              >
+              <Buttons variant="info" onClick={handleRefresh}>
+                <RefreshCw size={16} /> Refresh
+              </Buttons>
+              <Buttons variant="success" onClick={handleOpenAddModal}>
                 <Plus size={16} /> Add Unit
-              </button>
+              </Buttons>
             </div>
           </div>
 

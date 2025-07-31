@@ -28,8 +28,10 @@ const UpbPage = () => {
   const [bidangList, setBidangList] = useState([]);
   const [selectedUnit, setSelectedUnit] = useState("");
   const [unitList, setUnitList] = useState([]);
+  const [loadingUnits, setLoadingUnits] = useState(false);
   const [selectedSubUnit, setSelectedSubUnit] = useState("");
   const [subUnitList, setSubUnitList] = useState([]);
+  const [loadingSubUnits, setLoadingSubUnits] = useState(false);
 
   // Modal state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -85,17 +87,25 @@ const UpbPage = () => {
         setBidangList(sortedBidang);
       } catch (error) {
         console.error("Gagal mendapatkan bidang list:", error);
+        setBidangList([]);
       }
     };
 
     fetchBidangList();
   }, []);
 
+  // Fetch unit list (static data)
   useEffect(() => {
+    if (!selectedBidang) {
+      setUnitList([]);
+      return;
+    }
+
     const fetchUnitList = async () => {
+      setLoadingUnits(true);
       try {
         const response = await api.get("/klasifikasi-instansi/unit", {
-          params: { per_page: 1000 },
+          params: { per_page: 1000, bidang_id: selectedBidang },
         });
 
         const sortedUnit = response.data.data
@@ -113,17 +123,27 @@ const UpbPage = () => {
         setUnitList(sortedUnit);
       } catch (error) {
         console.error("Gagal mendapatkan unit list:", error);
+        setUnitList([]);
+      } finally {
+        setLoadingUnits(false);
       }
     };
 
     fetchUnitList();
-  }, []);
+  }, [selectedBidang]);
 
+  // Fetch subunit list (static data)
   useEffect(() => {
+    if (!selectedUnit) {
+      setSubUnitList([]);
+      return;
+    }
+
     const fetchSubUnitList = async () => {
+      setLoadingSubUnits(true);
       try {
         const response = await api.get("/klasifikasi-instansi/subunit", {
-          params: { per_page: 1000 },
+          params: { per_page: 1000, unit_id: selectedUnit },
         });
 
         const sortedSubUnit = response.data.data
@@ -141,11 +161,14 @@ const UpbPage = () => {
         setSubUnitList(sortedSubUnit);
       } catch (error) {
         console.error("Gagal mendapatkan subunit list:", error);
+        setSubUnitList([]);
+      } finally {
+        setLoadingSubUnits(false);
       }
     };
 
     fetchSubUnitList();
-  }, []);
+  }, [selectedUnit]);
 
   // Fetch upb data
   useEffect(() => {
@@ -162,16 +185,12 @@ const UpbPage = () => {
           params.append("search", debouncedSearchTerm);
         }
 
-        if (selectedBidang) {
-          params.append("bidang_id", selectedBidang);
-        }
-
-        if (selectedUnit) {
-          params.append("unit_id", selectedUnit);
-        }
-
         if (selectedSubUnit) {
           params.append("sub_unit_id", selectedSubUnit);
+        } else if (selectedUnit) {
+          params.append("unit_id", selectedUnit);
+        } else if (selectedBidang) {
+          params.append("bidang_id", selectedBidang);
         }
 
         const response = await api.get(
@@ -402,15 +421,30 @@ const UpbPage = () => {
       }
       handleRefresh();
       handleCloseAddModal();
-    } catch (error) {
-      console.error("Gagal simpan upb:", error.response?.data || error.message);
-      Swal.fire({
-        title: "Gagal",
-        text: "Data tidak dapat disimpan.",
-        icon: "error",
-        timer: 1500,
-        showConfirmButton: false,
-      });
+    } catch (err) {
+      console.error("Gagal menyimpan:", err);
+
+      const errorData = err.response?.data;
+
+      if (errorData?.errors) {
+        const errorMessages = Object.values(errorData.errors).flat().join("\n");
+        Swal.fire({
+          title: "Gagal",
+          text: errorMessages,
+          icon: "error",
+        });
+      } else {
+        Swal.fire({
+          title: "Gagal",
+          text: "Terjadi kesalahan saat menyimpan data.",
+          icon: "error",
+          buttonsStyling: false,
+          customClass: {
+            confirmButton:
+              "bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500",
+          },
+        });
+      }
     }
   };
 
@@ -616,38 +650,55 @@ const UpbPage = () => {
             {/* Left: Filters */}
             <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end">
               {/* Bidang Filter */}
-              <div className="flex items-center gap-2">
-                <select
-                  value={selectedBidang}
-                  onChange={(e) => setSelectedBidang(e.target.value)}
-                  className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto cursor-pointer"
-                >
-                  <option value="">-- Semua Bidang --</option>
-                  {bidangList.map((bidang) => (
-                    <option key={bidang.id} value={bidang.id}>
-                      {bidang.kode_bidang} - {bidang.nama_bidang}
-                    </option>
-                  ))}
-                </select>
-              </div>
               <select
-                value={selectedUnit}
-                onChange={(e) => setSelectedUnit(e.target.value)}
+                value={selectedBidang}
+                onChange={(e) => {
+                  setSelectedBidang(e.target.value);
+                  setSelectedUnit("");
+                  setSelectedSubUnit("");
+                }}
                 className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto cursor-pointer"
               >
-                <option value="">-- Semua Unit --</option>
+                <option value="">-- Semua Bidang --</option>
+                {bidangList.map((bidang) => (
+                  <option key={bidang.id} value={bidang.id}>
+                    {bidang.kode_bidang} - {bidang.nama_bidang}
+                  </option>
+                ))}
+              </select>
+
+              {/* Unit Filter */}
+              <select
+                value={selectedUnit}
+                onChange={(e) => {
+                  setSelectedUnit(e.target.value);
+                  setSelectedSubUnit("");
+                }}
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto cursor-pointer"
+                disabled={!selectedBidang || loadingUnits}
+              >
+                <option value="">
+                  {loadingUnits ? "Memuat..." : "-- Semua Unit --"}
+                </option>
                 {unitList.map((unit) => (
                   <option key={unit.id} value={unit.id}>
                     {unit.kode_unit} - {unit.nama_unit}
                   </option>
                 ))}
               </select>
+
+              {/* SubUnit Filter */}
               <select
                 value={selectedSubUnit}
-                onChange={(e) => setSelectedSubUnit(e.target.value)}
+                onChange={(e) => {
+                  setSelectedSubUnit(e.target.value);
+                }}
                 className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto cursor-pointer"
+                disabled={!selectedUnit || loadingSubUnits}
               >
-                <option value="">-- Semua Sub Unit --</option>
+                <option value="">
+                  {loadingSubUnits ? "Memuat..." : "-- Semua Sub Unit --"}
+                </option>
                 {subUnitList.map((subUnit) => (
                   <option key={subUnit.id} value={subUnit.id}>
                     {subUnit.kode_sub_unit} - {subUnit.nama_sub_unit}
