@@ -6,7 +6,6 @@ import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import DataTable from "../../../../components/DataTable";
 import AddUpbModal from "./AddUpbModal";
 import Swal from "sweetalert2";
-// Import the export handler
 import {
   handleExport as exportHandler,
   commonFormatters,
@@ -462,10 +461,16 @@ const UpbPage = () => {
       text: "Data yang dihapus tidak dapat dikembalikan!",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
       confirmButtonText: "Ya, hapus!",
       cancelButtonText: "Batal",
+      buttonsStyling: false,
+      customClass: {
+        confirmButton:
+          "bg-red-600 text-white px-4 py-2 mr-1 rounded-md hover:bg-red-700 hover:outline-none cursor-pointer",
+        cancelButton:
+          "bg-gray-200 text-gray-700 px-4 py-2 ml-1 rounded-md hover:bg-gray-300 hover:outline-none cursor-pointer",
+        popup: "rounded-lg shadow-lg",
+      },
     });
 
     if (!result.isConfirmed) return;

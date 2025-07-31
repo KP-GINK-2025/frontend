@@ -6,12 +6,14 @@ import DataTable from "../../../../components/DataTable";
 import AddSubSubRincianModal from "./AddSubSubRincianModal";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import Swal from "sweetalert2";
+import { handleExport } from "../../../../handlers/exportHandler"; // Konsisten: Import handleExport
 
 const SubSubRincianPage = () => {
   // Main data states
   const [subSubRincianData, setSubSubRincianData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(true);
+  const [exporting, setExporting] = useState(false); // State untuk status exporting
 
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState("");
@@ -168,6 +170,100 @@ const SubSubRincianPage = () => {
     return matchesSearch && matchesFilters;
   });
 
+  // Fetch all data for export, applying current filters
+  const fetchAllDataForExport = async () => {
+    try {
+      const response = await api.get("/klasifikasi-aset/sub-sub-rincian-aset");
+      const mappedData = mapSubSubRincianData(response.data.data);
+
+      // Apply same filtering logic as the display
+      return mappedData.filter((item) => {
+        const matchesSearch = [
+          item.aset1,
+          item.aset2,
+          item.aset3,
+          item.aset4,
+          item.aset5,
+          item.aset6,
+          item.kodeAset7,
+          item.namaAset7,
+          item.kode,
+        ].some((field) =>
+          field?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+
+        const matchesFilters = [
+          selectedAsetSatu === "" || item.aset1 === selectedAsetSatu,
+          selectedAsetDua === "" || item.aset2 === selectedAsetDua,
+          selectedAsetTiga === "" || item.aset3 === selectedAsetTiga,
+          selectedAsetEmpat === "" || item.aset4 === selectedAsetEmpat,
+          selectedAsetLima === "" || item.aset5 === selectedAsetLima,
+          selectedAsetEnam === "" || item.aset6 === selectedAsetEnam,
+        ].every(Boolean);
+
+        return matchesSearch && matchesFilters;
+      });
+    } catch (error) {
+      console.error("Gagal mengambil data untuk export:", error);
+      return [];
+    }
+  };
+
+  const handleExportData = async () => {
+    const exportColumns = [
+      {
+        field: "no",
+        headerName: "No",
+      },
+      {
+        field: "aset1",
+        headerName: "Aset 1",
+      },
+      {
+        field: "aset2",
+        headerName: "Aset 2",
+      },
+      {
+        field: "aset3",
+        headerName: "Aset 3",
+      },
+      {
+        field: "aset4",
+        headerName: "Aset 4",
+      },
+      {
+        field: "aset5",
+        headerName: "Aset 5",
+      },
+      {
+        field: "aset6",
+        headerName: "Aset 6",
+      },
+      {
+        field: "kodeAset7",
+        headerName: "Kode Aset 7",
+      },
+      {
+        field: "namaAset7",
+        headerName: "Nama Aset 7",
+      },
+      {
+        field: "kode",
+        headerName: "Kode",
+      },
+    ];
+
+    const exportConfig = {
+      fetchDataFunction: fetchAllDataForExport,
+      columns: exportColumns,
+      filename: "klasifikasi-aset-sub-sub-rincian",
+      sheetName: "Aset 7",
+      setExporting,
+    };
+
+    await handleExport(exportConfig);
+  };
+
   // Alert helpers
   const showSuccessAlert = (message) => {
     Swal.fire({
@@ -208,10 +304,6 @@ const SubSubRincianPage = () => {
   };
 
   // Event handlers
-  const handleExport = () => {
-    console.log("Exporting sub sub rincian data...");
-  };
-
   const handleRefresh = async () => {
     setRefreshing(true);
     setLoading(true);
@@ -276,10 +368,16 @@ const SubSubRincianPage = () => {
       text: "Data yang dihapus tidak dapat dikembalikan!",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
       confirmButtonText: "Ya, hapus!",
       cancelButtonText: "Batal",
+      buttonsStyling: false,
+      customClass: {
+        confirmButton:
+          "bg-red-600 text-white px-4 py-2 mr-1 rounded-md hover:bg-red-700 hover:outline-none cursor-pointer",
+        cancelButton:
+          "bg-gray-200 text-gray-700 px-4 py-2 ml-1 rounded-md hover:bg-gray-300 hover:outline-none cursor-pointer",
+        popup: "rounded-lg shadow-lg",
+      },
     });
 
     if (result.isConfirmed) {
@@ -367,10 +465,13 @@ const SubSubRincianPage = () => {
         {/* Export Button */}
         <div className="flex justify-end mt-4 mb-4">
           <button
-            onClick={handleExport}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+            onClick={handleExportData} // Menggunakan handleExportData
+            disabled={exporting} // Menonaktifkan tombol saat exporting
+            className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
           >
-            <Download size={16} /> Export
+            <Download size={16} className={exporting ? "animate-spin" : ""} />{" "}
+            {/* Spinner saat exporting */}
+            {exporting ? "Exporting..." : "Export"}
           </button>
         </div>
 
