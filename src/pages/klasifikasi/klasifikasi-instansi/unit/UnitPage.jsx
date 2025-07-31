@@ -17,10 +17,9 @@ const UnitPage = () => {
   const [unitData, setUnitData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(true);
-  const [exporting, setExporting] = useState(false); // Add exporting state
+  const [exporting, setExporting] = useState(false);
   const [totalRows, setTotalRows] = useState(0);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [allUnitData, setAllUnitData] = useState([]); // Store all data for export
 
   // Filter and search state
   const [searchTerm, setSearchTerm] = useState("");
@@ -152,13 +151,8 @@ const UnitPage = () => {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      setSearchTerm("");
-      setSelectedBidang("");
-      setPaginationModel((prev) => ({ ...prev, page: 0 }));
       setRefreshTrigger((prev) => prev + 1);
-
       await new Promise((resolve) => setTimeout(resolve, 800));
-
       Swal.fire({
         icon: "success",
         title: "Berhasil!",
@@ -460,8 +454,9 @@ const UnitPage = () => {
 
         {/* Export Button */}
         <div className="flex justify-end mt-4 mb-4">
-          <Buttons variant="danger" onClick={handleExport}>
-            <Download size={16} /> Export
+          <Buttons variant="danger" onClick={handleExport} disabled={exporting}>
+            <Download size={16} className={exporting ? "animate-pulse" : ""} />
+            {exporting ? "Exporting..." : "Export"}
           </Buttons>
         </div>
 
@@ -471,8 +466,16 @@ const UnitPage = () => {
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-gray-800">Daftar Unit</h1>
             <div className="flex gap-3">
-              <Buttons variant="info" onClick={handleRefresh}>
-                <RefreshCw size={16} /> Refresh
+              <Buttons
+                variant="info"
+                onClick={handleRefresh}
+                disabled={refreshing}
+              >
+                <RefreshCw
+                  size={16}
+                  className={refreshing ? "animate-spin" : ""}
+                />
+                Refresh
               </Buttons>
               <Buttons variant="success" onClick={handleOpenAddModal}>
                 <Plus size={16} /> Add Unit
