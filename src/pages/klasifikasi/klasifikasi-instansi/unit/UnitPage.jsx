@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import api from "../../../../api/axios";
 import Navbar from "../../../../components/Navbar";
 import Breadcrumbs from "../../../../components/Breadcrumbs";
-import { Search, Download, RefreshCw, Plus } from "lucide-react";
+import { Search, Upload, RefreshCw, Plus } from "lucide-react";
 import DataTable from "../../../../components/DataTable";
 import AddUnitModal from "./AddUnitModal";
 import Buttons from "../../../../components/Buttons";
@@ -142,7 +142,7 @@ const UnitPage = () => {
 
       return response.data.data;
     } catch (error) {
-      console.error("Failed to fetch all unit data:", error);
+      console.error("Gagal mendapatkan semua unit data:", error);
       throw error;
     }
   };
@@ -155,7 +155,7 @@ const UnitPage = () => {
       await new Promise((resolve) => setTimeout(resolve, 800));
       Swal.fire({
         icon: "success",
-        title: "Berhasil!",
+        title: "Berhasil",
         text: "Data berhasil dimuat ulang.",
         toast: true,
         position: "top-end",
@@ -166,7 +166,7 @@ const UnitPage = () => {
     } catch (error) {
       Swal.fire({
         icon: "error",
-        title: "Error!",
+        title: "Error",
         text: "Gagal memuat ulang data",
         toast: true,
         position: "top-end",
@@ -245,7 +245,7 @@ const UnitPage = () => {
     try {
       await exportHandler(exportConfig);
     } catch (error) {
-      console.error("Export failed:", error);
+      console.error("Export gagal:", error);
     }
   };
 
@@ -274,7 +274,8 @@ const UnitPage = () => {
           title: "Berhasil Edit",
           text: "Data berhasil diubah.",
           icon: "success",
-          timer: 1500,
+          timer: 2000,
+          timerProgressBar: true,
           showConfirmButton: false,
         });
       } else {
@@ -283,7 +284,8 @@ const UnitPage = () => {
           title: "Berhasil Add",
           text: "Data berhasil ditambah.",
           icon: "success",
-          timer: 1500,
+          timer: 2000,
+          timerProgressBar: true,
           showConfirmButton: false,
         });
       }
@@ -300,6 +302,12 @@ const UnitPage = () => {
           title: "Gagal",
           text: errorMessages,
           icon: "error",
+          buttonsStyling: false,
+          customClass: {
+            confirmButton:
+              "bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 hover:outline-none cursor-pointer",
+            popup: "rounded-lg shadow-lg",
+          },
         });
       } else {
         Swal.fire({
@@ -309,7 +317,8 @@ const UnitPage = () => {
           buttonsStyling: false,
           customClass: {
             confirmButton:
-              "bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500",
+              "bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 hover:outline-none cursor-pointer",
+            popup: "rounded-lg shadow-lg",
           },
         });
       }
@@ -335,7 +344,6 @@ const UnitPage = () => {
       confirmButtonText: "Ya, hapus!",
       cancelButtonText: "Batal",
     });
-
     if (!result.isConfirmed) return;
 
     try {
@@ -345,17 +353,42 @@ const UnitPage = () => {
         title: "Berhasil Delete",
         text: "Data berhasil dihapus.",
         icon: "success",
-        timer: 1500,
+        timer: 2000,
+        timerProgressBar: true,
         showConfirmButton: false,
       });
       handleRefresh();
-    } catch (error) {
-      console.error("Gagal menghapus unit:", error);
-      Swal.fire({
-        title: "Gagal",
-        text: "Terjadi kesalahan saat menghapus data.",
-        icon: "error",
-      });
+    } catch (err) {
+      console.error("Gagal menghapus unit:", err);
+
+      const errorData = err.response?.data;
+
+      if (errorData?.errors) {
+        const errorMessages = Object.values(errorData.errors).flat().join("\n");
+        Swal.fire({
+          title: "Gagal",
+          text: errorMessages,
+          icon: "error",
+          buttonsStyling: false,
+          customClass: {
+            confirmButton:
+              "bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 hover:outline-none cursor-pointer",
+            popup: "rounded-lg shadow-lg",
+          },
+        });
+      } else {
+        Swal.fire({
+          title: "Gagal",
+          text: "Terjadi kesalahan saat menghapus data.",
+          icon: "error",
+          buttonsStyling: false,
+          customClass: {
+            confirmButton:
+              "bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 hover:outline-none cursor-pointer",
+            popup: "rounded-lg shadow-lg",
+          },
+        });
+      }
     }
   };
 
@@ -455,7 +488,7 @@ const UnitPage = () => {
         {/* Export Button */}
         <div className="flex justify-end mt-4 mb-4">
           <Buttons variant="danger" onClick={handleExport} disabled={exporting}>
-            <Download size={16} className={exporting ? "animate-pulse" : ""} />
+            <Upload size={16} className={exporting ? "animate-pulse" : ""} />
             {exporting ? "Exporting..." : "Export"}
           </Buttons>
         </div>

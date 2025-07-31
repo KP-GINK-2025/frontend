@@ -1,103 +1,62 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Swal from "sweetalert2";
 import Buttons from "../../../../components/Buttons";
-import {
-  getProvinsi,
-  getKabupatenByProvinsi,
-  getBidangByKabKot,
-} from "../../../../api/klasifikasiInstansiService";
-import { useHierarchySelector } from "../../../../hooks/useHierarchySelector";
 import SelectForm from "../../../../components/form/SelectForm";
 import InputForm from "../../../../components/form/InputForm";
+import { useUnitForm } from "./useUnitForm";
 
 const AddUnitModal = ({ isOpen, onClose, onSave, initialData }) => {
-  const [kodeUnit, setKodeUnit] = useState("");
-  const [namaUnit, setNamaUnit] = useState("");
-  const [kode, setKode] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
-  const initialProvinsi = useMemo(
-    () =>
-      initialData
-        ? { value: initialData.bidang.kabupaten_kota.provinsi.id }
-        : null,
-    [initialData]
-  );
+  const {
+    formState,
+    handleInputChange,
+    provinsi,
+    kabupaten,
+    bidang,
+    isFormValid,
+    dataToSave,
+  } = useUnitForm(initialData);
 
-  const initialKabupaten = useMemo(
-    () =>
-      initialData ? { value: initialData.bidang.kabupaten_kota.id } : null,
-    [initialData]
-  );
-
-  const initialBidang = useMemo(
-    () => (initialData ? { value: initialData.bidang.id } : null),
-    [initialData]
-  );
-
-  const provinsi = useHierarchySelector({
-    fetcher: getProvinsi,
-    initialData: initialProvinsi,
-  });
-
-  const kabupaten = useHierarchySelector({
-    fetcher: getKabupatenByProvinsi,
-    parentId: provinsi.selectedValue?.value,
-    initialData: initialKabupaten,
-  });
-
-  const bidang = useHierarchySelector({
-    fetcher: getBidangByKabKot,
-    parentId: kabupaten.selectedValue?.value,
-    initialData: initialBidang,
-  });
+  // Debug
+  useEffect(() => {
+    console.log("Provinsi:", provinsi.selectedValue);
+    console.log("Kabupaten:", kabupaten.selectedValue);
+    console.log("Bidang:", bidang.selectedValue);
+  }, [provinsi.selectedValue, kabupaten.selectedValue, bidang.selectedValue]);
 
   useEffect(() => {
-    if (isOpen) {
-      if (initialData) {
-        // Mode Edit
-        setKodeUnit(initialData.kode_unit || "");
-        setNamaUnit(initialData.nama_unit || "");
-        setKode(initialData.kode || "");
-      } else {
-        // Mode Add
-        setKodeUnit("");
-        setNamaUnit("");
-        setKode("");
-        provinsi.reset();
-        kabupaten.reset();
-        bidang.reset();
-      }
-    }
-  }, [isOpen, initialData]);
+    if (!isOpen) setIsSaving(false);
+  }, [isOpen]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (
-      !provinsi.selectedValue ||
-      !kabupaten.selectedValue ||
-      !bidang.selectedValue ||
-      !kodeUnit.trim() ||
-      !namaUnit.trim() ||
-      !kode.trim()
-    ) {
-      Swal.fire({ text: "Harap lengkapi semua field wajib (*)", icon: "info" });
+    if (!isFormValid) {
+      Swal.fire({
+        title: "Form Belum Lengkap",
+        text: "Harap lengkapi semua field yang wajib diisi (*)",
+        icon: "info",
+        buttonsStyling: false,
+        customClass: {
+          confirmButton:
+            "bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 hover:outline-none cursor-pointer",
+          popup: "rounded-lg shadow-lg",
+        },
+      });
       return;
     }
 
-    const dataToSave = {
-      bidang_id: bidang.selectedValue.value,
-      kode_unit: kodeUnit,
-      nama_unit: namaUnit,
-      kode,
-    };
-
     setIsSaving(true);
-    await onSave(
-      initialData ? { ...dataToSave, id: initialData.id } : dataToSave
-    );
-    setIsSaving(false);
+    try {
+      await onSave(
+        initialData ? { ...dataToSave, id: initialData.id } : dataToSave
+      );
+    } catch (error) {
+      console.error("Proses penyimpanan gagal di level modal:", error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -186,25 +145,28 @@ const AddUnitModal = ({ isOpen, onClose, onSave, initialData }) => {
                 formTitle="Kode Unit"
                 id="kodeUnit"
                 type="number"
-                value={kodeUnit}
-                onChange={(e) => setKodeUnit(e.target.value)}
+                value={formState.kodeUnit}
+                onChange={handleInputChange}
                 min="0"
+                disabled={isSaving}
               />
 
               <InputForm
                 formTitle="Nama Unit"
                 id="namaUnit"
                 type="text"
-                value={namaUnit}
-                onChange={(e) => setNamaUnit(e.target.value)}
+                value={formState.namaUnit}
+                onChange={handleInputChange}
+                disabled={isSaving}
               />
 
               <InputForm
                 formTitle="Kode"
                 id="kode"
                 type="text"
-                value={kode}
-                onChange={(e) => setKode(e.target.value)}
+                value={formState.kode}
+                onChange={handleInputChange}
+                disabled={isSaving}
               />
             </form>
 
