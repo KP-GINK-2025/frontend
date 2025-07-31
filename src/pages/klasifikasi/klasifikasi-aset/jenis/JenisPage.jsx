@@ -5,7 +5,8 @@ import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import AddJenisModal from "./AddJenisModal";
 import DataTable from "../../../../components/DataTable";
-import Swal from "sweetalert2"; // <-- Tambahkan import ini
+import Swal from "sweetalert2";
+import { handleExport } from "../../../../handlers/exportHandler";
 
 const JenisPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -13,6 +14,7 @@ const JenisPage = () => {
   const [jenisData, setJenisData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   // State untuk data filter Aset 1 dan Aset 2
   const [asetSatuData, setAsetSatuData] = useState([]);
@@ -94,8 +96,83 @@ const JenisPage = () => {
     return matchesSearch && matchesAsetSatu && matchesAsetDua;
   });
 
-  const handleExport = () => {
-    console.log("Exporting jenis data...");
+  // Fetch all data for export
+  const fetchAllDataForExport = async () => {
+    try {
+      const response = await api.get("/klasifikasi-aset/jenis-aset");
+
+      const mappedJenis = response.data.data.map((item) => ({
+        id: item.id,
+        aset1: item.kelompok_aset?.akun_aset
+          ? `${item.kelompok_aset.akun_aset.kode_akun_aset} - ${item.kelompok_aset.akun_aset.nama_akun_aset}`
+          : "-",
+        aset2: item.kelompok_aset
+          ? `${item.kelompok_aset.kode_kelompok_aset} - ${item.kelompok_aset.nama_kelompok_aset}`
+          : "-",
+        kodeAset3: item.kode_jenis_aset,
+        namaAset3: item.nama_jenis_aset,
+        kode: item.kode,
+      }));
+
+      // Apply same filtering logic as the display
+      return mappedJenis.filter((item) => {
+        const matchesSearch =
+          item.aset1?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.aset2?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.kodeAset3?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.namaAset3?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.kode?.toLowerCase().includes(searchTerm.toLowerCase());
+
+        const matchesAsetSatu =
+          selectedAsetSatu === "" || item.aset1 === selectedAsetSatu;
+        const matchesAsetDua =
+          selectedAsetDua === "" || item.aset2 === selectedAsetDua;
+
+        return matchesSearch && matchesAsetSatu && matchesAsetDua;
+      });
+    } catch (error) {
+      console.error("Gagal mengambil data untuk export:", error);
+      return [];
+    }
+  };
+
+  const handleExportData = async () => {
+    const exportColumns = [
+      {
+        field: "no",
+        headerName: "No",
+      },
+      {
+        field: "aset1",
+        headerName: "Aset 1",
+      },
+      {
+        field: "aset2",
+        headerName: "Aset 2",
+      },
+      {
+        field: "kodeAset3",
+        headerName: "Kode Aset 3",
+      },
+      {
+        field: "namaAset3",
+        headerName: "Nama Aset 3",
+      },
+      {
+        field: "kode",
+        headerName: "Kode",
+      },
+    ];
+
+    const exportConfig = {
+      fetchDataFunction: fetchAllDataForExport,
+      columns: exportColumns,
+      filename: "klasifikasi-aset-jenis",
+      sheetName: "Aset 3",
+      setExporting,
+    };
+
+    await handleExport(exportConfig);
   };
 
   // Ubah handleRefresh agar ada animasi, SweetAlert2, dan loading table
@@ -183,10 +260,16 @@ const JenisPage = () => {
       text: "Data yang dihapus tidak dapat dikembalikan!",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
       confirmButtonText: "Ya, hapus!",
       cancelButtonText: "Batal",
+      buttonsStyling: false,
+      customClass: {
+        confirmButton:
+          "bg-red-600 text-white px-4 py-2 mr-1 rounded-md hover:bg-red-700 hover:outline-none cursor-pointer",
+        cancelButton:
+          "bg-gray-200 text-gray-700 px-4 py-2 ml-1 rounded-md hover:bg-gray-300 hover:outline-none cursor-pointer",
+        popup: "rounded-lg shadow-lg",
+      },
     });
 
     if (result.isConfirmed) {
@@ -263,10 +346,12 @@ const JenisPage = () => {
 
         <div className="flex justify-end mt-4 mb-4">
           <button
-            onClick={handleExport}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+            onClick={handleExportData}
+            disabled={exporting}
+            className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
           >
-            <Download size={16} /> Export
+            <Download size={16} className={exporting ? "animate-spin" : ""} />
+            {exporting ? "Exporting..." : "Export"}
           </button>
         </div>
 

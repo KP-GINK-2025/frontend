@@ -5,7 +5,8 @@ import Breadcrumbs from "../../../../components/Breadcrumbs";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import AddKelompokModal from "./AddKelompokModal";
 import DataTable from "../../../../components/DataTable";
-import Swal from "sweetalert2"; // <-- Tambahkan import ini
+import Swal from "sweetalert2";
+import { handleExport } from "../../../../handlers/exportHandler";
 
 const KelompokPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -15,6 +16,7 @@ const KelompokPage = () => {
   const [refreshing, setRefreshing] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingKelompok, setEditingKelompok] = useState(null);
+  const [exporting, setExporting] = useState(false);
 
   const [dataTablePaginationModel, setDataTablePaginationModel] = useState({
     page: 0,
@@ -73,8 +75,66 @@ const KelompokPage = () => {
     );
   });
 
-  const handleExport = () => {
-    console.log("Exporting data...");
+  // Fetch all data for export
+  const fetchAllDataForExport = async () => {
+    try {
+      const response = await api.get("/klasifikasi-aset/kelompok-aset", {
+        params: {
+          search: searchTerm,
+          // Don't add per_page limit to get all data
+        },
+      });
+
+      return response.data.data.map((item) => ({
+        id: item.id,
+        aset1: item.akun_aset
+          ? `${item.akun_aset.kode_akun_aset} - ${item.akun_aset.nama_akun_aset}`
+          : "-",
+        kodeAset2: item.kode_kelompok_aset,
+        namaAset2: item.nama_kelompok_aset,
+        kode: item.kode,
+        kodeKelompok: item.kode_kelompok_aset,
+        namaKelompok: item.nama_kelompok_aset,
+      }));
+    } catch (error) {
+      console.error("Gagal mengambil data untuk export:", error);
+      return [];
+    }
+  };
+
+  const handleExportData = async () => {
+    const exportColumns = [
+      {
+        field: "no",
+        headerName: "No",
+      },
+      {
+        field: "aset1",
+        headerName: "Aset 1",
+      },
+      {
+        field: "kodeAset2",
+        headerName: "Kode Aset 2",
+      },
+      {
+        field: "namaAset2",
+        headerName: "Nama Aset 2",
+      },
+      {
+        field: "kode",
+        headerName: "Kode",
+      },
+    ];
+
+    const exportConfig = {
+      fetchDataFunction: fetchAllDataForExport,
+      columns: exportColumns,
+      filename: "klasifikasi-aset-kelompok",
+      sheetName: "Aset 2",
+      setExporting,
+    };
+
+    await handleExport(exportConfig);
   };
 
   // Ubah handleRefresh agar ada animasi, SweetAlert2, dan loading table
@@ -180,10 +240,16 @@ const KelompokPage = () => {
       text: "Data yang dihapus tidak dapat dikembalikan!",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
       confirmButtonText: "Ya, hapus!",
       cancelButtonText: "Batal",
+      buttonsStyling: false,
+      customClass: {
+        confirmButton:
+          "bg-red-600 text-white px-4 py-2 mr-1 rounded-md hover:bg-red-700 hover:outline-none cursor-pointer",
+        cancelButton:
+          "bg-gray-200 text-gray-700 px-4 py-2 ml-1 rounded-md hover:bg-gray-300 hover:outline-none cursor-pointer",
+        popup: "rounded-lg shadow-lg",
+      },
     });
 
     if (result.isConfirmed) {
@@ -289,10 +355,12 @@ const KelompokPage = () => {
 
         <div className="flex justify-end mt-4 mb-4">
           <button
-            onClick={handleExport}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+            onClick={handleExportData}
+            disabled={exporting}
+            className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
           >
-            <Download size={16} /> Export
+            <Download size={16} className={exporting ? "animate-spin" : ""} />
+            {exporting ? "Exporting..." : "Export"}
           </button>
         </div>
 

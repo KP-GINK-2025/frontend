@@ -6,16 +6,17 @@ import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import AddAkunModal from "./AddAkunModal";
 import DataTable from "../../../../components/DataTable";
 import Swal from "sweetalert2";
+import { handleExport } from "../../../../handlers/exportHandler";
 
 const AkunPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [akunData, setAkunData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [rowCount, setRowCount] = useState(0);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [refreshing, setRefreshing] = useState(true);
+  const [loading, setLoading] = useState(true); // Default true agar tabel menunjukkan loading di awal
+  const [rowCount, setRowCount] = useState(0); // Inisialisasi rowCount
+  const [refreshing, setRefreshing] = useState(true); // Default true agar animasi refresh berjalan di awal
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingAkun, setEditingAkun] = useState(null);
+  const [exporting, setExporting] = useState(false);
 
   // Pagination state
   const [dataTablePaginationModel, setDataTablePaginationModel] = useState({
@@ -44,55 +45,122 @@ const AkunPage = () => {
   }, [debouncedSearchTerm, searchTerm]);
 
   // Fetch akun
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const params = new URLSearchParams();
-        params.append("page", dataTablePaginationModel.page + 1); // API biasanya 1-indexed
-        params.append("per_page", dataTablePaginationModel.pageSize);
+  const fetchData = async () => {
+    setLoading(true); // Selalu set loading true saat memulai fetch
+    setRefreshing(true); // Selalu set refreshing true saat memulai fetch
 
-        if (debouncedSearchTerm) {
-          params.append("search", debouncedSearchTerm);
-        }
-
-        const response = await api.get(
-          `/klasifikasi-aset/akun-aset?${params.toString()}`
-        );
-
-        setAkunData(response.data.data);
-        setRowCount(response.data.meta.total);
-      } catch (error) {
-        console.error("Gagal fetch data akun:", error);
-        setAkunData([]);
-        setRowCount(0);
-      } finally {
-        setLoading(false);
+    try {
+      const params = new URLSearchParams();
+      params.append("page", dataTablePaginationModel.page + 1);
+      params.append("per_page", dataTablePaginationModel.pageSize);
+      if (searchTerm) {
+        params.append("search", searchTerm);
       }
-    };
 
-    fetchData();
-  }, [dataTablePaginationModel, debouncedSearchTerm, refreshTrigger]); // Dependencies yang memicu re-fetch
+      const response = await api.get(
+        `/klasifikasi-aset/akun-aset?${params.toString()}`
+      );
+      const data = response.data.data.map((item) => ({
+        id: item.id,
+        kodeAset1: item.kode_akun_aset, // Nama properti di sini
+        namaAset1: item.nama_akun_aset, // Nama properti di sini
+        kode: item.kode,
+      }));
 
-  // Event handlers
-  const handleExport = () => {
-    console.log("Exporting data...");
+      setAkunData(data);
+      // **PENTING: Pastikan API Anda mengembalikan 'total' atau sesuaikan ini.**
+      // Jika 'response.data.total' tidak ada, mungkin 'response.data.meta.total' atau lainnya.
+      setRowCount(response.data.total || 0);
+    } catch (error) {
+      console.error("Gagal mengambil data akun aset:", error);
+      setAkunData([]);
+      setRowCount(0); // Set ke 0 jika ada error
+    } finally {
+      setLoading(false); // Matikan loading setelah fetch selesai (baik sukses maupun gagal)
+      setRefreshing(false); // Matikan refreshing setelah fetch selesai (baik sukses maupun gagal)
+    }
   };
 
-  // Ubah handleRefresh agar ada animasi, SweetAlert2, dan loading table
+  // Initial data fetch and re-fetch on pagination/search changes
+  useEffect(() => {
+    fetchData();
+    // eslint-disable-next-line
+  }, [
+    dataTablePaginationModel.page,
+    dataTablePaginationModel.pageSize,
+    searchTerm,
+  ]);
+
+  // Fetch all data for export
+  const fetchAllDataForExport = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (searchTerm) {
+        params.append("search", searchTerm);
+      }
+      // Don't add pagination params to get all data
+
+      const response = await api.get(
+        `/klasifikasi-aset/akun-aset?${params.toString()}`
+      );
+
+      return response.data.data.map((item) => ({
+        id: item.id,
+        kodeAset1: item.kode_akun_aset,
+        namaAset1: item.nama_akun_aset,
+        kode: item.kode,
+      }));
+    } catch (error) {
+      console.error("Gagal mengambil data untuk export:", error);
+      return [];
+    }
+  };
+
+  // Event handlers
+  const handleExportData = async () => {
+    const exportColumns = [
+      {
+        field: "no",
+        headerName: "No",
+      },
+      {
+        field: "kodeAset1",
+        headerName: "Kode Akun",
+      },
+      {
+        field: "namaAset1",
+        headerName: "Nama Akun",
+      },
+      {
+        field: "kode",
+        headerName: "Kode",
+      },
+    ];
+
+    const exportConfig = {
+      fetchDataFunction: fetchAllDataForExport,
+      columns: exportColumns,
+      filename: "klasifikasi-aset-akun",
+      sheetName: "Aset 1",
+      setExporting,
+    };
+
+    await handleExport(exportConfig);
+  };
+
   const handleRefresh = async () => {
     setRefreshing(true);
-    setLoading(true);
-    setRefreshTrigger((c) => c + 1);
+    setLoading(true); // Tambahkan loading pada table saat refresh manual
     try {
-      setSearchTerm("");
+      setSearchTerm(""); // Reset search term
       setDataTablePaginationModel((prev) => ({
         ...prev,
-        page: 0,
+        page: 0, // Reset ke halaman pertama
       }));
-      // Simulasi delay agar animasi terlihat
-      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      // Panggil fetchData, yang akan mengelola state loading/refreshing
       await fetchData();
+
       Swal.fire({
         icon: "success",
         title: "Berhasil!",
@@ -116,7 +184,7 @@ const AkunPage = () => {
       });
     } finally {
       setRefreshing(false);
-      setLoading(false);
+      setLoading(false); // Matikan loading table
     }
   };
 
@@ -155,7 +223,7 @@ const AkunPage = () => {
         });
       }
       handleCloseAddModal();
-      handleRefresh();
+      fetchData(); // Panggil fetchData untuk refresh data setelah simpan
     } catch (err) {
       console.error("Gagal menyimpan:", err);
 
@@ -197,11 +265,18 @@ const AkunPage = () => {
       text: "Data yang dihapus tidak dapat dikembalikan!",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
       confirmButtonText: "Ya, hapus!",
       cancelButtonText: "Batal",
+      buttonsStyling: false,
+      customClass: {
+        confirmButton:
+          "bg-red-600 text-white px-4 py-2 mr-1 rounded-md hover:bg-red-700 hover:outline-none cursor-pointer",
+        cancelButton:
+          "bg-gray-200 text-gray-700 px-4 py-2 ml-1 rounded-md hover:bg-gray-300 hover:outline-none cursor-pointer",
+        popup: "rounded-lg shadow-lg",
+      },
     });
+
     if (!result.isConfirmed) return;
     if (result.isConfirmed) {
       try {
@@ -272,15 +347,19 @@ const AkunPage = () => {
       },
     },
     {
-      field: "kode_akun_aset",
+      // Menggunakan nama field yang sama dengan properti di object data
+      field: "kodeAset1",
       headerName: "Kode Akun",
       width: 150,
+      // valueGetter tidak lagi diperlukan karena 'field' sudah cocok dengan properti data
     },
     {
-      field: "nama_akun_aset",
+      // Menggunakan nama field yang sama dengan properti di object data
+      field: "namaAset1",
       headerName: "Nama Akun",
       flex: 1,
       minWidth: 250,
+      // valueGetter tidak lagi diperlukan karena 'field' sudah cocok dengan properti data
     },
     { field: "kode", headerName: "Kode", width: 120 },
   ];
@@ -295,16 +374,20 @@ const AkunPage = () => {
 
         <div className="flex justify-end mt-4 mb-4">
           <button
-            onClick={handleExport}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+            onClick={handleExportData}
+            disabled={exporting}
+            className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
           >
-            <Download size={16} /> Export
+            <Download size={16} className={exporting ? "animate-spin" : ""} />
+            {exporting ? "Exporting..." : "Export"}
           </button>
         </div>
 
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-800">Daftar Akun</h1>
+            <h1 className="text-2xl font-bold text-gray-800">
+              Daftar Klasifikasi Aset 1
+            </h1>
             <div className="flex gap-3">
               <button
                 onClick={handleRefresh}
@@ -367,17 +450,17 @@ const AkunPage = () => {
           <DataTable
             rows={akunData}
             columns={columns}
-            rowCount={rowCount}
+            rowCount={rowCount} // Pastikan rowCount ada dan nilainya benar
             loading={loading || refreshing}
             paginationMode="server"
-            filterMode="server" // Ini sebenarnya dikontrol oleh cara Anda mem-fetch data dengan 'search' param
+            filterMode="server"
             pageSizeOptions={[5, 10, 25, 50, 75, 100]}
             paginationModel={dataTablePaginationModel}
             onPaginationModelChange={setDataTablePaginationModel}
             height={500}
             emptyRowsMessage="Tidak ada data akun yang tersedia"
-            disableRowSelectionOnClick // Menambahkan ini agar baris tidak terpilih saat diklik
-            hideFooterSelectedRowCount // Menambahkan ini untuk menyembunyikan hitungan baris yang dipilih di footer
+            disableRowSelectionOnClick
+            hideFooterSelectedRowCount
           />
         </div>
       </div>
