@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import UserDropdown from "./UserDropdown";
+import UserDropdown from "../modal/UserDropdown";
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -62,7 +62,6 @@ const Navbar = () => {
           isDropdownOpen={isDropdownOpen}
         />
       </div>
-
     </>
   );
 };

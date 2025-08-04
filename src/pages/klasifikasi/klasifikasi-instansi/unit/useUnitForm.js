@@ -1,9 +1,9 @@
 // src/pages/klasifikasi/klasifikasi-instansi/unit/useUnitForm.js
 import { useState, useEffect, useMemo } from "react";
 import {
-  getProvinsi,
+  getProvinsiOptions,
   getKabupatenByProvinsi,
-  getBidangByKabKot,
+  getBidangByKabupaten,
 } from "../../../../api/klasifikasiInstansiService";
 import { useHierarchySelector } from "../../../../hooks/useHierarchySelector";
 
@@ -37,7 +37,7 @@ export const useUnitForm = (initialData) => {
   );
 
   const provinsi = useHierarchySelector({
-    fetcher: getProvinsi,
+    fetcher: getProvinsiOptions,
     initialData: initialProvinsi,
   });
   const kabupaten = useHierarchySelector({
@@ -46,7 +46,7 @@ export const useUnitForm = (initialData) => {
     initialData: initialKabupaten,
   });
   const bidang = useHierarchySelector({
-    fetcher: getBidangByKabKot,
+    fetcher: getBidangByKabupaten,
     parentId: kabupaten.selectedValue?.value,
     initialData: initialBidang,
   });

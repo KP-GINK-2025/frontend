@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import Navbar from "../../../components/Navbar";
-import Breadcrumbs from "../../../components/Breadcrumbs";
+import { Navbar, Breadcrumbs } from "@/components/layout";
 import { Check, X } from "lucide-react";
 import Swal from "sweetalert2";
 

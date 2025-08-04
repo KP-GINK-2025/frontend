@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Swal from "sweetalert2";
-import Buttons from "../../../../components/Buttons";
-import SelectForm from "../../../../components/form/SelectForm";
-import InputForm from "../../../../components/form/InputForm";
+import { Buttons } from "@/components/ui";
+import { InputForm, SelectForm } from "@/components/form";
 import { useUnitForm } from "./useUnitForm";
+import { showInfoAlert } from "../../../../utils/notificationService";
 
 const AddUnitModal = ({ isOpen, onClose, onSave, initialData }) => {
   const [isSaving, setIsSaving] = useState(false);
@@ -19,13 +18,6 @@ const AddUnitModal = ({ isOpen, onClose, onSave, initialData }) => {
     dataToSave,
   } = useUnitForm(initialData);
 
-  // Debug
-  useEffect(() => {
-    console.log("Provinsi:", provinsi.selectedValue);
-    console.log("Kabupaten:", kabupaten.selectedValue);
-    console.log("Bidang:", bidang.selectedValue);
-  }, [provinsi.selectedValue, kabupaten.selectedValue, bidang.selectedValue]);
-
   useEffect(() => {
     if (!isOpen) setIsSaving(false);
   }, [isOpen]);
@@ -33,17 +25,10 @@ const AddUnitModal = ({ isOpen, onClose, onSave, initialData }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isFormValid) {
-      Swal.fire({
-        title: "Form Belum Lengkap",
-        text: "Harap lengkapi semua field yang wajib diisi (*)",
-        icon: "info",
-        buttonsStyling: false,
-        customClass: {
-          confirmButton:
-            "bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 hover:outline-none cursor-pointer",
-          popup: "rounded-lg shadow-lg",
-        },
-      });
+      showInfoAlert(
+        "Harap lengkapi semua field yang wajib diisi (*)",
+        "Form Belum Lengkap"
+      );
       return;
     }
 
@@ -70,14 +55,16 @@ const AddUnitModal = ({ isOpen, onClose, onSave, initialData }) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          onClick={onClose}
         >
           <motion.div
             key="modal-content"
             initial={{ opacity: 0, scale: 0.95, y: -20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -20 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
             className="relative w-full max-w-lg p-6 mx-4 bg-white rounded-lg shadow-lg"
+            onClick={(e) => e.stopPropagation()}
           >
             {/* --- Modal Content Mulai dari sini --- */}
             <div className="flex items-center justify-between pb-4 mb-4 border-b border-gray-200">

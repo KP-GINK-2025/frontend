@@ -1,8 +1,7 @@
 import React from "react";
 import { ListChecks, Boxes, Repeat } from "lucide-react"; // Ikon sudah disesuaikan
-import Navbar from "../../../components/Navbar";
-import Breadcrumbs from "../../../components/Breadcrumbs";
-import MenuItem from "../../../components/MenuItem";
+import { Navbar, Breadcrumbs } from "@/components/layout";
+import { MenuItem } from "@/components/ui";
 import useMenuNavigation from "../../../hooks/useMenuNavigation";
 
 const menuItems = [

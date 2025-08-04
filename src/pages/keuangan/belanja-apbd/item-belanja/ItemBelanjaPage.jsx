@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
-import Navbar from "../../../../components/Navbar";
-import Breadcrumbs from "../../../../components/Breadcrumbs";
+import { Navbar, Breadcrumbs } from "@/components/layout";
+import { DataTable } from "@/components/table";
 import { RefreshCw, Download, Search } from "lucide-react";
-import DataTable from "../../../../components/DataTable";
 import Swal from "sweetalert2";
 
 const ItemBelanjaPage = () => {
