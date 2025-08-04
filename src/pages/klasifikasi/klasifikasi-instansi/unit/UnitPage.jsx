@@ -1,16 +1,24 @@
-import React, { useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Upload, RefreshCw, Plus } from "lucide-react";
 import { Navbar, Breadcrumbs } from "@/components/layout";
 import { DataTable } from "@/components/table";
 import { Buttons } from "@/components/ui";
 import { SearchInput, FilterDropdown } from "@/components/form";
+import { ColumnManager } from "@/components/table";
 import AddUnitModal from "./AddUnitModal";
 import { useUnitPageLogic } from "./useUnitPageLogic";
 
 const UnitPage = () => {
   const { state, handler } = useUnitPageLogic();
-  
-    const [columnVisibility, setColumnVisibility] = useState({});
+  const [columnVisibility, setColumnVisibility] = useState({});
+
+  useEffect(() => {
+    const initialVisibility = {};
+    columns.forEach((col) => {
+      initialVisibility[col.field] = true;
+    });
+    setColumnVisibility(initialVisibility);
+  }, []);
 
   const columns = useMemo(
     () => [
@@ -113,21 +121,14 @@ const UnitPage = () => {
     [state.unitData, state.paginationModel, handler]
   );
 
-// Initialize column visibility
-  useEffect(() => {
-    const initialVisibility = {};
-    baseColumns.forEach((col) => {
-      initialVisibility[col.field] = true;
-    });
-    setColumnVisibility(initialVisibility);
-  }, []);
-
-const visibleColumns = baseColumns.filter((col) => {
-    return columnVisibility[col.field] !== false;
-  });
-const handleColumnVisibilityChange = (newVisibility) => {
+  const handleColumnVisibilityChange = (newVisibility) => {
     setColumnVisibility(newVisibility);
   };
+
+  // Filter visible columns
+  const visibleColumns = columns.filter((col) => {
+    return columnVisibility[col.field] !== false;
+  });
 
   const paginationOptions = [5, 10, 25, 50, 75, 100, 200];
 
@@ -206,14 +207,6 @@ const handleColumnVisibilityChange = (newVisibility) => {
                 <span className="text-sm text-gray-600">entries</span>
               </div>
 
-              {/* Column Manager */}
-              <ColumnManager
-                columns={baseColumns}
-                columnVisibility={columnVisibility}
-                onColumnVisibilityChange={handleColumnVisibilityChange}
-              />
-            </div>
-          
               {/* Filter Bidang */}
               <FilterDropdown
                 value={state.selectedBidang}
@@ -225,6 +218,11 @@ const handleColumnVisibilityChange = (newVisibility) => {
                 options={state.bidangList}
                 placeholder="-- Semua Bidang --"
                 loading={state.loadingBidang}
+              />
+              <ColumnManager
+                columns={columns}
+                columnVisibility={columnVisibility}
+                onColumnVisibilityChange={handleColumnVisibilityChange}
               />
             </div>
 

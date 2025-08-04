@@ -4,7 +4,7 @@ import { Navbar, Breadcrumbs } from "@/components/layout";
 import { DataTable } from "@/components/table";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import AddBidangModal from "./AddBidangModal";
-import ColumnManager from "../../../../components/ColumnManager";
+import ColumnManager from "../../../../components/table/ColumnManager";
 
 import Swal from "sweetalert2";
 import {
