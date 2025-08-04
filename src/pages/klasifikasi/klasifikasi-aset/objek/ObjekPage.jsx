@@ -4,7 +4,9 @@ import { Navbar, Breadcrumbs } from "@/components/layout";
 import { DataTable } from "@/components/table";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import AddObjekModal from "./AddObjekModal";
-import Swal from "sweetalert2"; // <-- Tambahkan import ini
+import DataTable from "../../../../components/DataTable";
+import Swal from "sweetalert2";
+import { handleExport } from "../../../../handlers/exportHandler"; // Konsisten: Import handleExport
 
 const ObjekPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -12,6 +14,7 @@ const ObjekPage = () => {
   const [objekData, setObjekData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(true);
+  const [exporting, setExporting] = useState(false); // State untuk status exporting
 
   // State untuk data filter Aset 1 2 3
   const [asetSatuData, setAsetSatuData] = useState([]);
@@ -109,8 +112,94 @@ const ObjekPage = () => {
     );
   });
 
-  const handleExport = () => {
-    console.log("Exporting objek data...");
+  // Fetch all data for export, applying current filters
+  const fetchAllDataForExport = async () => {
+    try {
+      const response = await api.get("/klasifikasi-aset/objek-aset");
+      const mappedObjek = response.data.data.map((item) => ({
+        id: item.id,
+        aset1: item.jenis_aset?.kelompok_aset?.akun_aset
+          ? `${item.jenis_aset.kelompok_aset.akun_aset.kode_akun_aset} - ${item.jenis_aset.kelompok_aset.akun_aset.nama_akun_aset}`
+          : "-",
+        aset2: item.jenis_aset?.kelompok_aset
+          ? `${item.jenis_aset.kelompok_aset.kode_kelompok_aset} - ${item.jenis_aset.kelompok_aset.nama_kelompok_aset}`
+          : "-",
+        aset3: item.jenis_aset
+          ? `${item.jenis_aset.kode_jenis_aset} - ${item.jenis_aset.nama_jenis_aset}`
+          : "-",
+        kodeAset4: item.kode_objek_aset,
+        namaAset4: item.nama_objek_aset,
+        kode: item.kode,
+      }));
+
+      // Apply same filtering logic as the display
+      return mappedObjek.filter((item) => {
+        const matchesSearch =
+          item.aset1?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.aset2?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.aset3?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.kodeAset4?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.namaAset4?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.kode?.toLowerCase().includes(searchTerm.toLowerCase());
+
+        const matchesAsetSatu =
+          selectedAsetSatu === "" || item.aset1 === selectedAsetSatu;
+        const matchesAsetDua =
+          selectedAsetDua === "" || item.aset2 === selectedAsetDua;
+        const matchesAsetTiga =
+          selectedAsetTiga === "" || item.aset3 === selectedAsetTiga;
+
+        return (
+          matchesSearch && matchesAsetSatu && matchesAsetDua && matchesAsetTiga
+        );
+      });
+    } catch (error) {
+      console.error("Gagal mengambil data untuk export:", error);
+      return [];
+    }
+  };
+
+  const handleExportData = async () => {
+    const exportColumns = [
+      {
+        field: "no",
+        headerName: "No",
+      },
+      {
+        field: "aset1",
+        headerName: "Aset 1",
+      },
+      {
+        field: "aset2",
+        headerName: "Aset 2",
+      },
+      {
+        field: "aset3",
+        headerName: "Aset 3",
+      },
+      {
+        field: "kodeAset4",
+        headerName: "Kode Aset 4",
+      },
+      {
+        field: "namaAset4",
+        headerName: "Nama Aset 4",
+      },
+      {
+        field: "kode",
+        headerName: "Kode",
+      },
+    ];
+
+    const exportConfig = {
+      fetchDataFunction: fetchAllDataForExport,
+      columns: exportColumns,
+      filename: "klasifikasi-aset-objek",
+      sheetName: "Aset 4",
+      setExporting,
+    };
+
+    await handleExport(exportConfig);
   };
 
   // Ubah handleRefresh agar ada animasi, SweetAlert2, dan loading table
@@ -199,10 +288,16 @@ const ObjekPage = () => {
       text: "Data yang dihapus tidak dapat dikembalikan!",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
       confirmButtonText: "Ya, hapus!",
       cancelButtonText: "Batal",
+      buttonsStyling: false,
+      customClass: {
+        confirmButton:
+          "bg-red-600 text-white px-4 py-2 mr-1 rounded-md hover:bg-red-700 hover:outline-none cursor-pointer",
+        cancelButton:
+          "bg-gray-200 text-gray-700 px-4 py-2 ml-1 rounded-md hover:bg-gray-300 hover:outline-none cursor-pointer",
+        popup: "rounded-lg shadow-lg",
+      },
     });
 
     if (result.isConfirmed) {
@@ -280,10 +375,13 @@ const ObjekPage = () => {
 
         <div className="flex justify-end mt-4 mb-4">
           <button
-            onClick={handleExport}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+            onClick={handleExportData} // Menggunakan handleExportData
+            disabled={exporting} // Menonaktifkan tombol saat exporting
+            className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
           >
-            <Download size={16} /> Export
+            <Download size={16} className={exporting ? "animate-spin" : ""} />{" "}
+            {/* Spinner saat exporting */}
+            {exporting ? "Exporting..." : "Export"}
           </button>
         </div>
 
