@@ -1,6 +1,5 @@
 import React from "react";
-import Navbar from "../../../../components/Navbar";
-import Breadcrumbs from "../../../../components/Breadcrumbs";
+import { Navbar, Breadcrumbs } from "@/components/layout";
 
 const LraVsBmSkpdPage = () => {
   return (

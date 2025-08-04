@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import Navbar from "../../components/Navbar";
-import Breadcrumbs from "../../components/Breadcrumbs";
+import api from "../../api/axios";
+import { Navbar, Breadcrumbs } from "@/components/layout";
+import { DataTable } from "@/components/table";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import AddNeracaAsetModal from "./AddNeracaAsetModal";
-import DataTable from "../../components/DataTable";
-import api from "../../api/axios";
 import Swal from "sweetalert2";
 import { handleExport, commonFormatters } from "../../handlers/exportHandler";
 import ColumnManager from "../../components/ColumnManager";

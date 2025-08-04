@@ -1,9 +1,8 @@
 import React from "react";
 import { Building2, PieChart, ListOrdered, FileText } from "lucide-react";
-import Navbar from "../../../components/Navbar";
-import MenuItem from "../../../components/MenuItem";
+import { Navbar, Breadcrumbs } from "@/components/layout";
+import { MenuItem } from "@/components/ui";
 import useMenuNavigation from "../../../hooks/useMenuNavigation";
-import Breadcrumbs from "../../../components/Breadcrumbs";
 
 const menuItems = [
   { name: "Hibah per UPB", icon: Building2 },

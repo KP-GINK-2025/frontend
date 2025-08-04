@@ -8,9 +8,8 @@ import {
   Layers,
   Settings,
 } from "lucide-react";
-import Breadcrumbs from "../components/Breadcrumbs";
-import MenuItem from "../components/MenuItem";
-import Navbar from "../components/Navbar";
+import { Navbar, Breadcrumbs } from "@/components/layout";
+import { MenuItem } from "@/components/ui";
 import useMenuNavigation from "../hooks/useMenuNavigation";
 
 const menuItems = [
