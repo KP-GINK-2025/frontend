@@ -5,10 +5,9 @@ import {
   LayoutGrid,
   CircleDollarSign,
 } from "lucide-react";
-import Navbar from "../../../components/Navbar";
-import MenuItem from "../../../components/MenuItem";
+import { Navbar, Breadcrumbs } from "@/components/layout";
+import { MenuItem } from "@/components/ui";
 import useMenuNavigation from "../../../hooks/useMenuNavigation";
-import Breadcrumbs from "../../../components/Breadcrumbs";
 
 const menuItems = [
   { name: "Laporan per UPB", icon: Building2 },

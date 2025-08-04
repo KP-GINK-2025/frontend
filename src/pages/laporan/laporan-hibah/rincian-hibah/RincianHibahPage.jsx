@@ -1,9 +1,8 @@
 import React from "react";
 import { FileText, CheckCircle2, Clock } from "lucide-react";
-import Navbar from "../../../../components/Navbar";
-import MenuItem from "../../../../components/MenuItem";
 import useMenuNavigation from "../../../../hooks/useMenuNavigation";
-import Breadcrumbs from "../../../../components/Breadcrumbs";
+import { Navbar, Breadcrumbs } from "@/components/layout";
+import { MenuItem } from "@/components/ui";
 
 const menuItems = [
   { name: "Rincian Realisasi Anggaran", icon: FileText },

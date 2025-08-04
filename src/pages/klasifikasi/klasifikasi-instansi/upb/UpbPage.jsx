@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import api from "../../../../api/axios";
-import Navbar from "../../../../components/Navbar";
-import Breadcrumbs from "../../../../components/Breadcrumbs";
+import { Navbar, Breadcrumbs } from "@/components/layout";
+import { DataTable } from "@/components/table";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
-import DataTable from "../../../../components/DataTable";
 import AddUpbModal from "./AddUpbModal";
 import Swal from "sweetalert2";
 import {

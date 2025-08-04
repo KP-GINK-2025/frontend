@@ -1,9 +1,8 @@
 import React from "react";
 import { Wallet, ClipboardList, Repeat, FileBarChart2 } from "lucide-react";
-import Navbar from "../../../../components/Navbar";
-import MenuItem from "../../../../components/MenuItem";
+import { Navbar, Breadcrumbs } from "@/components/layout";
+import { MenuItem } from "@/components/ui";
 import useMenuNavigation from "../../../../hooks/useMenuNavigation";
-import Breadcrumbs from "../../../../components/Breadcrumbs";
 
 const menuItems = [
   { name: "Belanja APBD per UPB", icon: Wallet },
