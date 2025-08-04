@@ -6,7 +6,7 @@ import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import AddNeracaAsetModal from "./AddNeracaAsetModal";
 import Swal from "sweetalert2";
 import { handleExport, commonFormatters } from "../../handlers/exportHandler";
-import ColumnManager from "../../components/ColumnManager";
+import ColumnManager from "../../components/table/ColumnManager";
 
 // Constants
 const ENTRIES_PER_PAGE_OPTIONS = [5, 10, 25, 50, 75, 100];
