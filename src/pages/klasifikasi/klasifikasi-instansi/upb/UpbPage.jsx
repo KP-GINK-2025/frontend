@@ -6,11 +6,7 @@ import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import DataTable from "../../../../components/DataTable";
 import AddUpbModal from "./AddUpbModal";
 import Swal from "sweetalert2";
-import {
-  handleExport as exportHandler,
-  commonFormatters,
-  createExportConfig,
-} from "../../../../handlers/exportHandler";
+import { handleExport as exportHandler } from "../../../../handlers/exportHandler";
 
 const UpbPage = () => {
   const [upbData, setUpbData] = useState([]);
