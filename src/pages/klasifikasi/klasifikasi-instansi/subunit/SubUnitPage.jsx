@@ -5,12 +5,7 @@ import { DataTable } from "@/components/table";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import AddSubUnitModal from "./AddSubUnitModal";
 import Swal from "sweetalert2";
-// Import the export handler
-import {
-  handleExport as exportHandler,
-  commonFormatters,
-  createExportConfig,
-} from "../../../../handlers/exportHandler";
+import { handleExport as exportHandler } from "../../../../handlers/exportHandler";
 
 const SubUnitPage = () => {
   const [subUnitData, setSubUnitData] = useState([]);

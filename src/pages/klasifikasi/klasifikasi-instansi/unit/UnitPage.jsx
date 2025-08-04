@@ -9,6 +9,8 @@ import { useUnitPageLogic } from "./useUnitPageLogic";
 
 const UnitPage = () => {
   const { state, handler } = useUnitPageLogic();
+  
+    const [columnVisibility, setColumnVisibility] = useState({});
 
   const columns = useMemo(
     () => [
@@ -111,6 +113,22 @@ const UnitPage = () => {
     [state.unitData, state.paginationModel, handler]
   );
 
+// Initialize column visibility
+  useEffect(() => {
+    const initialVisibility = {};
+    baseColumns.forEach((col) => {
+      initialVisibility[col.field] = true;
+    });
+    setColumnVisibility(initialVisibility);
+  }, []);
+
+const visibleColumns = baseColumns.filter((col) => {
+    return columnVisibility[col.field] !== false;
+  });
+const handleColumnVisibilityChange = (newVisibility) => {
+    setColumnVisibility(newVisibility);
+  };
+
   const paginationOptions = [5, 10, 25, 50, 75, 100, 200];
 
   return (
@@ -188,6 +206,14 @@ const UnitPage = () => {
                 <span className="text-sm text-gray-600">entries</span>
               </div>
 
+              {/* Column Manager */}
+              <ColumnManager
+                columns={baseColumns}
+                columnVisibility={columnVisibility}
+                onColumnVisibilityChange={handleColumnVisibilityChange}
+              />
+            </div>
+          
               {/* Filter Bidang */}
               <FilterDropdown
                 value={state.selectedBidang}
@@ -215,7 +241,7 @@ const UnitPage = () => {
           {/* Tabel */}
           <DataTable
             rows={state.unitData}
-            columns={columns}
+            columns={visibleColumns}
             rowCount={state.totalRows}
             loading={state.loading}
             paginationMode="server"

@@ -1,92 +1,102 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import api from "../../../../api/axios";
 import { Navbar, Breadcrumbs } from "@/components/layout";
 import { DataTable } from "@/components/table";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import AddBidangModal from "./AddBidangModal";
+import ColumnManager from "../../../../components/ColumnManager";
+
 import Swal from "sweetalert2";
 import {
   handleExport,
   commonFormatters,
-  createExportConfig,
 } from "../../../../handlers/exportHandler";
 
 const BidangPage = () => {
+  // Search and filter states
   const [searchTerm, setSearchTerm] = useState("");
-  const [bidangData, setBidangData] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
+  // Data states
+  const [bidangData, setBidangData] = useState([]);
   const [rowCount, setRowCount] = useState(0);
 
-  const [refreshing, setRefreshing] = useState(true);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [exporting, setExporting] = useState(false); // State untuk loading export
+  // Loading states
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
+  // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingBidang, setEditingBidang] = useState(null);
 
-  // Pagination state
-  const [dataTablePaginationModel, setDataTablePaginationModel] = useState({
+  // Table states
+  const [paginationModel, setPaginationModel] = useState({
     page: 0,
     pageSize: 10,
   });
+  const [columnVisibility, setColumnVisibility] = useState({});
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  // Initialize column visibility
+  useEffect(() => {
+    const initialVisibility = {};
+    baseColumns.forEach((col) => {
+      initialVisibility[col.field] = true;
+    });
+    setColumnVisibility(initialVisibility);
+  }, []);
 
   // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
-    }, 300); // Tunggu 300ms setelah user berhenti mengetik
+    }, 300);
 
-    return () => {
-      clearTimeout(timer); // Bersihkan timer jika searchTerm berubah sebelum 300ms
-    };
+    return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Reset pagination when filters change
+  // Reset pagination when search changes
   useEffect(() => {
     if (debouncedSearchTerm !== searchTerm) {
-      setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
+      setPaginationModel((prev) => ({ ...prev, page: 0 }));
     }
   }, [debouncedSearchTerm, searchTerm]);
 
-  // Fetch bidang
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setRefreshing(true); // Spinner aktif juga saat fetch pertama kali
-      try {
-        const params = new URLSearchParams();
-        params.append("page", dataTablePaginationModel.page + 1);
-        params.append("per_page", dataTablePaginationModel.pageSize);
+  // Fetch data
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setRefreshing(true);
 
-        if (debouncedSearchTerm) {
-          params.append("search", debouncedSearchTerm);
-        }
+    try {
+      const params = new URLSearchParams({
+        page: paginationModel.page + 1,
+        per_page: paginationModel.pageSize,
+      });
 
-        const response = await api.get(
-          `/klasifikasi-instansi/bidang?${params.toString()}`
-        );
-
-        setBidangData(response.data.data);
-        setRowCount(response.data.meta.total);
-      } catch (error) {
-        console.error("Gagal fetch data bidang:", error);
-        setBidangData([]);
-        setRowCount(0);
-      } finally {
-        setLoading(false);
-        setRefreshing(false); // Matikan spinner setelah data selesai di-load
+      if (debouncedSearchTerm) {
+        params.append("search", debouncedSearchTerm);
       }
-    };
 
+      const response = await api.get(`/klasifikasi-instansi/bidang?${params}`);
+
+      setBidangData(response.data.data);
+      setRowCount(response.data.meta.total);
+    } catch (error) {
+      console.error("Failed to fetch bidang data:", error);
+      setBidangData([]);
+      setRowCount(0);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [paginationModel, debouncedSearchTerm, refreshTrigger]);
+
+  useEffect(() => {
     fetchData();
-  }, [dataTablePaginationModel, debouncedSearchTerm, refreshTrigger]);
+  }, [fetchData]);
 
-  // --- Handler Fungsi ---
-
-  // Define export columns configuration
+  // Export configuration
   const exportColumns = [
     { field: "no", headerName: "No" },
     {
@@ -122,49 +132,117 @@ const BidangPage = () => {
     { field: "kode", headerName: "Kode" },
   ];
 
-  // New export handler using the reusable function
-  const handleExportClick = async () => {
-    // Function to fetch all data for export
-    const fetchAllDataForExport = async () => {
-      try {
-        const params = new URLSearchParams();
-        params.append("page", 1);
-        params.append("per_page", 10000); // Get all data
-        if (debouncedSearchTerm) {
-          params.append("search", debouncedSearchTerm);
-        }
+  // Table columns configuration
+  const baseColumns = [
+    {
+      field: "action",
+      headerName: "Action",
+      width: 150,
+      sortable: false,
+      renderCell: (params) => (
+        <div className="flex items-center gap-2 h-full">
+          <button
+            onClick={() => handleEditClick(params.row.id)}
+            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => handleDeleteClick(params.row.id)}
+            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
+          >
+            Delete
+          </button>
+        </div>
+      ),
+    },
+    {
+      field: "no",
+      headerName: "No",
+      width: 70,
+      sortable: false,
+      renderCell: (params) => {
+        const index = bidangData.findIndex((row) => row.id === params.row.id);
+        return paginationModel.page * paginationModel.pageSize + index + 1;
+      },
+    },
+    {
+      field: "provinsi",
+      headerName: "Provinsi",
+      flex: 1,
+      minWidth: 250,
+      renderCell: (params) => {
+        const provinsi = params.row.kabupaten_kota?.provinsi;
+        return provinsi
+          ? `${provinsi.kode_provinsi} - ${provinsi.nama_provinsi}`
+          : "N/A";
+      },
+    },
+    {
+      field: "kabupaten_kota",
+      headerName: "Kabupaten/Kota",
+      flex: 1,
+      minWidth: 250,
+      renderCell: (params) => {
+        const kabKot = params.row.kabupaten_kota;
+        return kabKot
+          ? `${kabKot.kode_kabupaten_kota} - ${kabKot.nama_kabupaten_kota}`
+          : "N/A";
+      },
+    },
+    {
+      field: "kode_bidang",
+      headerName: "Kode Bidang",
+      width: 150,
+    },
+    {
+      field: "nama_bidang",
+      headerName: "Nama Bidang",
+      flex: 1,
+      minWidth: 250,
+    },
+    {
+      field: "kode",
+      headerName: "Kode",
+      width: 120,
+    },
+  ];
 
-        const response = await api.get(
-          `/klasifikasi-instansi/bidang?${params.toString()}`
-        );
-        return response.data.data;
-      } catch (error) {
-        console.error("Failed to fetch export data:", error);
-        throw error;
+  // Event handlers
+  const handleExportClick = async () => {
+    const fetchAllDataForExport = async () => {
+      const params = new URLSearchParams({
+        page: 1,
+        per_page: 10000,
+      });
+
+      if (debouncedSearchTerm) {
+        params.append("search", debouncedSearchTerm);
       }
+
+      const response = await api.get(`/klasifikasi-instansi/bidang?${params}`);
+      return response.data.data;
     };
 
-    // Create export configuration
     const exportConfig = {
       fetchDataFunction: fetchAllDataForExport,
       columns: exportColumns,
       filename: "data-bidang",
       sheetName: "Data Bidang",
-      setExporting: setExporting,
+      setExporting,
     };
 
-    // Call the reusable export handler
     await handleExport(exportConfig);
   };
 
   const handleRefresh = async () => {
     setRefreshing(true);
+
     try {
-      setSearchTerm(""); // Reset pencarian jika ingin seperti LraPage
-      setDataTablePaginationModel((prev) => ({ ...prev, page: 0 })); // Reset halaman
+      setSearchTerm("");
+      setPaginationModel((prev) => ({ ...prev, page: 0 }));
       setRefreshTrigger((c) => c + 1);
 
-      // Simulasi delay agar animasi terlihat (opsional, bisa dihapus jika tidak perlu)
       await new Promise((resolve) => setTimeout(resolve, 800));
 
       Swal.fire({
@@ -206,9 +284,9 @@ const BidangPage = () => {
   const handleSaveBidang = async (bidangToSave) => {
     try {
       if (bidangToSave.id) {
-        // Mode Edit
         const { id, ...payload } = bidangToSave;
         await api.patch(`/klasifikasi-instansi/bidang/${id}`, payload);
+
         Swal.fire({
           title: "Berhasil Edit",
           text: "Data berhasil diubah.",
@@ -217,8 +295,8 @@ const BidangPage = () => {
           showConfirmButton: false,
         });
       } else {
-        // Mode Add
         await api.post("/klasifikasi-instansi/bidang", bidangToSave);
+
         Swal.fire({
           title: "Berhasil Add",
           text: "Data berhasil ditambah.",
@@ -227,10 +305,11 @@ const BidangPage = () => {
           showConfirmButton: false,
         });
       }
+
       handleCloseAddModal();
       handleRefresh();
     } catch (err) {
-      console.error("Gagal menyimpan:", err);
+      console.error("Failed to save:", err);
 
       const errorData = err.response?.data;
 
@@ -286,7 +365,7 @@ const BidangPage = () => {
 
     try {
       await api.delete(`/klasifikasi-instansi/bidang/${id}`);
-      console.log("Berhasil menghapus bidang dengan ID:", id);
+
       Swal.fire({
         title: "Berhasil Delete",
         text: "Data berhasil dihapus.",
@@ -294,9 +373,10 @@ const BidangPage = () => {
         timer: 1500,
         showConfirmButton: false,
       });
+
       handleRefresh();
     } catch (error) {
-      console.error("Gagal menghapus bidang:", error);
+      console.error("Failed to delete bidang:", error);
       Swal.fire({
         title: "Gagal",
         text: "Terjadi kesalahan saat menghapus data.",
@@ -305,78 +385,15 @@ const BidangPage = () => {
     }
   };
 
-  // Table columns configuration
-  const columns = [
-    {
-      field: "action",
-      headerName: "Action",
-      width: 150,
-      sortable: false,
-      renderCell: (params) => (
-        <div className="flex items-center gap-2 h-full">
-          <button
-            onClick={() => handleEditClick(params.row.id)}
-            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => handleDeleteClick(params.row.id)}
-            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
-          >
-            Delete
-          </button>
-        </div>
-      ),
-    },
-    {
-      field: "no",
-      headerName: "No",
-      width: 70,
-      sortable: false,
-      renderCell: (params) => {
-        const index = bidangData.findIndex((row) => row.id === params.row.id);
-        return (
-          dataTablePaginationModel.page * dataTablePaginationModel.pageSize +
-          index +
-          1
-        );
-      },
-    },
-    {
-      field: "provinsi",
-      headerName: "Provinsi",
-      flex: 1,
-      minWidth: 250,
-      renderCell: (params) => {
-        const provinsi = params.row.kabupaten_kota?.provinsi;
-        return provinsi
-          ? `${provinsi.kode_provinsi} - ${provinsi.nama_provinsi}`
-          : "N/A";
-      },
-    },
-    {
-      field: "kabupaten_kota",
-      headerName: "Kabupaten/Kota",
-      flex: 1,
-      minWidth: 250,
-      renderCell: (params) => {
-        const kabKot = params.row.kabupaten_kota;
-        return kabKot
-          ? `${kabKot.kode_kabupaten_kota} - ${kabKot.nama_kabupaten_kota}`
-          : "N/A";
-      },
-    },
-    {
-      field: "kode_bidang",
-      headerName: "Kode Bidang",
-      width: 150,
-    },
-    { field: "nama_bidang", headerName: "Nama Bidang", flex: 1, minWidth: 250 },
-    { field: "kode", headerName: "Kode", width: 120 },
-  ];
+  const handleColumnVisibilityChange = (newVisibility) => {
+    setColumnVisibility(newVisibility);
+  };
 
-  // --- Render UI ---
+  // Filter visible columns
+  const visibleColumns = baseColumns.filter((col) => {
+    return columnVisibility[col.field] !== false;
+  });
+
   return (
     <div className="min-h-screen bg-[#f7f7f7]">
       <Navbar />
@@ -384,9 +401,10 @@ const BidangPage = () => {
       <div className="px-8 py-8">
         <Breadcrumbs />
 
+        {/* Export Button */}
         <div className="flex justify-end mt-4 mb-4">
           <button
-            onClick={handleExportClick} // Updated to use new handler
+            onClick={handleExportClick}
             disabled={exporting}
             className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
           >
@@ -395,7 +413,9 @@ const BidangPage = () => {
           </button>
         </div>
 
+        {/* Main Content */}
         <div className="bg-white rounded-lg shadow-sm p-6">
+          {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-gray-800">Daftar Bidang</h1>
             <div className="flex gap-3">
@@ -419,29 +439,41 @@ const BidangPage = () => {
             </div>
           </div>
 
+          {/* Controls */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-gray-600 text-sm">Show</span>
-              <select
-                value={dataTablePaginationModel.pageSize}
-                onChange={(e) => {
-                  setDataTablePaginationModel((prev) => ({
-                    ...prev,
-                    pageSize: Number(e.target.value),
-                    page: 0, // Reset ke halaman pertama saat jumlah entri berubah
-                  }));
-                }}
-                className="border border-gray-300 rounded px-3 py-1 text-sm cursor-pointer"
-              >
-                {[5, 10, 25, 50, 75, 100].map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-              <span className="text-gray-600 text-sm">entries</span>
+            <div className="flex items-center gap-4">
+              {/* Page Size Selector */}
+              <div className="flex items-center gap-2">
+                <span className="text-gray-600 text-sm">Show</span>
+                <select
+                  value={paginationModel.pageSize}
+                  onChange={(e) => {
+                    setPaginationModel((prev) => ({
+                      ...prev,
+                      pageSize: Number(e.target.value),
+                      page: 0,
+                    }));
+                  }}
+                  className="border border-gray-300 rounded px-3 py-1 text-sm cursor-pointer"
+                >
+                  {[5, 10, 25, 50, 75, 100].map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+                <span className="text-gray-600 text-sm">entries</span>
+              </div>
+
+              {/* Column Manager */}
+              <ColumnManager
+                columns={baseColumns}
+                columnVisibility={columnVisibility}
+                onColumnVisibilityChange={handleColumnVisibilityChange}
+              />
             </div>
 
+            {/* Search */}
             <div className="relative w-full md:w-64">
               <Search
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
@@ -457,24 +489,26 @@ const BidangPage = () => {
             </div>
           </div>
 
+          {/* Data Table */}
           <DataTable
             rows={bidangData}
-            columns={columns}
+            columns={visibleColumns}
             rowCount={rowCount}
             loading={loading}
             paginationMode="server"
-            filterMode="server" // Ini sebenarnya dikontrol oleh cara Anda mem-fetch data dengan 'search' param
+            filterMode="server"
             pageSizeOptions={[5, 10, 25, 50, 75, 100]}
-            paginationModel={dataTablePaginationModel}
-            onPaginationModelChange={setDataTablePaginationModel}
+            paginationModel={paginationModel}
+            onPaginationModelChange={setPaginationModel}
             height={500}
             emptyRowsMessage="Tidak ada data tersedia"
-            disableRowSelectionOnClick // Menambahkan ini agar baris tidak terpilih saat diklik
-            hideFooterSelectedRowCount // Menambahkan ini untuk menyembunyikan hitungan baris yang dipilih di footer
+            disableRowSelectionOnClick
+            hideFooterSelectedRowCount
           />
         </div>
       </div>
 
+      {/* Modal */}
       <AddBidangModal
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
