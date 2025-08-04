@@ -4,7 +4,6 @@ import { Navbar, Breadcrumbs } from "@/components/layout";
 import { DataTable } from "@/components/table";
 import { Search, Download, RefreshCw, Plus } from "lucide-react";
 import AddObjekModal from "./AddObjekModal";
-import DataTable from "../../../../components/DataTable";
 import Swal from "sweetalert2";
 import { handleExport } from "../../../../handlers/exportHandler"; // Konsisten: Import handleExport
 
