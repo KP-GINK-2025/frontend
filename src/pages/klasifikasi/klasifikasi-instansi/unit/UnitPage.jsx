@@ -61,8 +61,6 @@ const UnitPage = () => {
           );
         },
       },
-
-      // --- MENERAPKAN POLA DARI SUBUNITPAGE ---
       {
         field: "provinsi",
         headerName: "Provinsi",
@@ -156,11 +154,11 @@ const UnitPage = () => {
         {/* Kontainer utama */}
         <div className="bg-white rounded-lg shadow-sm p-4">
           {/* Judul + Tombol Aksi */}
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-y-4 mb-4">
             <h1 className="text-2xl font-bold text-gray-800 mr-2">
               Daftar Unit
             </h1>
-            <div className="flex gap-2">
+            <div className="flex w-full sm:w-auto md:justify-end gap-2">
               <Buttons
                 variant="info"
                 onClick={handler.handleRefresh}
@@ -181,11 +179,25 @@ const UnitPage = () => {
             </div>
           </div>
 
-          {/* Filter dan Search */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
-            {/* BAGIAN KIRI: Kumpulan Filter */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              {/* Dropdown "Show entries" */}
+          {/* --- TATA LETAK BARU DIMULAI DARI SINI --- */}
+
+          {/* Baris 1: Filter Utama */}
+          <div className="flex flex-wrap items-center gap-4 mb-4">
+            <FilterDropdown
+              value={state.selectedBidang}
+              onChange={(e) => {
+                handler.setSelectedBidang(e.target.value);
+              }}
+              options={state.bidangList}
+              placeholder="-- Semua Bidang --"
+              loading={state.loadingBidang}
+            />
+          </div>
+
+          {/* Baris 2: Kontrol Tabel (Show Entries, Column Manager, Search) */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+            {/* Grup Kiri: Show Entries & Column Manager */}
+            <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600">Show</span>
                 <select
@@ -206,19 +218,6 @@ const UnitPage = () => {
                 </select>
                 <span className="text-sm text-gray-600">entries</span>
               </div>
-
-              {/* Filter Bidang */}
-              <FilterDropdown
-                value={state.selectedBidang}
-                onChange={(e) => {
-                  handler.setSelectedBidang(e.target.value);
-                  handler.setSelectedUnit("");
-                  handler.setSelectedSubUnit("");
-                }}
-                options={state.bidangList}
-                placeholder="-- Semua Bidang --"
-                loading={state.loadingBidang}
-              />
               <ColumnManager
                 columns={columns}
                 columnVisibility={columnVisibility}
@@ -226,8 +225,8 @@ const UnitPage = () => {
               />
             </div>
 
-            {/* BAGIAN KANAN: Search */}
-            <div className="relative w-full md:w-64">
+            {/* Grup Kanan: Search */}
+            <div className="w-full md:w-auto">
               <SearchInput
                 placeholder="Cari unit..."
                 value={state.searchTerm}

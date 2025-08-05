@@ -34,6 +34,7 @@ const SelectForm = ({
             borderRadius: "4px", // Meniru 'rounded-sm'
             boxShadow: "none", // Menghapus efek shadow bawaan
             outline: "none", // Meniru 'focus:outline-none'
+            cursor: "pointer",
 
             // Mengatur border-width & border-color secara dinamis
             borderWidth: state.isFocused ? "2px" : "1px", // Meniru 'focus:border-2'
@@ -50,6 +51,7 @@ const SelectForm = ({
           }),
           valueContainer: (provided) => ({
             ...provided,
+            cursor: "pointer",
             padding: "0 11px", // Disesuaikan sedikit agar pas dengan px-3 & border-2
           }),
           // Style lain bisa ditambahkan di sini jika perlu

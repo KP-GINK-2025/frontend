@@ -74,12 +74,14 @@ const LoginPage = () => {
 
       navigate("/dashboard");
     } catch (error) {
-      const msg =
-        error?.response?.data?.message || "Terjadi kesalahan saat login.";
+      const errorData = error.response?.data;
+      const errorMessages = errorData?.errors
+        ? Object.values(errorData.errors).flat().join("\n")
+        : "Terjadi kesalahan";
       Swal.fire({
         icon: "error",
         title: "Login gagal",
-        text: msg,
+        text: errorMessages,
       });
     }
   };

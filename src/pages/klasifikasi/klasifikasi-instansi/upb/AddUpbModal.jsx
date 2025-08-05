@@ -1,138 +1,53 @@
 import React, { useState, useEffect } from "react";
-import Select from "react-select";
-import api from "../../../../api/axios";
 import { motion, AnimatePresence } from "framer-motion";
-import Swal from "sweetalert2";
+import { Buttons } from "@/components/ui";
+import { InputForm, SelectForm } from "@/components/form";
+import { useUpbForm } from "./useUpbForm";
+import { showInfoAlert } from "../../../../utils/notificationService";
 
 const AddUpbModal = ({ isOpen, onClose, onSave, initialData }) => {
-  const [kodeUpb, setKodeUpb] = useState("");
-  const [namaUpb, setNamaUpb] = useState("");
-  const [kode, setKode] = useState("");
-  const [selectedSubUnit, setSelectedSubUnit] = useState(null);
-  const [subUnitOptions, setSubUnitOptions] = useState([]);
-  const [isLoadingSubUnit, setIsLoadingSubUnit] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  const {
+    formState,
+    handleInputChange,
+    resetForm,
+    provinsi,
+    kabupaten,
+    bidang,
+    unit,
+    subUnit,
+    isFormValid,
+    dataToSave,
+  } = useUpbForm(initialData, isOpen);
+
   useEffect(() => {
-    if (isOpen) {
-      if (initialData) {
-        // --- MODE EDIT ---
-        setKodeUpb(initialData.kode_upb || "");
-        setNamaUpb(initialData.nama_upb || "");
-        setKode(initialData.kode || "");
-
-        // Cek apakah data sub unit sudah ada di `initialData`
-        if (initialData.sub_unit) {
-          // atau if (initialData.subUnit)
-          // Jika ya (dari eager loading atau frontend join), langsung gunakan
-          const subUnit = initialData.sub_unit;
-          const option = {
-            value: subUnit.id,
-            label: `${subUnit.kode_sub_unit} - ${subUnit.nama_sub_unit}`,
-          };
-          setSelectedSubUnit(option);
-          setSubUnitOptions([option]); // Set opsi awal
-        } else if (initialData.sub_unit_id) {
-          // Fallback: Jika hanya ada ID, fetch ke API (seperti sebelumnya)
-          setIsLoadingSubUnit(true);
-          api
-            .get(`/klasifikasi-instansi/subunit/${initialData.sub_unit_id}`)
-            .then((response) => {
-              const data = response.data.data;
-              const option = {
-                value: data.id,
-                label: `${data.kode_sub_unit} - ${data.nama_sub_unit}`,
-              };
-              setSelectedSubUnit(option);
-              setSubUnitOptions([option]);
-            })
-            .catch((error) =>
-              console.error("Gagal fetch initial unit data:", error)
-            )
-            .finally(() => setIsLoadingSubUnit(false));
-        } else {
-          setSelectedSubUnit(null);
-        }
-      } else {
-        // --- MODE TAMBAH BARU (Reset semua form) ---
-        setKodeUpb("");
-        setNamaUpb("");
-        setKode("");
-        setSelectedSubUnit(null);
-        setSubUnitOptions([]);
-      }
-    }
-  }, [isOpen, initialData]);
-
-  const loadSubUnitOptions = (inputValue) => {
-    if (!inputValue) {
-      return;
-    }
-    setIsLoadingSubUnit(true);
-    api
-      .get(`/klasifikasi-instansi/subunit?per_page=1000&search=${inputValue}`)
-      .then((response) => {
-        const formattedOptions = response.data.data.map((item) => ({
-          value: item.id,
-          label: `${item.kode_sub_unit} - ${item.nama_sub_unit}`,
-        }));
-        setSubUnitOptions(formattedOptions);
-      })
-      .catch((error) => {
-        console.error("Gagal cari data subunit:", error);
-        setSubUnitOptions([]);
-      })
-      .finally(() => {
-        setIsLoadingSubUnit(false);
-      });
-  };
+    if (!isOpen) setIsSaving(false);
+  }, [isOpen]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (
-      !selectedSubUnit ||
-      !kodeUpb.trim() ||
-      !namaUpb.trim() ||
-      !kode.trim()
-    ) {
-      Swal.fire({
-        text: "Harap lengkapi semua field yang wajib diisi (*)",
-        icon: "info",
-        timer: 2500,
-        showConfirmButton: false,
-      });
+    if (!isFormValid) {
+      showInfoAlert(
+        "Harap lengkapi semua field yang wajib diisi (*)",
+        "Form Belum Lengkap"
+      );
       return;
     }
-    const dataToSave = {
-      sub_unit_id: selectedSubUnit.value,
-      kode_upb: kodeUpb,
-      nama_upb: namaUpb,
-      kode,
-    };
 
+    setIsSaving(true);
     try {
-      setIsSaving(true); // Mulai state loading
-      if (initialData && initialData.id) {
-        await onSave({ ...dataToSave, id: initialData.id });
-      } else {
-        await onSave(dataToSave);
-      }
-    } catch (err) {
-      // alert("Terjadi kesalahan saat menyimpan data.");
-      Swal.fire({
-        title: "Gagal",
-        text: "Terjadi kesalahan saat menyimpan data.",
-        icon: "error",
-      });
-      console.error("Gagal menyimpan: ", err);
+      await onSave(
+        initialData ? { ...dataToSave, id: initialData.id } : dataToSave
+      );
+    } catch (error) {
+      console.error("Proses penyimpanan gagal di level modal:", error);
     } finally {
-      setIsSaving(false); // Selesai loading
+      setIsSaving(false);
     }
   };
 
-  if (!isOpen) {
-    return null;
-  }
+  if (!isOpen) return null;
 
   return (
     <AnimatePresence>
@@ -143,14 +58,16 @@ const AddUpbModal = ({ isOpen, onClose, onSave, initialData }) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          onClick={onClose}
         >
           <motion.div
             key="modal-content"
             initial={{ opacity: 0, scale: 0.95, y: -20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -20 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className="relative w-full max-w-lg p-6 bg-white rounded-lg shadow-lg"
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="relative w-full max-w-lg p-6 mx-4 bg-white rounded-lg shadow-lg"
+            onClick={(e) => e.stopPropagation()}
           >
             {/* --- Modal Content Mulai dari sini --- */}
             <div className="flex items-center justify-between pb-4 mb-4 border-b border-gray-200">
@@ -175,98 +92,121 @@ const AddUpbModal = ({ isOpen, onClose, onSave, initialData }) => {
               className="max-h-[calc(100vh-220px)] overflow-y-auto pr-2 pb-4"
             >
               {/* --- Isi Form --- */}
-              <div className="mb-4">
-                <label htmlFor="subUnit" className="block mb-2 text-gray-700">
-                  Sub Unit: <span className="text-[#B53C3C]">*</span>
-                </label>
-                <Select
-                  id="subUnit"
-                  className="rounded-md focus:outline-none focus:ring-2 focus:ring-[#B53C3C]"
-                  options={subUnitOptions}
-                  value={selectedSubUnit}
-                  onChange={setSelectedSubUnit}
-                  onInputChange={(newValue) => {
-                    loadSubUnitOptions(newValue);
-                    return newValue;
-                  }}
-                  isLoading={isLoadingSubUnit}
-                  placeholder="Ketik untuk mencari ID atau Nama..."
-                  isClearable
-                  noOptionsMessage={({ inputValue }) =>
-                    !inputValue
-                      ? "Ketik sesuatu untuk mencari"
-                      : "Data tidak ditemukan"
-                  }
-                />
-              </div>
+              <SelectForm
+                formTitle="Provinsi"
+                id="provinsi"
+                options={provinsi.options}
+                value={provinsi.selectedValue}
+                onChange={provinsi.handleChange}
+                isLoading={provinsi.isLoading}
+                placeholder="Pilih provinsi..."
+                isDisabled={isSaving}
+              />
+              <SelectForm
+                formTitle="Kabupaten/Kota"
+                id="kabKot"
+                options={kabupaten.options}
+                value={kabupaten.selectedValue}
+                onChange={kabupaten.handleChange}
+                isLoading={kabupaten.isLoading}
+                placeholder={
+                  provinsi.selectedValue
+                    ? "Pilih kabupaten/kota..."
+                    : "Pilih provinsi dahulu"
+                }
+                isDisabled={!provinsi.selectedValue || isSaving}
+              />
+              <SelectForm
+                formTitle="Bidang"
+                id="bidang"
+                options={bidang.options}
+                value={bidang.selectedValue}
+                onChange={bidang.handleChange}
+                isLoading={bidang.isLoading}
+                placeholder={
+                  kabupaten.selectedValue
+                    ? "Pilih bidang..."
+                    : "Pilih kabupaten/kota dahulu"
+                }
+                isDisabled={!kabupaten.selectedValue || isSaving}
+              />
+              <SelectForm
+                formTitle="Unit"
+                id="unit"
+                options={unit.options}
+                value={unit.selectedValue}
+                onChange={unit.handleChange}
+                isLoading={unit.isLoading}
+                placeholder={
+                  bidang.selectedValue ? "Pilih unit..." : "Pilih bidang dahulu"
+                }
+                isDisabled={!bidang.selectedValue || isSaving}
+              />
+              <SelectForm
+                formTitle="Sub Unit"
+                id="subunit"
+                options={subUnit.options}
+                value={subUnit.selectedValue}
+                onChange={subUnit.handleChange}
+                isLoading={subUnit.isLoading}
+                placeholder={
+                  unit.selectedValue ? "Pilih sub unit..." : "Pilih unit dahulu"
+                }
+                isDisabled={!unit.selectedValue || isSaving}
+              />
 
-              <div className="mb-4">
-                <label htmlFor="kodeUpb" className="block mb-2 text-gray-700">
-                  Kode UPB: <span className="text-[#B53C3C]">*</span>
-                </label>
-                <input
-                  type="number"
-                  id="kodeUpb"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#B53C3C]"
-                  value={kodeUpb}
-                  onChange={(e) => setKodeUpb(e.target.value)}
-                  required
-                  min="0"
-                />
-              </div>
+              <InputForm
+                formTitle="Kode UPB"
+                id="kodeUpb"
+                type="text"
+                value={formState.kodeUpb}
+                onChange={handleInputChange}
+                min="0"
+                disabled={isSaving}
+              />
 
-              <div className="mb-4">
-                <label htmlFor="namaUpb" className="block mb-2 text-gray-700">
-                  Nama UPB: <span className="text-[#B53C3C]">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="namaUpb"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#B53C3C]"
-                  value={namaUpb}
-                  onChange={(e) => setNamaUpb(e.target.value)}
-                  required
-                />
-              </div>
+              <InputForm
+                formTitle="Nama UPB"
+                id="namaUpb"
+                type="text"
+                value={formState.namaUpb}
+                onChange={handleInputChange}
+                disabled={isSaving}
+              />
 
-              <div className="mb-6">
-                <label htmlFor="kode" className="block mb-2 text-gray-700">
-                  Kode: <span className="text-[#B53C3C]">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="kode"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#B53C3C]"
-                  value={kode}
-                  onChange={(e) => setKode(e.target.value)}
-                  required
-                />
-              </div>
+              <InputForm
+                formTitle="Kode"
+                id="kode"
+                type="text"
+                value={formState.kode}
+                onChange={handleInputChange}
+                disabled={isSaving}
+              />
             </form>
 
             <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200 mt-4">
-              <button
-                type="button"
+              <Buttons
+                variant="secondary"
+                onClick={resetForm}
+                disabled={isSaving}
+                className="mr-auto"
+              >
+                Reset
+              </Buttons>
+
+              <Buttons
+                variant="secondary"
                 onClick={onClose}
                 disabled={isSaving}
-                className={`px-6 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400 cursor-pointer ${
-                  isSaving
-                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                }`}
               >
                 Batal
-              </button>
+              </Buttons>
 
-              <button
+              <Buttons
                 type="submit"
+                variant="danger"
                 onClick={handleSubmit}
                 disabled={isSaving}
-                className={`px-6 py-2 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-[#B53C3C] cursor-pointer ${
-                  isSaving
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-red-600 hover:bg-red-700"
-                }`}
               >
                 {isSaving
                   ? initialData
@@ -275,7 +215,7 @@ const AddUpbModal = ({ isOpen, onClose, onSave, initialData }) => {
                   : initialData
                   ? "Simpan Perubahan"
                   : "Simpan"}
-              </button>
+              </Buttons>
             </div>
             {/* --- Modal Content Selesai --- */}
           </motion.div>
