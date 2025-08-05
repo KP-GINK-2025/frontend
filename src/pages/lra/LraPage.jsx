@@ -1,9 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Navbar, Breadcrumbs } from "@/components/layout";
 import { DataTable } from "@/components/table";
-import { Search, Download, RefreshCw, Plus } from "lucide-react";
+import { Buttons } from "@/components/ui";
+import { SearchInput } from "@/components/form";
+import { ColumnManager } from "@/components/table";
+import { Search, Download, RefreshCw, Plus, Upload } from "lucide-react";
 import AddLraModal from "./AddLraModal";
 import Swal from "sweetalert2";
+import api from "../../api/axios"; // Changed to relative path and 'api' variable name
 
 // Constants
 const ENTRIES_PER_PAGE_OPTIONS = [5, 10, 25, 50, 100];
@@ -15,7 +19,6 @@ const INITIAL_FILTERS = {
   subUnit: "",
   upb: "",
   semester: "",
-  tahun: "",
 };
 
 // Utility Components
@@ -31,7 +34,7 @@ const FilterSelect = ({
   <select
     value={value}
     onChange={(e) => onChange(e.target.value)}
-    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+    className="w-full border border-gray-300 hover:border-gray-500 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-2 focus:border-[#B53C3C] disabled:bg-gray-100 cursor-pointer"
     disabled={disabled}
   >
     <option value="">{label}</option>
@@ -46,23 +49,6 @@ const FilterSelect = ({
   </select>
 );
 
-const ActionButtons = ({ onEdit, onDelete }) => (
-  <div className="flex gap-2 items-center">
-    <button
-      onClick={onEdit}
-      className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors cursor-pointer"
-    >
-      Edit
-    </button>
-    <button
-      onClick={onDelete}
-      className="text-red-600 hover:text-red-800 text-sm font-medium transition-colors cursor-pointer"
-    >
-      Delete
-    </button>
-  </div>
-);
-
 const LraPage = () => {
   // State management
   const [searchTerm, setSearchTerm] = useState("");
@@ -71,9 +57,12 @@ const LraPage = () => {
   );
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingLra, setEditingLra] = useState(null);
+  const [columnVisibility, setColumnVisibility] = useState({});
 
   // Dropdown data states
   const [bidangData, setBidangData] = useState([]);
@@ -81,7 +70,6 @@ const LraPage = () => {
   const [subUnitData, setSubUnitData] = useState([]);
   const [upbData, setUpbData] = useState([]);
   const [semesterData, setSemesterData] = useState([]);
-  const [tahunData, setTahunData] = useState([]);
   const [lraData, setLraData] = useState([]);
 
   const [dataTablePaginationModel, setDataTablePaginationModel] = useState({
@@ -89,75 +77,59 @@ const LraPage = () => {
     pageSize: DEFAULT_ENTRIES_PER_PAGE,
   });
 
+  // Initialize column visibility
+  useEffect(() => {
+    const initialVisibility = {};
+    columns.forEach((col) => {
+      // Set default visibility based on screenshot
+      if (col.field === "tahun" || col.field.startsWith("nilaiLraKib")) {
+        initialVisibility[col.field] = false; // Initially hidden as per screenshot
+      } else {
+        initialVisibility[col.field] = true;
+      }
+    });
+    setColumnVisibility(initialVisibility);
+  }, []);
+
   // API Functions
+  const fetchDropdownData = async () => {
+    try {
+      const [bidangRes, unitRes, subUnitRes, upbRes, semesterRes] =
+        await Promise.all([
+          api.get("/klasifikasi-instansi/bidang"),
+          api.get("/klasifikasi-instansi/unit"),
+          api.get("/klasifikasi-instansi/subunit"),
+          api.get("/klasifikasi-instansi/upb"),
+          api.get("/lra/semester"),
+        ]);
+
+      setBidangData(bidangRes.data?.data || bidangRes.data || []);
+      setUnitData(unitRes.data?.data || unitRes.data || []);
+      setSubUnitData(subUnitRes.data?.data || subUnitRes.data || []);
+      setUpbData(upbRes.data?.data || upbRes.data || []);
+      setSemesterData(semesterRes.data?.data || semesterRes.data || []);
+    } catch (error) {
+      console.error("Error fetching dropdown data:", error);
+      throw error;
+    }
+  };
+
+  const fetchLraData = async () => {
+    try {
+      const response = await api.get("/lra");
+      setLraData(response.data?.data || response.data || []);
+    } catch (error) {
+      console.error("Error fetching LRA data:", error);
+      throw error;
+    }
+  };
+
   const fetchData = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      // Simulate API call with timeout
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      // Dummy data untuk filter
-      setBidangData([
-        { id: 1, nama: "Bidang Keuangan" },
-        { id: 2, nama: "Bidang Umum" },
-      ]);
-      setUnitData([
-        { id: 1, nama: "Unit Anggaran" },
-        { id: 2, nama: "Unit Gaji" },
-      ]);
-      setSubUnitData([
-        { id: 1, nama: "Sub Unit A" },
-        { id: 2, nama: "Sub Unit B" },
-      ]);
-      setUpbData([
-        { id: 1, nama: "UPB A" },
-        { id: 2, nama: "UPB B" },
-      ]);
-      setSemesterData([
-        { id: 1, nama: "Ganjil" },
-        { id: 2, nama: "Genap" },
-      ]);
-      setTahunData(["2023", "2024", "2025"]);
-
-      // Dummy data untuk LRA
-      const dummyLraData = [
-        {
-          id: 1,
-          tahun: "2024",
-          semester: "Ganjil",
-          bidang: "Bidang Keuangan",
-          unit: "Unit Anggaran",
-          subUnit: "Sub Unit A",
-          upb: "UPB A",
-          nilaiTotal: 100000000,
-          keterangan: "LRA Bulan Januari",
-        },
-        {
-          id: 2,
-          tahun: "2023",
-          semester: "Genap",
-          bidang: "Bidang Umum",
-          unit: "Unit Gaji",
-          subUnit: "Sub Unit B",
-          upb: "UPB B",
-          nilaiTotal: 75000000,
-          keterangan: "LRA Bulan Juli",
-        },
-        {
-          id: 3,
-          tahun: "2024",
-          semester: "Ganjil",
-          bidang: "Bidang Keuangan",
-          unit: "Unit Anggaran",
-          subUnit: "Sub Unit A",
-          upb: "UPB A",
-          nilaiTotal: 120000000,
-          keterangan: "LRA Bulan Februari",
-        },
-      ];
-      setLraData(dummyLraData);
+      await Promise.all([fetchDropdownData(), fetchLraData()]);
     } catch (err) {
       console.error("Gagal mengambil data:", err);
       setError(err.message || "Terjadi kesalahan saat mengambil data.");
@@ -196,7 +168,7 @@ const LraPage = () => {
       item.unit?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.upb?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.keterangan?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.nilaiTotal
+      item.nilaiTotalLra // Use nilaiTotalLra for consistency with AddLraModal
         ?.toString()
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
@@ -207,31 +179,138 @@ const LraPage = () => {
       !filters.subUnit || item.subUnit === filters.subUnit,
       !filters.upb || item.upb === filters.upb,
       !filters.semester || item.semester === filters.semester,
-      !filters.tahun || item.tahun === filters.tahun,
     ];
 
     return matchesSearch && filterChecks.every(Boolean);
   });
+
+  // Helper function for currency formatting
+  const currencyFormatter = (value) => {
+    if (value == null) {
+      return "";
+    }
+    return `Rp ${new Intl.NumberFormat("id-ID").format(value)}`;
+  };
+
+  // Table columns configuration
+  const columns = useMemo(
+    () => [
+      {
+        field: "action",
+        headerName: "Action",
+        width: 150,
+        sortable: false,
+        renderCell: (params) => (
+          <div className="flex items-center gap-2 h-full">
+            <button
+              onClick={() => handleEditClick(params.row.id)}
+              className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => handleDeleteClick(params.row.id)}
+              className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
+            >
+              Delete
+            </button>
+          </div>
+        ),
+      },
+      {
+        field: "no",
+        headerName: "No",
+        width: 70,
+        sortable: false,
+        renderCell: (params) => {
+          return (
+            params.api.getRowIndexRelativeToVisibleRows(params.id) +
+            1 +
+            dataTablePaginationModel.page * dataTablePaginationModel.pageSize
+          );
+        },
+      },
+      { field: "tahun", headerName: "Tahun", width: 100 }, // Added Tahun column
+      { field: "semester", headerName: "Semester", width: 120 },
+      { field: "bidang", headerName: "Bidang", width: 180 },
+      { field: "unit", headerName: "Unit", width: 150 },
+      { field: "subUnit", headerName: "Sub Unit", width: 150 },
+      { field: "upb", headerName: "UPB", width: 120 },
+      {
+        field: "nilaiLraKibA",
+        headerName: "Nilai LRA KIB A/Tanah",
+        width: 200,
+        valueFormatter: (params) => currencyFormatter(params.value),
+      },
+      {
+        field: "nilaiLraKibB",
+        headerName: "Nilai LRA KIB B/Peralatan dan Mesin",
+        width: 250,
+        valueFormatter: (params) => currencyFormatter(params.value),
+      },
+      {
+        field: "nilaiLraKibC",
+        headerName: "Nilai LRA KIB C/Gedung dan Bangunan",
+        width: 250,
+        valueFormatter: (params) => currencyFormatter(params.value),
+      },
+      {
+        field: "nilaiLraKibD",
+        headerName: "Nilai LRA KIB D/Jalan, Irigasi dan Jaringan",
+        width: 280,
+        valueFormatter: (params) => currencyFormatter(params.value),
+      },
+      {
+        field: "nilaiLraKibE",
+        headerName: "Nilai LRA KIB E/Aset Tetap Lainnya",
+        width: 250,
+        valueFormatter: (params) => currencyFormatter(params.value),
+      },
+      {
+        field: "nilaiLraKibF",
+        headerName: "Nilai LRA KIB F/Konstruksi Dalam Pengerjaan",
+        width: 300,
+        valueFormatter: (params) => currencyFormatter(params.value),
+      },
+      {
+        field: "nilaiTotalLra", // Changed field name to match AddLraModal's state
+        headerName: "Nilai Total",
+        width: 180,
+        valueFormatter: (params) => currencyFormatter(params.value),
+      },
+      { field: "keterangan", headerName: "Keterangan", flex: 1 },
+    ],
+    [dataTablePaginationModel]
+  );
 
   // Event handlers
   const handleFilterChange = (filterType, value) => {
     setFilters((prev) => ({ ...prev, [filterType]: value }));
   };
 
-  const handleExport = () => {
-    Swal.fire({
-      icon: "info",
-      title: "Export Data",
-      text: "Fitur export sedang dalam pengembangan",
-      toast: true,
-      position: "top-end",
-      showConfirmButton: false,
-      timer: 2000,
-      timerProgressBar: true,
-    });
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      // Simulate export delay
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      Swal.fire({
+        icon: "info",
+        title: "Export Data",
+        text: "Fitur export sedang dalam pengembangan",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleRefresh = async () => {
+    setRefreshing(true);
     try {
       setSearchTerm("");
       setFilters(INITIAL_FILTERS);
@@ -258,6 +337,8 @@ const LraPage = () => {
         timer: 2000,
         timerProgressBar: true,
       });
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -273,7 +354,7 @@ const LraPage = () => {
 
   const handleSaveNewLra = (lraToSave) => {
     if (lraToSave.id) {
-      // Mode Edit
+      // Edit Mode
       setLraData((prevData) =>
         prevData.map((item) => (item.id === lraToSave.id ? lraToSave : item))
       );
@@ -289,7 +370,7 @@ const LraPage = () => {
         timerProgressBar: true,
       });
     } else {
-      // Mode Tambah Baru
+      // Add New Mode
       setLraData((prevData) => [...prevData, { id: Date.now(), ...lraToSave }]);
 
       Swal.fire({
@@ -348,112 +429,58 @@ const LraPage = () => {
     });
   };
 
-  // Table columns configuration
-  const columns = [
-    {
-      field: "action",
-      headerName: "Action",
-      width: 150,
-      sortable: false,
-      renderCell: (params) => (
-        <div className="flex items-center gap-2 h-full">
-          <button
-            onClick={() => handleEditClick(params.row.id)}
-            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => handleDeleteClick(params.row.id)}
-            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
-          >
-            Delete
-          </button>
-        </div>
-      ),
-    },
-    {
-      field: "no",
-      headerName: "No",
-      width: 70,
-      sortable: false,
-      renderCell: (params) => {
-        return (
-          params.api.getRowIndexRelativeToVisibleRows(params.id) +
-          1 +
-          dataTablePaginationModel.page * dataTablePaginationModel.pageSize
-        );
-      },
-    },
-    { field: "tahun", headerName: "Tahun", width: 100 },
-    { field: "semester", headerName: "Semester", width: 120 },
-    { field: "bidang", headerName: "Bidang", width: 180 },
-    { field: "unit", headerName: "Unit", width: 150 },
-    { field: "subUnit", headerName: "Sub Unit", width: 150 },
-    { field: "upb", headerName: "UPB", width: 120 },
-    {
-      field: "nilaiTotal",
-      headerName: "Nilai Total",
-      width: 180,
-      valueFormatter: (params) => {
-        if (params.value == null) {
-          return "";
-        }
-        return `Rp ${new Intl.NumberFormat("id-ID").format(params.value)}`;
-      },
-    },
-    { field: "keterangan", headerName: "Keterangan", flex: 1 },
-  ];
+  const handleColumnVisibilityChange = (newVisibility) => {
+    setColumnVisibility(newVisibility);
+  };
+
+  // Filter visible columns
+  const visibleColumns = columns.filter((col) => {
+    return columnVisibility[col.field] !== false;
+  });
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#f7f7f7]">
       <Navbar />
 
-      <div className="px-8 py-8">
+      <div className="p-8">
         <Breadcrumbs />
 
         {/* Export Button */}
-        <div className="flex justify-end mb-4">
-          <button
-            onClick={handleExport}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
-          >
-            <Download size={16} />
-            Export
-          </button>
+        <div className="flex justify-end mt-4 mb-4">
+          <Buttons variant="danger" onClick={handleExport} disabled={exporting}>
+            <Upload size={16} className={exporting ? "animate-pulse" : ""} />
+            {exporting ? "Mengekspor..." : "Ekspor"}
+          </Buttons>
         </div>
 
         {/* Main Content */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="bg-white rounded-lg shadow-sm p-4">
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-gray-800">
               Laporan Realisasi Anggaran
             </h1>
             <div className="flex gap-3">
-              <button
+              <Buttons
+                variant="info"
                 onClick={handleRefresh}
-                disabled={loading}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+                disabled={refreshing}
               >
                 <RefreshCw
                   size={16}
-                  className={loading ? "animate-spin" : ""}
+                  className={refreshing ? "animate-spin" : ""}
                 />
                 Refresh
-              </button>
-              <button
-                onClick={handleOpenAddModal}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
-              >
+              </Buttons>
+              <Buttons variant="success" onClick={handleOpenAddModal}>
                 <Plus size={16} />
                 Add LRA
-              </button>
+              </Buttons>
             </div>
           </div>
 
           {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
             <FilterSelect
               label="-- Bidang --"
               value={filters.bidang}
@@ -489,46 +516,41 @@ const LraPage = () => {
               options={semesterData}
               disabled={loading}
             />
-            <FilterSelect
-              label="-- Tahun --"
-              value={filters.tahun}
-              onChange={(value) => handleFilterChange("tahun", value)}
-              options={tahunData}
-              disabled={loading}
-            />
           </div>
 
           {/* Controls */}
           <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <span>Show</span>
-              <select
-                value={entriesPerPage}
-                onChange={(e) => setEntriesPerPage(Number(e.target.value))}
-                className="border border-gray-300 rounded px-2 py-1 disabled:bg-gray-100"
-                disabled={loading}
-              >
-                {ENTRIES_PER_PAGE_OPTIONS.map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-              <span>entries</span>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <span>Show</span>
+                <select
+                  value={entriesPerPage}
+                  onChange={(e) => setEntriesPerPage(Number(e.target.value))}
+                  className="border border-gray-300 hover:border-gray-500 rounded px-2 py-1 disabled:bg-gray-100 cursor-pointer focus:outline-none focus:border-2 focus:border-[#B53C3C]"
+                  disabled={loading}
+                >
+                  {ENTRIES_PER_PAGE_OPTIONS.map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+                <span>entries</span>
+              </div>
+
+              {/* Column Manager */}
+              <ColumnManager
+                columns={columns}
+                columnVisibility={columnVisibility}
+                onColumnVisibilityChange={handleColumnVisibilityChange}
+              />
             </div>
 
             <div className="relative w-full md:w-64">
-              <Search
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                size={16}
-              />
-              <input
-                type="text"
+              <SearchInput
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                disabled={loading}
               />
             </div>
           </div>
@@ -540,7 +562,7 @@ const LraPage = () => {
               <div className="text-gray-600 mb-4">{error}</div>
               <button
                 onClick={fetchData}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors cursor-pointer"
               >
                 Coba Lagi
               </button>
@@ -549,7 +571,7 @@ const LraPage = () => {
             <div className="border border-gray-200 rounded-lg overflow-hidden">
               <DataTable
                 rows={filteredData}
-                columns={columns}
+                columns={visibleColumns}
                 initialPageSize={entriesPerPage}
                 pageSizeOptions={ENTRIES_PER_PAGE_OPTIONS}
                 height={500}
@@ -557,6 +579,8 @@ const LraPage = () => {
                 paginationModel={dataTablePaginationModel}
                 onPaginationModelChange={setDataTablePaginationModel}
                 loading={loading}
+                disableRowSelectionOnClick
+                hideFooterSelectedRowCount
               />
             </div>
           )}
