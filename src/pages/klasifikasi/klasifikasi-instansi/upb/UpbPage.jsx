@@ -1,306 +1,74 @@
-import React, { useState, useEffect } from "react";
-import api from "../../../../api/axios";
+import React, { useState, useEffect, useMemo } from "react";
+import { Upload, RefreshCw, Plus } from "lucide-react";
 import { Navbar, Breadcrumbs } from "@/components/layout";
 import { DataTable } from "@/components/table";
-import { Search, Download, RefreshCw, Plus } from "lucide-react";
+import { Buttons } from "@/components/ui";
+import { SearchInput, FilterDropdown } from "@/components/form";
+import { ColumnManager } from "@/components/table";
 import AddUpbModal from "./AddUpbModal";
-import Swal from "sweetalert2";
-import { handleExport as exportHandler } from "../../../../handlers/exportHandler";
+import { useUpbPageLogic } from "./useUpbPageLogic";
 
 const UpbPage = () => {
-  const [upbData, setUpbData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(true);
-  const [exporting, setExporting] = useState(false); // Add exporting state
-  const [totalRows, setTotalRows] = useState(0);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const { state, handler } = useUpbPageLogic();
+  const [columnVisibility, setColumnVisibility] = useState({});
 
-  // Filter and search state
-  const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
-  const [selectedBidang, setSelectedBidang] = useState("");
-  const [bidangList, setBidangList] = useState([]);
-  const [selectedUnit, setSelectedUnit] = useState("");
-  const [unitList, setUnitList] = useState([]);
-  const [loadingUnits, setLoadingUnits] = useState(false);
-  const [selectedSubUnit, setSelectedSubUnit] = useState("");
-  const [subUnitList, setSubUnitList] = useState([]);
-  const [loadingSubUnits, setLoadingSubUnits] = useState(false);
-
-  // Modal state
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [editingUpb, setEditingUpb] = useState(null);
-
-  // Pagination state
-  const [paginationModel, setPaginationModel] = useState({
-    page: 0,
-    pageSize: 10,
-  });
-
-  // Debounce search input
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
-
-  // Reset pagination when filters change
-  useEffect(() => {
-    if (
-      debouncedSearchTerm ||
-      selectedBidang ||
-      selectedUnit ||
-      selectedSubUnit
-    ) {
-      setPaginationModel((prev) => ({ ...prev, page: 0 }));
-    }
-  }, [debouncedSearchTerm, selectedBidang, selectedUnit, selectedSubUnit]);
-
-  // Fetch bidang list (static data)
-  useEffect(() => {
-    const fetchBidangList = async () => {
-      try {
-        const response = await api.get("/klasifikasi-instansi/bidang", {
-          params: { per_page: 1000 },
-        });
-
-        const sortedBidang = response.data.data
-          .map((bidang) => ({
-            id: bidang.id,
-            kode_bidang: bidang.kode_bidang,
-            nama_bidang: bidang.nama_bidang,
-          }))
-          .sort((a, b) =>
-            a.kode_bidang.localeCompare(b.kode_bidang, undefined, {
-              numeric: true,
-            })
-          );
-
-        setBidangList(sortedBidang);
-      } catch (error) {
-        console.error("Gagal mendapatkan bidang list:", error);
-        setBidangList([]);
-      }
-    };
-
-    fetchBidangList();
+    const initialVisibility = {};
+    columns.forEach((col) => {
+      initialVisibility[col.field] = true;
+    });
+    setColumnVisibility(initialVisibility);
   }, []);
 
-  // Fetch unit list (static data)
-  useEffect(() => {
-    if (!selectedBidang) {
-      setUnitList([]);
-      return;
-    }
-
-    const fetchUnitList = async () => {
-      setLoadingUnits(true);
-      try {
-        const response = await api.get("/klasifikasi-instansi/unit", {
-          params: { per_page: 1000, bidang_id: selectedBidang },
-        });
-
-        const sortedUnit = response.data.data
-          .map((unit) => ({
-            id: unit.id,
-            kode_unit: unit.kode_unit,
-            nama_unit: unit.nama_unit,
-          }))
-          .sort((a, b) =>
-            a.kode_unit.localeCompare(b.kode_unit, undefined, {
-              numeric: true,
-            })
+  const columns = useMemo(
+    () => [
+      {
+        field: "action",
+        headerName: "Action",
+        width: 120,
+        sortable: false,
+        renderCell: (params) => {
+          if (!params.row) return null;
+          return (
+            <div className="flex gap-2 items-center h-full">
+              <button
+                onClick={() => handler.handleOpenModal(params.row)}
+                className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => handler.handleDeleteSubUnit(params.row.id)}
+                className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
+              >
+                Delete
+              </button>
+            </div>
           );
-
-        setUnitList(sortedUnit);
-      } catch (error) {
-        console.error("Gagal mendapatkan unit list:", error);
-        setUnitList([]);
-      } finally {
-        setLoadingUnits(false);
-      }
-    };
-
-    fetchUnitList();
-  }, [selectedBidang]);
-
-  // Fetch subunit list (static data)
-  useEffect(() => {
-    if (!selectedUnit) {
-      setSubUnitList([]);
-      return;
-    }
-
-    const fetchSubUnitList = async () => {
-      setLoadingSubUnits(true);
-      try {
-        const response = await api.get("/klasifikasi-instansi/subunit", {
-          params: { per_page: 1000, unit_id: selectedUnit },
-        });
-
-        const sortedSubUnit = response.data.data
-          .map((subUnit) => ({
-            id: subUnit.id,
-            kode_sub_unit: subUnit.kode_sub_unit,
-            nama_sub_unit: subUnit.nama_sub_unit,
-          }))
-          .sort((a, b) =>
-            a.kode_sub_unit.localeCompare(b.kode_sub_unit, undefined, {
-              numeric: true,
-            })
-          );
-
-        setSubUnitList(sortedSubUnit);
-      } catch (error) {
-        console.error("Gagal mendapatkan subunit list:", error);
-        setSubUnitList([]);
-      } finally {
-        setLoadingSubUnits(false);
-      }
-    };
-
-    fetchSubUnitList();
-  }, [selectedUnit]);
-
-  // Fetch upb data
-  useEffect(() => {
-    const fetchUpbData = async () => {
-      setLoading(true);
-      setRefreshing(true);
-      try {
-        const params = new URLSearchParams({
-          page: paginationModel.page + 1,
-          per_page: paginationModel.pageSize,
-        });
-
-        if (debouncedSearchTerm) {
-          params.append("search", debouncedSearchTerm);
-        }
-
-        if (selectedSubUnit) {
-          params.append("sub_unit_id", selectedSubUnit);
-        } else if (selectedUnit) {
-          params.append("unit_id", selectedUnit);
-        } else if (selectedBidang) {
-          params.append("bidang_id", selectedBidang);
-        }
-
-        const response = await api.get(
-          `/klasifikasi-instansi/upb?${params.toString()}`
-        );
-
-        setUpbData(response.data.data);
-        setTotalRows(response.data.meta.total);
-      } catch (error) {
-        console.error("Gagal mendapatkan upb data:", error);
-        setUpbData([]);
-        setTotalRows(0);
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    };
-
-    fetchUpbData();
-  }, [
-    paginationModel,
-    debouncedSearchTerm,
-    selectedBidang,
-    selectedUnit,
-    selectedSubUnit,
-    refreshTrigger,
-  ]);
-
-  // Fetch all upb data for export
-  const fetchAllUpbData = async () => {
-    try {
-      const params = new URLSearchParams({
-        per_page: 10000, // Large number to get all data
-      });
-
-      if (debouncedSearchTerm) {
-        params.append("search", debouncedSearchTerm);
-      }
-
-      if (selectedBidang) {
-        params.append("bidang_id", selectedBidang);
-      }
-
-      if (selectedUnit) {
-        params.append("unit_id", selectedUnit);
-      }
-
-      if (selectedSubUnit) {
-        params.append("sub_unit_id", selectedSubUnit);
-      }
-
-      const response = await api.get(
-        `/klasifikasi-instansi/upb?${params.toString()}`
-      );
-
-      return response.data.data;
-    } catch (error) {
-      console.error("Failed to fetch all upb data:", error);
-      throw error;
-    }
-  };
-
-  // Event handlers
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    try {
-      setSearchTerm("");
-      setSelectedBidang("");
-      setSelectedUnit("");
-      setSelectedSubUnit("");
-      setPaginationModel((prev) => ({ ...prev, page: 0 }));
-      setRefreshTrigger((prev) => prev + 1);
-
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      Swal.fire({
-        icon: "success",
-        title: "Berhasil!",
-        text: "Data berhasil dimuat ulang.",
-        toast: true,
-        position: "top-end",
-        showConfirmButton: false,
-        timer: 2000,
-        timerProgressBar: true,
-      });
-    } catch (error) {
-      Swal.fire({
-        icon: "error",
-        title: "Error!",
-        text: "Gagal memuat ulang data",
-        toast: true,
-        position: "top-end",
-        showConfirmButton: false,
-        timer: 2000,
-        timerProgressBar: true,
-      });
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
-  // Updated export handler
-  const handleExport = async () => {
-    // Define export columns configuration
-    const exportColumns = [
+        },
+      },
       {
         field: "no",
         headerName: "No",
-        formatter: (value, item, index) => index + 1,
+        width: 70,
+        sortable: false,
+        renderCell: (params) => {
+          if (!params.row) return null;
+          return (
+            state.upbData.findIndex((row) => row.id === params.row.id) +
+            1 +
+            state.paginationModel.page * state.paginationModel.pageSize
+          );
+        },
       },
       {
         field: "provinsi",
         headerName: "Provinsi",
-        formatter: (value, item) => {
+        flex: 1,
+        minWidth: 250,
+        renderCell: (params) => {
           const provinsi =
-            item.sub_unit?.unit?.bidang?.kabupaten_kota?.provinsi;
+            params.row.sub_unit?.unit?.bidang?.kabupaten_kota?.provinsi;
           return provinsi
             ? `${provinsi.kode_provinsi} - ${provinsi.nama_provinsi}`
             : "N/A";
@@ -309,8 +77,10 @@ const UpbPage = () => {
       {
         field: "kabupaten_kota",
         headerName: "Kabupaten/Kota",
-        formatter: (value, item) => {
-          const kabKot = item.sub_unit?.unit?.bidang?.kabupaten_kota;
+        flex: 1,
+        minWidth: 250,
+        renderCell: (params) => {
+          const kabKot = params.row.sub_unit?.unit?.bidang?.kabupaten_kota;
           return kabKot
             ? `${kabKot.kode_kabupaten_kota} - ${kabKot.nama_kabupaten_kota}`
             : "N/A";
@@ -319,8 +89,10 @@ const UpbPage = () => {
       {
         field: "bidang",
         headerName: "Bidang",
-        formatter: (value, item) => {
-          const bidang = item.sub_unit?.unit?.bidang;
+        flex: 1,
+        minWidth: 250,
+        renderCell: (params) => {
+          const bidang = params.row.sub_unit?.unit?.bidang;
           return bidang
             ? `${bidang.kode_bidang} - ${bidang.nama_bidang}`
             : "N/A";
@@ -329,447 +101,215 @@ const UpbPage = () => {
       {
         field: "unit",
         headerName: "Unit",
-        formatter: (value, item) => {
-          const unit = item.sub_unit?.unit;
+        flex: 1,
+        minWidth: 250,
+        renderCell: (params) => {
+          const unit = params.row.sub_unit?.unit;
           return unit ? `${unit.kode_unit} - ${unit.nama_unit}` : "N/A";
         },
       },
       {
         field: "sub_unit",
         headerName: "Sub Unit",
-        formatter: (value, item) => {
-          const subUnit = item.sub_unit;
+        flex: 1,
+        minWidth: 250,
+        renderCell: (params) => {
+          const subUnit = params.row.sub_unit;
           return subUnit
             ? `${subUnit.kode_sub_unit} - ${subUnit.nama_sub_unit}`
             : "N/A";
         },
       },
+
+      // Kolom dengan data langsung tetap CUKUP GUNAKAN 'field'
       {
         field: "kode_upb",
         headerName: "Kode UPB",
+        width: 120,
       },
       {
         field: "nama_upb",
         headerName: "Nama UPB",
+        flex: 1,
+        minWidth: 250,
       },
       {
         field: "kode",
         headerName: "Kode",
+        width: 100,
       },
-    ];
+    ],
+    [state.upbData, state.paginationModel, handler]
+  );
 
-    // Create export configuration
-    const exportConfig = {
-      fetchDataFunction: fetchAllUpbData,
-      columns: exportColumns,
-      filename: "daftar-upb",
-      sheetName: "Data UPB",
-      setExporting,
-    };
-
-    // Execute export
-    try {
-      await exportHandler(exportConfig);
-    } catch (error) {
-      console.error("Export failed:", error);
-    }
+  const handleColumnVisibilityChange = (newVisibility) => {
+    setColumnVisibility(newVisibility);
   };
 
-  const handleOpenAddModal = () => {
-    setEditingUpb(null);
-    setIsAddModalOpen(true);
-  };
+  // Filter visible columns
+  const visibleColumns = columns.filter((col) => {
+    return columnVisibility[col.field] !== false;
+  });
 
-  const handleCloseAddModal = () => {
-    setIsAddModalOpen(false);
-    setEditingUpb(null);
-  };
-
-  const handleSaveUpb = async (upbToSave) => {
-    const payload = {
-      sub_unit_id: upbToSave.sub_unit_id,
-      kode_upb: upbToSave.kode_upb,
-      nama_upb: upbToSave.nama_upb,
-      kode: upbToSave.kode,
-    };
-
-    try {
-      if (upbToSave.id) {
-        await api.patch(`/klasifikasi-instansi/upb/${upbToSave.id}`, payload);
-        Swal.fire({
-          title: "Berhasil Edit",
-          text: "Data berhasil diubah.",
-          icon: "success",
-          timer: 1500,
-          showConfirmButton: false,
-        });
-      } else {
-        await api.post("/klasifikasi-instansi/upb", payload);
-        Swal.fire({
-          title: "Berhasil Add",
-          text: "Data berhasil ditambah.",
-          icon: "success",
-          timer: 1500,
-          showConfirmButton: false,
-        });
-      }
-      handleRefresh();
-      handleCloseAddModal();
-    } catch (err) {
-      console.error("Gagal menyimpan:", err);
-
-      const errorData = err.response?.data;
-
-      if (errorData?.errors) {
-        const errorMessages = Object.values(errorData.errors).flat().join("\n");
-        Swal.fire({
-          title: "Gagal",
-          text: errorMessages,
-          icon: "error",
-        });
-      } else {
-        Swal.fire({
-          title: "Gagal",
-          text: "Terjadi kesalahan saat menyimpan data.",
-          icon: "error",
-          buttonsStyling: false,
-          customClass: {
-            confirmButton:
-              "bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500",
-          },
-        });
-      }
-    }
-  };
-
-  const handleEditClick = (id) => {
-    const upbToEdit = upbData.find((item) => item.id === id);
-    if (upbToEdit) {
-      setEditingUpb(upbToEdit);
-      setIsAddModalOpen(true);
-    }
-  };
-
-  const handleDeleteClick = async (id) => {
-    const result = await Swal.fire({
-      title: "Apakah Anda yakin?",
-      text: "Data yang dihapus tidak dapat dikembalikan!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Ya, hapus!",
-      cancelButtonText: "Batal",
-      buttonsStyling: false,
-      customClass: {
-        confirmButton:
-          "bg-red-600 text-white px-4 py-2 mr-1 rounded-md hover:bg-red-700 hover:outline-none cursor-pointer",
-        cancelButton:
-          "bg-gray-200 text-gray-700 px-4 py-2 ml-1 rounded-md hover:bg-gray-300 hover:outline-none cursor-pointer",
-        popup: "rounded-lg shadow-lg",
-      },
-    });
-
-    if (!result.isConfirmed) return;
-
-    try {
-      await api.delete(`/klasifikasi-instansi/upb/${id}`);
-      console.log("Berhasil menghapus upb dengan ID:", id);
-      Swal.fire({
-        title: "Berhasil Delete",
-        text: "Data berhasil dihapus.",
-        icon: "success",
-        timer: 1500,
-        showConfirmButton: false,
-      });
-      handleRefresh();
-    } catch (error) {
-      console.error("Gagal menghapus upb:", error);
-      Swal.fire({
-        title: "Gagal",
-        text: "Terjadi kesalahan saat menghapus data.",
-        icon: "error",
-      });
-    }
-  };
-
-  // Table columns configuration
-  const columns = [
-    {
-      field: "action",
-      headerName: "Action",
-      width: 150,
-      sortable: false,
-      renderCell: (params) => (
-        <div className="flex items-center gap-2 h-full">
-          <button
-            onClick={() => handleEditClick(params.row.id)}
-            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => handleDeleteClick(params.row.id)}
-            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
-          >
-            Delete
-          </button>
-        </div>
-      ),
-    },
-    {
-      field: "no",
-      headerName: "No",
-      width: 70,
-      sortable: false,
-      renderCell: (params) => {
-        const index = upbData.findIndex((row) => row.id === params.row.id);
-        return paginationModel.page * paginationModel.pageSize + index + 1;
-      },
-    },
-    {
-      field: "provinsi",
-      headerName: "Provinsi",
-      flex: 1,
-      minWidth: 250,
-      renderCell: (params) => {
-        const provinsi =
-          params.row.sub_unit?.unit?.bidang?.kabupaten_kota?.provinsi;
-        return provinsi
-          ? `${provinsi.kode_provinsi} - ${provinsi.nama_provinsi}`
-          : "N/A";
-      },
-    },
-    {
-      field: "kabupaten_kota",
-      headerName: "Kabupaten/Kota",
-      flex: 1,
-      minWidth: 250,
-      renderCell: (params) => {
-        const kabKot = params.row.sub_unit?.unit?.bidang?.kabupaten_kota;
-        return kabKot
-          ? `${kabKot.kode_kabupaten_kota} - ${kabKot.nama_kabupaten_kota}`
-          : "N/A";
-      },
-    },
-    {
-      field: "bidang",
-      headerName: "Bidang",
-      flex: 1,
-      minWidth: 250,
-      renderCell: (params) => {
-        const bidang = params.row.sub_unit?.unit?.bidang;
-        return bidang ? `${bidang.kode_bidang} - ${bidang.nama_bidang}` : "N/A";
-      },
-    },
-    {
-      field: "unit",
-      headerName: "Unit",
-      flex: 1,
-      minWidth: 250,
-      renderCell: (params) => {
-        const unit = params.row.sub_unit?.unit;
-        return unit ? `${unit.kode_unit} - ${unit.nama_unit}` : "N/A";
-      },
-    },
-    {
-      field: "sub_unit",
-      headerName: "Sub Unit",
-      flex: 1,
-      minWidth: 250,
-      renderCell: (params) => {
-        const subUnit = params.row.sub_unit;
-        return subUnit
-          ? `${subUnit.kode_sub_unit} - ${subUnit.nama_sub_unit}`
-          : "N/A";
-      },
-    },
-    {
-      field: "kode_upb",
-      headerName: "Kode UPB",
-      width: 150,
-    },
-    {
-      field: "nama_upb",
-      headerName: "Nama UPB",
-      flex: 1,
-      minWidth: 250,
-    },
-    {
-      field: "kode",
-      headerName: "Kode",
-      width: 100,
-    },
-  ];
+  const paginationOptions = [5, 10, 25, 50, 75, 100, 200];
 
   return (
     <div className="min-h-screen bg-[#f7f7f7]">
       <Navbar />
-
-      <div className="px-8 py-8">
+      <div className="p-8">
         <Breadcrumbs />
 
-        {/* Export Button */}
-        <div className="flex justify-end mt-4 mb-4">
-          <button
-            onClick={handleExport}
-            disabled={exporting}
-            className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+        {/* Tombol Export */}
+        <div className="flex justify-end mt-4 mb-2">
+          <Buttons
+            variant="danger"
+            onClick={handler.handleExport}
+            disabled={state.exporting}
           >
-            <Download size={16} className={exporting ? "animate-pulse" : ""} />
-            {exporting ? "Exporting..." : "Export"}
-          </button>
+            <Upload
+              size={16}
+              className={state.exporting ? "animate-pulse" : ""}
+            />
+            {state.exporting ? "Mengekspor..." : "Ekspor"}
+          </Buttons>
         </div>
 
-        {/* Main Content */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          {/* Header */}
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-800">Daftar UPB</h1>
-            <div className="flex gap-3">
-              <button
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+        {/* Kontainer utama */}
+        <div className="bg-white rounded-lg shadow-sm p-4">
+          {/* Judul + Tombol Aksi */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-y-4 mb-4">
+            <h1 className="text-2xl font-bold text-gray-800 mr-2">
+              Daftar UPB
+            </h1>
+            <div className="flex w-full sm:w-auto md:justify-end gap-2">
+              <Buttons
+                variant="info"
+                onClick={handler.handleRefresh}
+                disabled={state.refreshing}
               >
                 <RefreshCw
                   size={16}
-                  className={refreshing ? "animate-spin" : ""}
+                  className={state.refreshing ? "animate-spin" : ""}
                 />
                 Refresh
-              </button>
-              <button
-                onClick={handleOpenAddModal}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+              </Buttons>
+              <Buttons
+                variant="success"
+                onClick={() => handler.handleOpenModal()}
               >
-                <Plus size={16} /> Add UPB
-              </button>
+                <Plus size={16} /> Tambah UPB
+              </Buttons>
             </div>
           </div>
 
-          {/* Filters and Search */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-4">
-            {/* Left: Filters */}
-            <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end">
-              {/* Bidang Filter */}
-              <select
-                value={selectedBidang}
-                onChange={(e) => {
-                  setSelectedBidang(e.target.value);
-                  setSelectedUnit("");
-                  setSelectedSubUnit("");
-                }}
-                className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto cursor-pointer"
-              >
-                <option value="">-- Semua Bidang --</option>
-                {bidangList.map((bidang) => (
-                  <option key={bidang.id} value={bidang.id}>
-                    {bidang.kode_bidang} - {bidang.nama_bidang}
-                  </option>
-                ))}
-              </select>
+          {/* --- TATA LETAK BARU DIMULAI DARI SINI --- */}
 
-              {/* Unit Filter */}
-              <select
-                value={selectedUnit}
-                onChange={(e) => {
-                  setSelectedUnit(e.target.value);
-                  setSelectedSubUnit("");
-                }}
-                className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto cursor-pointer"
-                disabled={!selectedBidang || loadingUnits}
-              >
-                <option value="">
-                  {loadingUnits ? "Memuat..." : "-- Semua Unit --"}
-                </option>
-                {unitList.map((unit) => (
-                  <option key={unit.id} value={unit.id}>
-                    {unit.kode_unit} - {unit.nama_unit}
-                  </option>
-                ))}
-              </select>
+          {/* Baris 1: Filter Utama */}
+          <div className="flex flex-wrap items-center gap-4 mb-4">
+            <FilterDropdown
+              value={state.selectedBidang}
+              onChange={(e) => {
+                handler.setSelectedBidang(e.target.value);
+                handler.setSelectedUnit("");
+              }}
+              options={state.bidangList}
+              placeholder="-- Semua Bidang --"
+              loading={state.loadingBidang}
+            />
+            <FilterDropdown
+              value={state.selectedUnit}
+              onChange={(e) => {
+                handler.setSelectedUnit(e.target.value);
+              }}
+              options={state.unitList}
+              placeholder={
+                state.selectedBidang
+                  ? "-- Semua Unit --"
+                  : "Pilih bidang dahulu"
+              }
+              loading={state.loadingUnit}
+              disabled={!state.selectedBidang}
+            />
+            <FilterDropdown
+              value={state.selectedSubUnit}
+              onChange={(e) => {
+                handler.setSelectedSubUnit(e.target.value);
+              }}
+              options={state.subUnitList}
+              placeholder={
+                state.selectedUnit
+                  ? "-- Semua Sub Unit --"
+                  : "Pilih unit dahulu"
+              }
+              loading={state.loadingSubUnit}
+              disabled={!state.selectedUnit}
+            />
+          </div>
 
-              {/* SubUnit Filter */}
-              <select
-                value={selectedSubUnit}
-                onChange={(e) => {
-                  setSelectedSubUnit(e.target.value);
-                }}
-                className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-auto cursor-pointer"
-                disabled={!selectedUnit || loadingSubUnits}
-              >
-                <option value="">
-                  {loadingSubUnits ? "Memuat..." : "-- Semua Sub Unit --"}
-                </option>
-                {subUnitList.map((subUnit) => (
-                  <option key={subUnit.id} value={subUnit.id}>
-                    {subUnit.kode_sub_unit} - {subUnit.nama_sub_unit}
-                  </option>
-                ))}
-              </select>
-
-              {/* Page Size Selector */}
-              <div className="flex items-center gap-2 mt-2 md:mt-0">
-                <span className="text-gray-600 text-sm">Show</span>
+          {/* Baris 2: Kontrol Tabel (Show Entries, Column Manager, Search) */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+            {/* Grup Kiri: Show Entries & Column Manager */}
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Show</span>
                 <select
-                  value={paginationModel.pageSize}
+                  value={state.paginationModel.pageSize}
                   onChange={(e) =>
-                    setPaginationModel({
+                    handler.setPaginationModel({
                       page: 0,
                       pageSize: Number(e.target.value),
                     })
                   }
-                  className="border border-gray-300 rounded px-3 py-1 text-sm cursor-pointer"
+                  className="border border-gray-300 hover:border-gray-500 rounded-md px-3 py-1 text-sm cursor-pointer focus:outline-none focus:border-2 focus:border-[#B53C3C]"
                 >
-                  {[5, 10, 25, 50, 75, 100].map((size) => (
+                  {paginationOptions.map((size) => (
                     <option key={size} value={size}>
                       {size}
                     </option>
                   ))}
                 </select>
-                <span className="text-gray-600 text-sm">entries</span>
+                <span className="text-sm text-gray-600">entries</span>
               </div>
+              <ColumnManager
+                columns={columns}
+                columnVisibility={columnVisibility}
+                onColumnVisibilityChange={handleColumnVisibilityChange}
+              />
             </div>
 
-            {/* Right: Search */}
-            <div className="relative w-full md:w-64">
-              <Search
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                size={16}
-              />
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            {/* Grup Kanan: Search */}
+            <div className="w-full md:w-auto">
+              <SearchInput
+                placeholder="Cari upb..."
+                value={state.searchTerm}
+                onChange={(e) => handler.setSearchTerm(e.target.value)}
               />
             </div>
           </div>
 
-          {/* Data Table */}
+          {/* Tabel */}
           <DataTable
-            rows={upbData}
-            columns={columns}
-            rowCount={totalRows}
-            loading={loading}
+            rows={state.upbData}
+            columns={visibleColumns}
+            rowCount={state.totalRows}
+            loading={state.loading}
             paginationMode="server"
-            filterMode="server"
-            pageSizeOptions={[5, 10, 25, 50, 75, 100]}
-            paginationModel={paginationModel}
-            onPaginationModelChange={setPaginationModel}
-            disableRowSelectionOnClick
-            hideFooterSelectedRowCount
+            pageSizeOptions={paginationOptions}
+            paginationModel={state.paginationModel}
+            onPaginationModelChange={handler.setPaginationModel}
             height={500}
             emptyRowsMessage="Tidak ada data tersedia"
+            disableRowSelectionOnClick
+            hideFooterSelectedRowCount
           />
         </div>
       </div>
 
-      {/* Add/Edit Modal */}
       <AddUpbModal
-        isOpen={isAddModalOpen}
-        onClose={handleCloseAddModal}
-        onSave={handleSaveUpb}
-        initialData={editingUpb}
+        isOpen={state.isModalOpen}
+        onClose={handler.handleCloseModal}
+        onSave={handler.handleSaveUpb}
+        initialData={state.editingUpb}
       />
     </div>
   );
