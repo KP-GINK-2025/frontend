@@ -1,16 +1,15 @@
-// src/pages/klasifikasi/klasifikasi-instansi/unit/useUnitForm.js
+// src/pages/klasifikasi/klasifikasi-instansi/bidang/useBidangForm.js
 import { useState, useEffect, useMemo } from "react";
 import {
   getProvinsiOptions,
   getKabupatenByProvinsi,
-  getBidangByKabupaten,
 } from "../../../../api/klasifikasiInstansiService";
 import { useHierarchySelector } from "../../../../hooks/useHierarchySelector";
 
-export const useUnitForm = (initialData, isOpen) => {
+export const useBidangForm = (initialData, isOpen) => {
   const [formState, setFormState] = useState({
-    kodeUnit: "",
-    namaUnit: "",
+    kodeBidang: "",
+    namaBidang: "",
     kode: "",
   });
 
@@ -21,18 +20,11 @@ export const useUnitForm = (initialData, isOpen) => {
 
   const initialProvinsi = useMemo(
     () =>
-      initialData
-        ? { value: initialData.bidang.kabupaten_kota.provinsi.id }
-        : null,
+      initialData ? { value: initialData.kabupaten_kota.provinsi.id } : null,
     [initialData]
   );
   const initialKabupaten = useMemo(
-    () =>
-      initialData ? { value: initialData.bidang.kabupaten_kota.id } : null,
-    [initialData]
-  );
-  const initialBidang = useMemo(
-    () => (initialData ? { value: initialData.bidang.id } : null),
+    () => (initialData ? { value: initialData.kabupaten_kota.id } : null),
     [initialData]
   );
 
@@ -45,17 +37,11 @@ export const useUnitForm = (initialData, isOpen) => {
     parentId: provinsi.selectedValue?.value,
     initialData: initialKabupaten,
   });
-  const bidang = useHierarchySelector({
-    fetcher: getBidangByKabupaten,
-    parentId: kabupaten.selectedValue?.value,
-    initialData: initialBidang,
-  });
 
   const resetForm = () => {
-    setFormState({ kodeUnit: "", namaUnit: "", kode: "" });
+    setFormState({ kodeBidang: "", namaBidang: "", kode: "" });
     provinsi.reset();
     kabupaten.reset();
-    bidang.reset();
   };
 
   useEffect(() => {
@@ -63,8 +49,8 @@ export const useUnitForm = (initialData, isOpen) => {
     if (isOpen) {
       if (initialData) {
         setFormState({
-          kodeUnit: initialData.kode_unit || "",
-          namaUnit: initialData.nama_unit || "",
+          kodeBidang: initialData.kode_bidang || "",
+          namaBidang: initialData.nama_bidang || "",
           kode: initialData.kode || "",
         });
       } else {
@@ -77,15 +63,14 @@ export const useUnitForm = (initialData, isOpen) => {
   const isFormValid =
     provinsi.selectedValue &&
     kabupaten.selectedValue &&
-    bidang.selectedValue &&
-    formState.kodeUnit.trim() &&
-    formState.namaUnit.trim() &&
+    formState.kodeBidang.trim() &&
+    formState.namaBidang.trim() &&
     formState.kode.trim();
 
   const dataToSave = {
-    bidang_id: bidang.selectedValue?.value,
-    kode_unit: formState.kodeUnit,
-    nama_unit: formState.namaUnit,
+    kabupaten_kota_id: kabupaten.selectedValue?.value,
+    kode_bidang: formState.kodeBidang,
+    nama_bidang: formState.namaBidang,
     kode: formState.kode,
   };
 
@@ -95,7 +80,6 @@ export const useUnitForm = (initialData, isOpen) => {
     resetForm,
     provinsi,
     kabupaten,
-    bidang,
     isFormValid,
     dataToSave,
   };

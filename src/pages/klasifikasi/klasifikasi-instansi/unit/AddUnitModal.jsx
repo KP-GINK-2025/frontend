@@ -11,12 +11,13 @@ const AddUnitModal = ({ isOpen, onClose, onSave, initialData }) => {
   const {
     formState,
     handleInputChange,
+    resetForm,
     provinsi,
     kabupaten,
     bidang,
     isFormValid,
     dataToSave,
-  } = useUnitForm(initialData);
+  } = useUnitForm(initialData, isOpen);
 
   useEffect(() => {
     if (!isOpen) setIsSaving(false);
@@ -127,17 +128,15 @@ const AddUnitModal = ({ isOpen, onClose, onSave, initialData }) => {
                 }
                 isDisabled={!kabupaten.selectedValue || isSaving}
               />
-
               <InputForm
                 formTitle="Kode Unit"
                 id="kodeUnit"
-                type="number"
+                type="text"
                 value={formState.kodeUnit}
                 onChange={handleInputChange}
                 min="0"
                 disabled={isSaving}
               />
-
               <InputForm
                 formTitle="Nama Unit"
                 id="namaUnit"
@@ -146,7 +145,6 @@ const AddUnitModal = ({ isOpen, onClose, onSave, initialData }) => {
                 onChange={handleInputChange}
                 disabled={isSaving}
               />
-
               <InputForm
                 formTitle="Kode"
                 id="kode"
@@ -158,6 +156,15 @@ const AddUnitModal = ({ isOpen, onClose, onSave, initialData }) => {
             </form>
 
             <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200 mt-4">
+              <Buttons
+                variant="secondary"
+                onClick={resetForm}
+                disabled={isSaving}
+                className="mr-auto"
+              >
+                Reset
+              </Buttons>
+
               <Buttons
                 variant="secondary"
                 onClick={onClose}
