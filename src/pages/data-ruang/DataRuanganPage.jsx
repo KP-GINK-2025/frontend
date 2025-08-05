@@ -5,6 +5,12 @@ import { DataTable } from "@/components/table";
 import AddRuanganModal from "./AddRuanganModal";
 import api from "../../api/axios";
 import Swal from "sweetalert2";
+import ColumnManager from "../../components/table/ColumnManager";
+import {
+  handleExport as universalHandleExport,
+  commonFormatters,
+  createExportConfig,
+} from "../../handlers/exportHandler";
 
 // Constants
 const ENTRIES_PER_PAGE_OPTIONS = [5, 10, 25, 50, 100];
@@ -18,14 +24,6 @@ const INITIAL_FILTERS = {
   upb: "",
 };
 
-const INITIAL_DROPDOWN_DATA = {
-  tahun: [],
-  bidang: [],
-  unit: [],
-  subUnit: [],
-  upb: [],
-};
-
 // Utility Components
 const FilterSelect = ({
   label,
@@ -34,48 +32,55 @@ const FilterSelect = ({
   options,
   valueKey = "",
   labelKey = "",
+  codeKey = "",
+  disabled = false,
+  loading = false,
 }) => (
   <select
     value={value}
     onChange={(e) => onChange(e.target.value)}
     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+    disabled={disabled || loading}
   >
-    <option value="">{label}</option>
+    <option value="">{loading ? "Memuat..." : label}</option>
     {options.map((option) => (
       <option
         key={option[valueKey] || option}
-        value={option[labelKey] || option}
+        value={option[valueKey] || option}
       >
+        {codeKey && option[codeKey] ? `${option[codeKey]} - ` : ""}
         {option[labelKey] || option}
       </option>
     ))}
   </select>
 );
 
-const ActionButtons = ({ onEdit, onDelete }) => (
-  <div className="flex gap-2 items-center">
-    <button
-      onClick={onEdit}
-      className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors cursor-pointer"
-    >
-      Edit
-    </button>
-    <button
-      onClick={onDelete}
-      className="text-red-600 hover:text-red-800 text-sm font-medium transition-colors cursor-pointer"
-    >
-      Delete
-    </button>
-  </div>
-);
-
 const DataRuanganPage = () => {
   // State management
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(
     DEFAULT_ENTRIES_PER_PAGE
   );
-  const [dropdownData, setDropdownData] = useState(INITIAL_DROPDOWN_DATA);
+
+  // State for dropdown data and loading
+  const [tahunList, setTahunList] = useState([]);
+  const [bidangList, setBidangList] = useState([]);
+  const [unitList, setUnitList] = useState([]);
+  const [subUnitList, setSubUnitList] = useState([]);
+  const [upbList, setUpbList] = useState([]);
+
+  // State untuk menyimpan semua data klasifikasi dari API
+  const [allBidangs, setAllBidangs] = useState([]);
+  const [allUnits, setAllUnits] = useState([]);
+  const [allSubUnits, setAllSubUnits] = useState([]);
+  const [allUpbs, setAllUpbs] = useState([]);
+
+  const [loadingBidang, setLoadingBidang] = useState(false);
+  const [loadingUnits, setLoadingUnits] = useState(false);
+  const [loadingSubUnits, setLoadingSubUnits] = useState(false);
+  const [loadingUpbs, setLoadingUpbs] = useState(false);
+
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [ruanganData, setRuanganData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -86,68 +91,150 @@ const DataRuanganPage = () => {
     pageSize: DEFAULT_ENTRIES_PER_PAGE,
   });
   const [error, setError] = useState(null);
+  const [isExporting, setIsExporting] = useState(false);
 
-  // API Functions
-  const fetchDropdownData = useCallback(async () => {
-    try {
-      const [bidangRes, unitRes, subUnitRes, upbRes] = await Promise.all([
-        api.get("/klasifikasi-instansi/bidang?per_page=1000"),
-        api.get("/klasifikasi-instansi/unit?per_page=1000"),
-        api.get("/klasifikasi-instansi/subunit?per_page=1000"),
-        api.get("/klasifikasi-instansi/upb?per_page=1000"),
-      ]);
+  // Fungsi untuk mengambil units berdasarkan bidang
+  const fetchUnits = useCallback(
+    (bidangId) => {
+      setLoadingUnits(true);
+      try {
+        const filteredUnits = allUnits.filter(
+          (unit) => unit.bidang?.id === parseInt(bidangId)
+        );
+        const sortedUnits = filteredUnits.sort(
+          (a, b) => parseInt(a.kode_unit) - parseInt(b.kode_unit)
+        );
+        setUnitList(sortedUnits);
+      } catch (error) {
+        console.error("Error filtering units:", error);
+        setUnitList([]);
+      } finally {
+        setLoadingUnits(false);
+      }
+    },
+    [allUnits]
+  );
 
-      setDropdownData((prev) => ({
-        ...prev,
-        bidang: bidangRes.data.data || [],
-        unit: unitRes.data.data || [],
-        subUnit: subUnitRes.data.data || [],
-        upb: upbRes.data.data || [],
-      }));
-    } catch (error) {
-      console.error("Gagal mengambil data dropdown:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Error!",
-        text: "Gagal mengambil data dropdown",
-        toast: true,
-        position: "top-end",
-        showConfirmButton: false,
-        timer: 2000,
-        timerProgressBar: true,
-      });
-    }
-  }, []);
+  // Fungsi untuk mengambil subunits berdasarkan unit
+  const fetchSubUnits = useCallback(
+    (unitId) => {
+      setLoadingSubUnits(true);
+      try {
+        const filteredSubUnits = allSubUnits.filter(
+          (subUnit) => subUnit.unit?.id === parseInt(unitId)
+        );
+        const sortedSubUnits = filteredSubUnits.sort(
+          (a, b) => parseInt(a.kode_sub_unit) - parseInt(b.kode_sub_unit)
+        );
+        setSubUnitList(sortedSubUnits);
+      } catch (error) {
+        console.error("Error filtering sub units:", error);
+        setSubUnitList([]);
+      } finally {
+        setLoadingSubUnits(false);
+      }
+    },
+    [allSubUnits]
+  );
 
-  const fetchRuanganData = useCallback(async () => {
+  // Fungsi untuk mengambil UPBs berdasarkan subunit
+  const fetchUpbs = useCallback(
+    (subUnitId) => {
+      setLoadingUpbs(true);
+      try {
+        const filteredUpbs = allUpbs.filter(
+          (upb) => upb.sub_unit?.id === parseInt(subUnitId)
+        );
+        const sortedUpbs = filteredUpbs.sort(
+          (a, b) => parseInt(a.kode_upb) - parseInt(b.kode_upb)
+        );
+        setUpbList(sortedUpbs);
+      } catch (error) {
+        console.error("Error filtering UPBs:", error);
+        setUpbList([]);
+      } finally {
+        setLoadingUpbs(false);
+      }
+    },
+    [allUpbs]
+  );
+
+  // Fungsi inti untuk mengambil data
+  const fetchAllInitialData = useCallback(async () => {
     setLoading(true);
     setError(null);
-
     try {
-      const response = await api.get("/data-ruangan");
-      const data = response.data.data || [];
-      setRuanganData(data);
+      const [ruanganRes, bidangRes, unitRes, subUnitRes, upbRes] =
+        await Promise.all([
+          api.get("/data-ruangan"),
+          api.get("/klasifikasi-instansi/bidang?per_page=1000"),
+          api.get("/klasifikasi-instansi/unit?per_page=1000"),
+          api.get("/klasifikasi-instansi/subunit?per_page=1000"),
+          api.get("/klasifikasi-instansi/upb?per_page=1000"),
+        ]);
 
-      // Extract unique years from data
-      const uniqueYears = [
-        ...new Set(data.map((item) => item.tahun).filter(Boolean)),
-      ].sort();
-      setDropdownData((prev) => ({ ...prev, tahun: uniqueYears }));
-    } catch (err) {
-      console.error("Gagal mengambil data ruangan:", err);
-      setRuanganData([]);
-      setError(err.message || "Terjadi kesalahan saat mengambil data ruangan.");
+      const ruanganDataRaw = ruanganRes.data.data || [];
+      const bidangData = bidangRes.data.data || [];
+      const unitData = unitRes.data.data || [];
+      const subUnitData = subUnitRes.data.data || [];
+      const upbData = upbRes.data.data || [];
 
-      Swal.fire({
-        icon: "error",
-        title: "Error!",
-        text: "Gagal mengambil data ruangan",
-        toast: true,
-        position: "top-end",
-        showConfirmButton: false,
-        timer: 2000,
-        timerProgressBar: true,
+      // Set all data untuk referensi
+      setAllBidangs(bidangData);
+      setAllUnits(unitData);
+      setAllSubUnits(subUnitData);
+      setAllUpbs(upbData);
+
+      // Create maps untuk enrichment
+      const createMap = (data) =>
+        data.reduce((acc, item) => {
+          acc[item.id] = item;
+          return acc;
+        }, {});
+
+      const bidangMap = createMap(bidangData);
+      const unitMap = createMap(unitData);
+      const subUnitMap = createMap(subUnitData);
+      const upbMap = createMap(upbData);
+
+      // Enrich ruangan data
+      const enrichedRuanganData = ruanganDataRaw.map((ruangan) => {
+        const upbId = ruangan.upb?.id || ruangan.upb_1?.id;
+        const enrichedUpb = upbMap[upbId];
+
+        const enrichedSubUnit =
+          enrichedUpb?.sub_unit || subUnitMap[enrichedUpb?.sub_unit_id];
+        const enrichedUnit =
+          enrichedSubUnit?.unit || unitMap[enrichedSubUnit?.unit_id];
+        const enrichedBidang =
+          enrichedUnit?.bidang || bidangMap[enrichedUnit?.bidang_id];
+
+        return {
+          ...ruangan,
+          bidang: enrichedBidang || null,
+          unit: enrichedUnit || null,
+          subUnit: enrichedSubUnit || null,
+          upb: enrichedUpb || null,
+        };
       });
+
+      setRuanganData(enrichedRuanganData);
+
+      // Set tahun list
+      const uniqueYears = [
+        ...new Set(ruanganDataRaw.map((item) => item.tahun).filter(Boolean)),
+      ].sort((a, b) => a - b);
+      setTahunList(uniqueYears);
+
+      // Set bidang list (sorted)
+      const sortedBidang = bidangData.sort(
+        (a, b) => parseInt(a.kode_bidang) - parseInt(b.kode_bidang)
+      );
+      setBidangList(sortedBidang);
+    } catch (error) {
+      console.error("Gagal mengambil data:", error);
+      setError("Gagal mengambil data dari server.");
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -155,11 +242,8 @@ const DataRuanganPage = () => {
 
   // Effects
   useEffect(() => {
-    const loadInitialData = async () => {
-      await Promise.all([fetchDropdownData(), fetchRuanganData()]);
-    };
-    loadInitialData();
-  }, [fetchDropdownData, fetchRuanganData]);
+    fetchAllInitialData();
+  }, [fetchAllInitialData]);
 
   useEffect(() => {
     setDataTablePaginationModel((prev) => ({
@@ -169,19 +253,401 @@ const DataRuanganPage = () => {
     }));
   }, [entriesPerPage]);
 
+  // Handle cascading dropdowns dengan cleanup
+  useEffect(() => {
+    if (filters.bidang) {
+      fetchUnits(filters.bidang);
+      // Reset dependent filters
+      setFilters((prev) => ({ ...prev, unit: "", subUnit: "", upb: "" }));
+      setSubUnitList([]);
+      setUpbList([]);
+    } else {
+      setUnitList([]);
+      setSubUnitList([]);
+      setUpbList([]);
+    }
+  }, [filters.bidang, fetchUnits]);
+
+  useEffect(() => {
+    if (filters.unit) {
+      fetchSubUnits(filters.unit);
+      // Reset dependent filters
+      setFilters((prev) => ({ ...prev, subUnit: "", upb: "" }));
+      setUpbList([]);
+    } else {
+      setSubUnitList([]);
+      setUpbList([]);
+    }
+  }, [filters.unit, fetchSubUnits]);
+
+  useEffect(() => {
+    if (filters.subUnit) {
+      fetchUpbs(filters.subUnit);
+      // Reset dependent filter
+      setFilters((prev) => ({ ...prev, upb: "" }));
+    } else {
+      setUpbList([]);
+    }
+  }, [filters.subUnit, fetchUpbs]);
+
+  // Debounce effect untuk search term
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchTerm]);
+
+  // Kolom untuk DataTable
+  const allTableColumns = [
+    {
+      field: "action",
+      headerName: "Action",
+      width: 150,
+      sortable: false,
+      renderCell: (params) => (
+        <div className="flex items-center gap-2 h-full">
+          <button
+            onClick={() => handleEditClick(params.row.id)}
+            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => handleDeleteClick(params.row.id)}
+            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
+          >
+            Delete
+          </button>
+        </div>
+      ),
+    },
+    {
+      field: "no",
+      headerName: "No",
+      width: 70,
+      sortable: false,
+      renderCell: (params) => {
+        return (
+          params.api.getRowIndexRelativeToVisibleRows(params.id) +
+          1 +
+          dataTablePaginationModel.page * dataTablePaginationModel.pageSize
+        );
+      },
+    },
+    { field: "tahun", headerName: "Tahun", width: 100 },
+    {
+      field: "provinsi",
+      headerName: "Provinsi",
+      width: 150,
+      renderCell: (params) =>
+        params.row.bidang?.kabupaten_kota?.provinsi?.nama_provinsi || "-",
+    },
+    {
+      field: "kabupaten_kota",
+      headerName: "Kabupaten/Kota",
+      width: 200,
+      renderCell: (params) =>
+        params.row.bidang?.kabupaten_kota?.nama_kabupaten_kota || "-",
+    },
+    {
+      field: "bidang",
+      headerName: "Bidang",
+      width: 200,
+      renderCell: (params) =>
+        `${params.row.bidang?.kode_bidang || ""} - ${
+          params.row.bidang?.nama_bidang || ""
+        }`.trim() || "-",
+    },
+    {
+      field: "unit",
+      headerName: "Unit",
+      width: 200,
+      renderCell: (params) =>
+        `${params.row.unit?.kode_unit} - ${params.row.unit?.nama_unit}` || "-",
+    },
+    {
+      field: "subUnit",
+      headerName: "Sub Unit",
+      width: 200,
+      renderCell: (params) =>
+        `${params.row.subUnit?.kode_sub_unit} - ${params.row.subUnit?.nama_sub_unit}` ||
+        "-",
+    },
+    {
+      field: "upb",
+      headerName: "UPB",
+      width: 200,
+      renderCell: (params) =>
+        `${params.row.upb?.kode_upb} - ${params.row.upb?.nama_upb}` || "-",
+    },
+    { field: "kode_ruangan", headerName: "Kode Ruangan", width: 150 },
+    { field: "nama_ruangan", headerName: "Nama Ruangan", width: 200 },
+    {
+      field: "nama_penanggung_jawab",
+      headerName: "Nama Penanggung Jawab",
+      width: 200,
+    },
+    {
+      field: "nip_penanggung_jawab",
+      headerName: "NIP Penanggung Jawab",
+      width: 180,
+    },
+    {
+      field: "jabatan_penanggung_jawab",
+      headerName: "Jabatan Penanggung Jawab",
+      width: 180,
+    },
+    {
+      field: "bidang1",
+      headerName: "Bidang 1",
+      width: 150,
+      renderCell: (params) => params.row.bidang1?.nama || "-",
+    },
+    {
+      field: "unit1",
+      headerName: "Unit 1",
+      width: 150,
+      renderCell: (params) => params.row.unit1?.nama || "-",
+    },
+    {
+      field: "subunit1",
+      headerName: "Sub Unit 1",
+      width: 150,
+      renderCell: (params) => params.row.subunit1?.nama || "-",
+    },
+    {
+      field: "upb1",
+      headerName: "UPB 1",
+      width: 150,
+      renderCell: (params) => params.row.upb1?.nama || "-",
+    },
+    {
+      field: "akun",
+      headerName: "Akun",
+      width: 150,
+      renderCell: (params) => params.row.akun?.nama || "-",
+    },
+    {
+      field: "kelompok",
+      headerName: "Kelompok",
+      width: 150,
+      renderCell: (params) => params.row.kelompok?.nama || "-",
+    },
+    {
+      field: "jenis",
+      headerName: "Jenis",
+      width: 150,
+      renderCell: (params) => params.row.jenis?.nama || "-",
+    },
+    {
+      field: "objek",
+      headerName: "Objek",
+      width: 150,
+      renderCell: (params) => params.row.objek?.nama || "-",
+    },
+    {
+      field: "rincian_objek",
+      headerName: "Rincian Objek",
+      width: 150,
+      renderCell: (params) => params.row.rincian_objek?.nama || "-",
+    },
+    {
+      field: "sub_rincian",
+      headerName: "Sub Rincian",
+      width: 150,
+      renderCell: (params) => params.row.sub_rincian?.nama || "-",
+    },
+    {
+      field: "sub_sub_rincian",
+      headerName: "Sub Sub Rincian",
+      width: 150,
+      renderCell: (params) => params.row.sub_sub_rincian?.nama || "-",
+    },
+    { field: "no_register", headerName: "No Register", width: 150 },
+    { field: "pemilik", headerName: "Pemilik", width: 120 },
+  ];
+
+  // Kolom untuk Export
+  const exportColumns = [
+    {
+      field: "no",
+      headerName: "No",
+      formatter: (val, item, index) => index + 1,
+    },
+    { field: "tahun", headerName: "Tahun" },
+    {
+      field: "provinsi",
+      headerName: "Provinsi",
+      formatter: (val, item) =>
+        item.bidang?.kabupaten_kota?.provinsi?.nama_provinsi || "N/A",
+    },
+    {
+      field: "kabupaten_kota",
+      headerName: "Kabupaten/Kota",
+      formatter: (val, item) =>
+        item.bidang?.kabupaten_kota?.nama_kabupaten_kota || "N/A",
+    },
+    {
+      field: "bidang",
+      headerName: "Bidang",
+      formatter: (val, item) =>
+        commonFormatters.combined(["bidang.kode_bidang", "bidang.nama_bidang"])(
+          val,
+          item
+        ),
+    },
+    {
+      field: "unit",
+      headerName: "Unit",
+      formatter: (val, item) =>
+        commonFormatters.combined(["unit.kode_unit", "unit.nama_unit"])(
+          val,
+          item
+        ),
+    },
+    {
+      field: "subUnit",
+      headerName: "Sub Unit",
+      formatter: (val, item) =>
+        commonFormatters.combined([
+          "subUnit.kode_sub_unit",
+          "subUnit.nama_sub_unit",
+        ])(val, item),
+    },
+    {
+      field: "upb",
+      headerName: "UPB",
+      formatter: (val, item) =>
+        commonFormatters.combined(["upb.kode_upb", "upb.nama_upb"])(val, item),
+    },
+    { field: "kode_ruangan", headerName: "Kode Ruangan" },
+    { field: "nama_ruangan", headerName: "Nama Ruangan" },
+    { field: "nama_penanggung_jawab", headerName: "Nama Penanggung Jawab" },
+    { field: "nip_penanggung_jawab", headerName: "NIP Penanggung Jawab" },
+    {
+      field: "jabatan_penanggung_jawab",
+      headerName: "Jabatan Penanggung Jawab",
+    },
+    {
+      field: "bidang1",
+      headerName: "Bidang 1",
+      formatter: (val, item) => item.bidang1?.nama || "N/A",
+    },
+    {
+      field: "unit1",
+      headerName: "Unit 1",
+      formatter: (val, item) => item.unit1?.nama || "N/A",
+    },
+    {
+      field: "subunit1",
+      headerName: "Sub Unit 1",
+      formatter: (val, item) => item.subunit1?.nama || "N/A",
+    },
+    {
+      field: "upb1",
+      headerName: "UPB 1",
+      formatter: (val, item) => item.upb1?.nama || "N/A",
+    },
+    {
+      field: "akun",
+      headerName: "Akun",
+      formatter: (val, item) => item.akun?.nama || "N/A",
+    },
+    {
+      field: "kelompok",
+      headerName: "Kelompok",
+      formatter: (val, item) => item.kelompok?.nama || "N/A",
+    },
+    {
+      field: "jenis",
+      headerName: "Jenis",
+      formatter: (val, item) => item.jenis?.nama || "N/A",
+    },
+    {
+      field: "objek",
+      headerName: "Objek",
+      formatter: (val, item) => item.objek?.nama || "N/A",
+    },
+    {
+      field: "rincian_objek",
+      headerName: "Rincian Objek",
+      formatter: (val, item) => item.rincian_objek?.nama || "N/A",
+    },
+    {
+      field: "sub_rincian",
+      headerName: "Sub Rincian",
+      formatter: (val, item) => item.sub_rincian?.nama || "N/A",
+    },
+    {
+      field: "sub_sub_rincian",
+      headerName: "Sub Sub Rincian",
+      formatter: (val, item) => item.sub_sub_rincian?.nama || "N/A",
+    },
+    { field: "no_register", headerName: "No Register" },
+    { field: "pemilik", headerName: "Pemilik" },
+  ];
+
+  // State untuk mengelola visibilitas kolom
+  const [columnVisibility, setColumnVisibility] = useState(() => {
+    const defaultVisibleFields = [
+      "no",
+      "tahun",
+      "bidang",
+      "unit",
+      "subUnit",
+      "upb",
+      "nama_ruangan",
+      "action",
+    ];
+
+    const initialVisibility = {};
+    allTableColumns.forEach((col) => {
+      initialVisibility[col.field] = defaultVisibleFields.includes(col.field);
+    });
+    return initialVisibility;
+  });
+
+  // Filter kolom yang akan ditampilkan di DataTable
+  const visibleColumns = allTableColumns.filter(
+    (col) => columnVisibility[col.field] !== false
+  );
+
   // Data filtering
   const filteredData = ruanganData.filter((item) => {
-    const matchesSearch = item.nama_ruangan
-      ?.toLowerCase()
-      .includes(searchTerm.toLowerCase());
+    const debouncedSearchLower = debouncedSearchTerm.toLowerCase();
+
+    // Logika pencarian yang lebih komprehensif
+    const matchesSearch = [
+      item.nama_ruangan,
+      item.kode_ruangan,
+      item.nama_penanggung_jawab,
+      item.nip_penanggung_jawab,
+      item.bidang?.nama_bidang,
+      item.unit?.nama_unit,
+      item.subUnit?.nama_sub_unit,
+      item.upb?.nama_upb,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase()
+      .includes(debouncedSearchLower);
 
     const filterChecks = [
-      !filters.tahun || item.tahun === filters.tahun,
-      !filters.bidang || item.bidang?.nama === filters.bidang,
-      !filters.unit || item.unit?.nama === filters.unit,
-      !filters.subUnit || item.subUnit?.nama === filters.subUnit,
-      !filters.upb || item.upb?.nama === filters.upb,
+      !filters.tahun || String(item.tahun) === String(filters.tahun),
+      !filters.bidang || String(item.bidang?.id) === String(filters.bidang),
+      !filters.unit || String(item.unit?.id) === String(filters.unit),
+      !filters.subUnit || String(item.subUnit?.id) === String(filters.subUnit),
+      !filters.upb || String(item.upb?.id) === String(filters.upb),
     ];
+
+    // Jika tidak ada filter dan tidak ada search term, tampilkan semua data
+    if (!debouncedSearchTerm && Object.values(filters).every((val) => !val)) {
+      return true;
+    }
 
     return matchesSearch && filterChecks.every(Boolean);
   });
@@ -191,26 +657,44 @@ const DataRuanganPage = () => {
     setFilters((prev) => ({ ...prev, [filterType]: value }));
   };
 
-  const handleExport = () => {
-    Swal.fire({
-      icon: "info",
-      title: "Export Data",
-      text: "Fitur export sedang dalam pengembangan",
-      toast: true,
-      position: "top-end",
-      showConfirmButton: false,
-      timer: 2000,
-      timerProgressBar: true,
-    });
+  const handleExport = async () => {
+    try {
+      const exportConfig = createExportConfig({
+        data: ruanganData,
+        searchTerm: debouncedSearchTerm,
+        filters: filters,
+        columns: exportColumns,
+        filename: "Data_Ruangan",
+        sheetName: "Ruangan",
+        setExporting: setIsExporting,
+        customFilters: {
+          bidang: (item, value) => String(item.bidang?.id) === String(value),
+          unit: (item, value) => String(item.unit?.id) === String(value),
+          subUnit: (item, value) => String(item.subUnit?.id) === String(value),
+          upb: (item, value) => String(item.upb?.id) === String(value),
+        },
+      });
+      await universalHandleExport(exportConfig);
+    } catch (error) {
+      console.error("Export error:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Gagal mengexport data.",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    }
   };
 
   const handleRefresh = async () => {
+    setSearchTerm("");
+    setFilters(INITIAL_FILTERS);
     try {
-      setSearchTerm("");
-      setFilters(INITIAL_FILTERS);
-      await fetchRuanganData();
-
-      // SweetAlert2 untuk refresh berhasil
+      await fetchAllInitialData();
       Swal.fire({
         icon: "success",
         title: "Berhasil!",
@@ -225,7 +709,7 @@ const DataRuanganPage = () => {
       Swal.fire({
         icon: "error",
         title: "Error!",
-        text: "Gagal memuat ulang data",
+        text: "Gagal memuat ulang data.",
         toast: true,
         position: "top-end",
         showConfirmButton: false,
@@ -247,13 +731,11 @@ const DataRuanganPage = () => {
 
   const handleSaveRuangan = (ruanganToSave) => {
     if (ruanganToSave.id) {
-      // Edit mode
       setRuanganData((prevData) =>
         prevData.map((item) =>
           item.id === ruanganToSave.id ? ruanganToSave : item
         )
       );
-
       Swal.fire({
         icon: "success",
         title: "Berhasil!",
@@ -265,10 +747,8 @@ const DataRuanganPage = () => {
         timerProgressBar: true,
       });
     } else {
-      // Add new mode
       const newRuangan = { id: Date.now(), ...ruanganToSave };
       setRuanganData((prevData) => [...prevData, newRuangan]);
-
       Swal.fire({
         icon: "success",
         title: "Berhasil!",
@@ -324,133 +804,6 @@ const DataRuanganPage = () => {
     });
   };
 
-  // Table columns configuration
-  const columns = [
-    {
-      field: "action",
-      headerName: "Action",
-      width: 150,
-      sortable: false,
-      renderCell: (params) => (
-        <div className="flex items-center gap-2 h-full">
-          <button
-            onClick={() => handleEditClick(params.row.id)}
-            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => handleDeleteClick(params.row.id)}
-            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
-          >
-            Delete
-          </button>
-        </div>
-      ),
-    },
-    {
-      field: "no",
-      headerName: "No",
-      width: 70,
-      sortable: false,
-      renderCell: (params) => {
-        return (
-          params.api.getRowIndexRelativeToVisibleRows(params.id) +
-          1 +
-          dataTablePaginationModel.page * dataTablePaginationModel.pageSize
-        );
-      },
-    },
-    { field: "tahun", headerName: "Tahun", width: 100 },
-    { field: "provinsi", headerName: "Provinsi", width: 120 },
-    { field: "kabupaten_kota", headerName: "Kabupaten/Kota", width: 150 },
-    {
-      field: "bidang",
-      headerName: "Bidang",
-      width: 120,
-      renderCell: (params) => params.row.bidang?.nama || "-",
-    },
-    {
-      field: "unit",
-      headerName: "Unit",
-      width: 120,
-      renderCell: (params) => params.row.unit?.nama || "-",
-    },
-    {
-      field: "subUnit",
-      headerName: "Sub Unit",
-      width: 120,
-      renderCell: (params) => params.row.subUnit?.nama || "-",
-    },
-    {
-      field: "upb",
-      headerName: "UPB",
-      width: 120,
-      renderCell: (params) => params.row.upb?.nama || "-",
-    },
-    { field: "kode_ruangan", headerName: "Kode Ruangan", width: 150 },
-    { field: "nama_ruangan", headerName: "Nama Ruangan", width: 200 },
-    {
-      field: "nama_penanggung_jawab",
-      headerName: "Nama Penanggung Jawab",
-      width: 200,
-    },
-    {
-      field: "nip_penanggung_jawab",
-      headerName: "NIP Penanggung Jawab",
-      width: 180,
-    },
-    {
-      field: "jabatan_penanggung_jawab",
-      headerName: "Jabatan Penanggung Jawab",
-      width: 180,
-    },
-    {
-      field: "akun",
-      headerName: "Akun",
-      width: 150,
-      renderCell: (params) => params.row.akun?.nama || "-",
-    },
-    {
-      field: "kelompok",
-      headerName: "Kelompok",
-      width: 150,
-      renderCell: (params) => params.row.kelompok?.nama || "-",
-    },
-    {
-      field: "jenis",
-      headerName: "Jenis",
-      width: 150,
-      renderCell: (params) => params.row.jenis?.nama || "-",
-    },
-    {
-      field: "objek",
-      headerName: "Objek",
-      width: 150,
-      renderCell: (params) => params.row.objek?.nama || "-",
-    },
-    {
-      field: "rincian_objek",
-      headerName: "Rincian Objek",
-      width: 150,
-      renderCell: (params) => params.row.rincian_objek?.nama || "-",
-    },
-    {
-      field: "sub_rincian",
-      headerName: "Sub Rincian",
-      width: 150,
-      renderCell: (params) => params.row.sub_rincian?.nama || "-",
-    },
-    {
-      field: "sub_sub_rincian",
-      headerName: "Sub Sub Rincian",
-      width: 150,
-      renderCell: (params) => params.row.sub_sub_rincian?.nama || "-",
-    },
-    { field: "no_register", headerName: "No Register", width: 150 },
-    { field: "pemilik", headerName: "Pemilik", width: 120 },
-  ];
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -462,10 +815,20 @@ const DataRuanganPage = () => {
         <div className="flex justify-end mb-4">
           <button
             onClick={handleExport}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
+            disabled={isExporting || loading}
+            className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors cursor-pointer"
           >
-            <Download size={16} />
-            Export
+            {isExporting ? (
+              <>
+                <RefreshCw size={16} className="animate-spin" />
+                Exporting...
+              </>
+            ) : (
+              <>
+                <Download size={16} />
+                Export
+              </>
+            )}
           </button>
         </div>
 
@@ -502,44 +865,55 @@ const DataRuanganPage = () => {
               label="-- Tahun --"
               value={filters.tahun}
               onChange={(value) => handleFilterChange("tahun", value)}
-              options={dropdownData.tahun}
+              options={tahunList}
             />
             <FilterSelect
               label="-- Bidang --"
               value={filters.bidang}
               onChange={(value) => handleFilterChange("bidang", value)}
-              options={dropdownData.bidang}
+              options={bidangList}
               valueKey="id"
               labelKey="nama_bidang"
+              codeKey="kode_bidang"
+              loading={loadingBidang}
             />
             <FilterSelect
               label="-- Unit --"
               value={filters.unit}
               onChange={(value) => handleFilterChange("unit", value)}
-              options={dropdownData.unit}
+              options={unitList}
               valueKey="id"
               labelKey="nama_unit"
+              codeKey="kode_unit"
+              loading={loadingUnits}
+              disabled={!filters.bidang}
             />
             <FilterSelect
               label="-- Sub Unit --"
               value={filters.subUnit}
               onChange={(value) => handleFilterChange("subUnit", value)}
-              options={dropdownData.subUnit}
+              options={subUnitList}
               valueKey="id"
               labelKey="nama_sub_unit"
+              codeKey="kode_sub_unit"
+              loading={loadingSubUnits}
+              disabled={!filters.unit}
             />
             <FilterSelect
               label="-- UPB --"
               value={filters.upb}
               onChange={(value) => handleFilterChange("upb", value)}
-              options={dropdownData.upb}
+              options={upbList}
               valueKey="id"
               labelKey="nama_upb"
+              codeKey="kode_upb"
+              loading={loadingUpbs}
+              disabled={!filters.subUnit}
             />
           </div>
 
           {/* Controls */}
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <span>Show</span>
               <select
@@ -554,22 +928,47 @@ const DataRuanganPage = () => {
                 ))}
               </select>
               <span>entries</span>
+              <ColumnManager
+                columns={allTableColumns.filter(
+                  (col) => col.field !== "action" && col.field !== "no"
+                )}
+                columnVisibility={columnVisibility}
+                onColumnVisibilityChange={setColumnVisibility}
+              />
             </div>
 
-            <div className="relative w-full md:w-64">
-              <Search
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                size={16}
-              />
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              <div className="relative flex-1">
+                <Search
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  size={16}
+                />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
             </div>
           </div>
+
+          {/* Search Info */}
+          {debouncedSearchTerm && (
+            <div className="mb-4 p-3 bg-blue-50 border-l-4 border-blue-400 text-blue-700">
+              <p className="text-sm">
+                Showing results for: <strong>"{debouncedSearchTerm}"</strong>
+                {filteredData.length > 0 && (
+                  <span>
+                    {" "}
+                    ({filteredData.length} result
+                    {filteredData.length !== 1 ? "s" : ""} found)
+                  </span>
+                )}
+              </p>
+            </div>
+          )}
 
           {/* Data Table */}
           {error ? (
@@ -581,7 +980,7 @@ const DataRuanganPage = () => {
             <div className="border border-gray-200 rounded-lg overflow-hidden">
               <DataTable
                 rows={filteredData}
-                columns={columns}
+                columns={visibleColumns}
                 initialPageSize={entriesPerPage}
                 pageSizeOptions={ENTRIES_PER_PAGE_OPTIONS}
                 height={500}
