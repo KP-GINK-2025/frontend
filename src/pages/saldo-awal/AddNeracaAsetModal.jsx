@@ -1,595 +1,341 @@
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useRef, useEffect } from "react";
+import { X, Upload, FileText, AlertCircle, CheckCircle } from "lucide-react";
+import Swal from "sweetalert2";
+import api from "../../api/axios";
 
 const AddNeracaAsetModal = ({ isOpen, onClose, onSave, initialData }) => {
-  const [tahun, setTahun] = useState("");
-  const [semester, setSemester] = useState("");
-  const [subRincianAset, setSubRincianAset] = useState("");
-  const [unit, setUnit] = useState("");
-  const [subUnit, setSubUnit] = useState("");
-  const [upb, setUpb] = useState("");
-  const [kualifikasiAset, setKualifikasiAset] = useState("");
-  const [kelompokAset, setKelompokAset] = useState("");
-  const [jenisAset, setJenisAset] = useState("");
-  const [objekAset, setObjekAset] = useState("");
-  const [jumlahBarang, setJumlahBarang] = useState("");
-  const [nilaiBarang, setNilaiBarang] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const fileInputRef = useRef(null);
 
-  // Dummy data untuk dropdown (dalam aplikasi nyata, ini akan datang dari props atau API)
-  const dummyTahunData = ["2023", "2024", "2025"];
-  const dummySemesterData = [
-    { id: 1, nama: "Ganjil" },
-    { id: 2, nama: "Genap" },
-  ];
-  const dummySubRincianAsetData = [
-    { id: 1, nama: "Sub Rincian A" },
-    { id: 2, nama: "Sub Rincian B" },
-  ];
-  const dummyUnitData = [
-    { id: 1, nama: "Unit A" },
-    { id: 2, nama: "Unit B" },
-  ];
-  const dummySubUnitData = [
-    { id: 1, nama: "Sub Unit X" },
-    { id: 2, nama: "Sub Unit Y" },
-  ];
-  const dummyUpbData = [
-    { id: 1, nama: "UPB 1" },
-    { id: 2, nama: "UPB 2" },
-  ];
-  const dummyKualifikasiAsetData = [
-    { id: 1, nama: "Tanah" },
-    { id: 2, nama: "Bangunan" },
-  ];
-  const dummyKelompokAsetData = [
-    { id: 1, nama: "Gedung" },
-    { id: 2, nama: "Peralatan" },
-  ];
-  const dummyJenisAsetData = [
-    { id: 1, nama: "Meja" },
-    { id: 2, nama: "Kursi" },
-  ];
-  const dummyObjekAsetData = [
-    { id: 1, nama: "Komputer" },
-    { id: 2, nama: "Laptop" },
-  ];
-
+  // Reset state when modal opens/closes
   useEffect(() => {
-    if (isOpen && initialData) {
-      setTahun(initialData.tahun || "");
-      setSemester(initialData.semester || "");
-      setSubRincianAset(initialData.subRincianAset || "");
-      setUnit(initialData.unit || "");
-      setSubUnit(initialData.subUnit || "");
-      setUpb(initialData.upb || "");
-      setKualifikasiAset(initialData.kualifikasiAset || "");
-      setKelompokAset(initialData.kelompokAset || "");
-      setJenisAset(initialData.jenisAset || "");
-      setObjekAset(initialData.objekAset || "");
-      setJumlahBarang(initialData.jumlahBarang || "");
-      setNilaiBarang(initialData.nilaiBarang || "");
-    } else if (isOpen && !initialData) {
-      // Reset form saat mode tambah baru
-      setTahun("");
-      setSemester("");
-      setSubRincianAset("");
-      setUnit("");
-      setSubUnit("");
-      setUpb("");
-      setKualifikasiAset("");
-      setKelompokAset("");
-      setJenisAset("");
-      setObjekAset("");
-      setJumlahBarang("");
-      setNilaiBarang("");
+    if (isOpen) {
+      setSelectedFile(null);
+      setUploadProgress(0);
+      setUploading(false);
     }
-  }, [isOpen, initialData]);
+  }, [isOpen]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  // Handle file selection
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
 
-    // Validasi manual
-    if (
-      !tahun ||
-      !semester ||
-      !subRincianAset ||
-      !unit ||
-      !subUnit ||
-      !upb ||
-      !kualifikasiAset ||
-      !kelompokAset ||
-      !jenisAset ||
-      !objekAset ||
-      !jumlahBarang ||
-      !nilaiBarang
-    ) {
-      alert("Harap lengkapi semua field yang wajib diisi (*).");
+    if (file) {
+      // Validate file type
+      const validTypes = [
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "text/csv",
+      ];
+
+      if (
+        !validTypes.includes(file.type) &&
+        !file.name.match(/\.(xlsx?|csv)$/i)
+      ) {
+        Swal.fire({
+          title: "File Tidak Valid",
+          text: "Harap pilih file Excel (.xlsx, .xls) atau CSV (.csv)",
+          icon: "error",
+        });
+        return;
+      }
+
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        Swal.fire({
+          title: "File Terlalu Besar",
+          text: "Ukuran file maksimal 10MB",
+          icon: "error",
+        });
+        return;
+      }
+
+      setSelectedFile(file);
+    }
+  };
+
+  // Handle file upload/import
+  const handleImport = async () => {
+    if (!selectedFile) {
+      Swal.fire({
+        title: "File Belum Dipilih",
+        text: "Silakan pilih file Excel terlebih dahulu",
+        icon: "warning",
+      });
       return;
     }
 
-    const dataToSave = {
-      // Nama properti ini harus sesuai dengan 'field' di columns DataTable di SaldoAwalPage
-      tahun,
-      semester,
-      subRincianAset,
-      unit,
-      subUnit,
-      upb,
-      kualifikasiAset,
-      kelompokAset,
-      jenisAset,
-      objekAset,
-      jumlahBarang: Number(jumlahBarang), // Pastikan ini angka
-      nilaiBarang: Number(nilaiBarang), // Pastikan ini angka
-    };
+    setUploading(true);
+    setUploadProgress(0);
 
-    if (initialData && initialData.id) {
-      onSave({ ...dataToSave, id: initialData.id });
-    } else {
-      onSave(dataToSave);
-    }
-    onClose();
-  };
+    try {
+      const formData = new FormData();
+      formData.append("file", selectedFile);
 
-  // Handle click outside modal
-  const handleBackdropClick = (e) => {
-    if (e.target === e.currentTarget) {
+      // Simulate progress for better UX
+      const progressInterval = setInterval(() => {
+        setUploadProgress((prev) => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return prev + 10;
+        });
+      }, 200);
+
+      const response = await api.post("/saldo-awal/import", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          setUploadProgress(percentCompleted);
+        },
+      });
+
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+
+      // Show success message
+      await Swal.fire({
+        title: "Import Berhasil!",
+        text: `Data saldo awal berhasil diimport. ${
+          response.data?.imported_count || 0
+        } record berhasil ditambahkan.`,
+        icon: "success",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+
+      // Close modal and refresh data
       onClose();
+      if (onSave) {
+        onSave(); // This will trigger refresh in parent component
+      }
+    } catch (error) {
+      console.error("Import error:", error);
+
+      let errorMessage = "Terjadi kesalahan saat mengimport data.";
+
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.errors) {
+        const errorDetails = Object.values(error.response.data.errors)
+          .flat()
+          .join("\n");
+        errorMessage = `Validasi gagal:\n${errorDetails}`;
+      }
+
+      await Swal.fire({
+        title: "Import Gagal",
+        text: errorMessage,
+        icon: "error",
+        confirmButtonColor: "#ef4444",
+      });
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
     }
   };
 
-  // Animation variants
-  const backdropVariants = {
-    visible: {
-      opacity: 1,
-      transition: {
-        duration: 0.3,
-        ease: "easeOut",
-      },
-    },
-    hidden: {
-      opacity: 0,
-      transition: {
-        duration: 0.2,
-        ease: "easeIn",
-      },
-    },
+  // Handle file input click
+  const handleFileInputClick = () => {
+    fileInputRef.current?.click();
   };
 
-  const modalVariants = {
-    visible: {
-      opacity: 1,
-      scale: 1,
-      y: 0,
-      transition: {
-        duration: 0.4,
-        ease: "easeOut",
-        type: "spring",
-        damping: 25,
-        stiffness: 300,
-      },
-    },
-    hidden: {
-      opacity: 0,
-      scale: 0.8,
-      y: -50,
-      transition: {
-        duration: 0.3,
-        ease: "easeIn",
-      },
-    },
+  // Handle drag and drop
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
   };
 
-  const formVariants = {
-    visible: {
-      opacity: 1,
-      transition: {
-        delay: 0.1,
-        duration: 0.3,
-        staggerChildren: 0.05,
-        delayChildren: 0.2,
-      },
-    },
-    hidden: {
-      opacity: 0,
-    },
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      const event = { target: { files: [files[0]] } };
+      handleFileChange(event);
+    }
   };
 
-  const fieldVariants = {
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.3,
-        ease: "easeOut",
-      },
-    },
-    hidden: {
-      opacity: 0,
-      y: 20,
-    },
-  };
+  if (!isOpen) return null;
 
   return (
-    <AnimatePresence mode="wait">
-      {isOpen && (
-        <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
-          variants={backdropVariants}
-          initial="hidden"
-          animate="visible"
-          exit="hidden"
-          onClick={handleBackdropClick}
-        >
-          <motion.div
-            className="relative w-full max-w-lg p-6 bg-white rounded-lg shadow-lg max-h-[90vh] overflow-hidden"
-            variants={modalVariants}
-            initial="hidden"
-            animate="visible"
-            exit="hidden"
-            onClick={(e) => e.stopPropagation()}
+    <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex justify-between items-center p-6 border-b border-gray-200">
+          <h2 className="text-xl font-semibold text-gray-800">
+            Petunjuk Import
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+            disabled={uploading}
           >
-            {/* Header */}
-            <motion.div
-              className="flex items-center justify-between pb-4 mb-4 border-b border-gray-200"
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1, duration: 0.3 }}
+            <X size={24} />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6">
+          {/* Instructions */}
+          <div className="mb-6">
+            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+              <li>
+                Download saldo awal melalui link simaset audited pada menu
+                laporan rekapitulasi buku inventaris.
+              </li>
+              <li>
+                Pilih kualifikasi nya (intra, ekstra, aset lain-lain, klik
+                excel).
+              </li>
+              <li>
+                Buka file blok kolom f sampai u pilih format number dan atur 2
+                angka di belakang koma.
+              </li>
+              <li>Simpan dalam Excel 2003.</li>
+              <li>
+                Lalu pilih file dengan tombol (Choose File) di bawah ini
+                kemudian klik Import.
+              </li>
+            </ol>
+          </div>
+
+          {/* File Upload Section */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              File Excel
+            </label>
+
+            {/* File Input Area */}
+            <div
+              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                selectedFile
+                  ? "border-green-300 bg-green-50"
+                  : "border-gray-300 bg-gray-50 hover:border-gray-400"
+              }`}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
             >
-              <h2 className="text-xl font-bold text-gray-800">
-                {initialData ? "EDIT SALDO AWAL" : "TAMBAH SALDO AWAL"}
-              </h2>
-              <motion.button
-                onClick={onClose}
-                className="text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer p-1 rounded-full hover:bg-gray-100 transition-colors"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-6 h-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </motion.button>
-            </motion.div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                onChange={handleFileChange}
+                className="hidden"
+                disabled={uploading}
+              />
 
-            {/* Form */}
-            <motion.form
-              className="max-h-[calc(90vh-180px)] overflow-y-auto pr-2 pb-4 space-y-4"
-              variants={formVariants}
-              initial="hidden"
-              animate="visible"
-            >
-              {/* Tahun */}
-              <motion.div className="mb-4" variants={fieldVariants}>
-                <label
-                  htmlFor="tahun"
-                  className="block mb-2 text-gray-700 font-medium"
-                >
-                  Tahun: <span className="text-red-500">*</span>
-                </label>
-                <motion.select
-                  id="tahun"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  value={tahun}
-                  onChange={(e) => setTahun(e.target.value)}
-                  required
-                  whileFocus={{ scale: 1.02 }}
-                >
-                  <option value="">- Pilih Tahun -</option>
-                  {dummyTahunData.map((t, i) => (
-                    <option key={i} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </motion.select>
-              </motion.div>
+              {selectedFile ? (
+                <div className="flex flex-col items-center">
+                  <CheckCircle className="text-green-500 mb-2" size={48} />
+                  <p className="text-sm font-medium text-green-700 mb-1">
+                    File dipilih:
+                  </p>
+                  <p className="text-sm text-gray-600 break-all">
+                    {selectedFile.name}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {(selectedFile.size / 1024).toFixed(2)} KB
+                  </p>
+                  <button
+                    onClick={handleFileInputClick}
+                    disabled={uploading}
+                    className="mt-2 text-sm text-blue-600 hover:text-blue-800 disabled:text-gray-400 cursor-pointer"
+                  >
+                    Ganti File
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center">
+                  <FileText className="text-gray-400 mb-2" size={48} />
+                  <button
+                    onClick={handleFileInputClick}
+                    disabled={uploading}
+                    className="bg-white border border-gray-300 rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  >
+                    Choose File
+                  </button>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Atau drag & drop file Excel di sini
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Format: .xlsx, .xls, .csv (Maksimal 10MB)
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
 
-              {/* Semester */}
-              <motion.div className="mb-4" variants={fieldVariants}>
-                <label
-                  htmlFor="semester"
-                  className="block mb-2 text-gray-700 font-medium"
-                >
-                  Semester: <span className="text-red-500">*</span>
-                </label>
-                <motion.select
-                  id="semester"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  value={semester}
-                  onChange={(e) => setSemester(e.target.value)}
-                  required
-                  whileFocus={{ scale: 1.02 }}
-                >
-                  <option value="">- Pilih Semester -</option>
-                  {dummySemesterData.map((s) => (
-                    <option key={s.id} value={s.nama}>
-                      {s.nama}
-                    </option>
-                  ))}
-                </motion.select>
-              </motion.div>
+          {/* Upload Progress */}
+          {uploading && (
+            <div className="mb-6">
+              <div className="flex justify-between text-sm text-gray-600 mb-1">
+                <span>Mengupload file...</span>
+                <span>{uploadProgress}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                ></div>
+              </div>
+            </div>
+          )}
 
-              {/* Sub Rincian Aset */}
-              <motion.div className="mb-4" variants={fieldVariants}>
-                <label
-                  htmlFor="subRincianAset"
-                  className="block mb-2 text-gray-700 font-medium"
-                >
-                  Sub Rincian Aset: <span className="text-red-500">*</span>
-                </label>
-                <motion.select
-                  id="subRincianAset"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  value={subRincianAset}
-                  onChange={(e) => setSubRincianAset(e.target.value)}
-                  required
-                  whileFocus={{ scale: 1.02 }}
-                >
-                  <option value="">- Pilih Sub Rincian Aset -</option>
-                  {dummySubRincianAsetData.map((s) => (
-                    <option key={s.id} value={s.nama}>
-                      {s.nama}
-                    </option>
-                  ))}
-                </motion.select>
-              </motion.div>
+          {/* Warning Message */}
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+            <div className="flex">
+              <AlertCircle
+                className="text-yellow-400 flex-shrink-0 mr-2"
+                size={20}
+              />
+              <div>
+                <p className="text-sm font-medium text-yellow-800">
+                  File hanya dapat digunakan sekali saja jika ada perubahan
+                  gunakan ikon pensil atau hubungi admin!!
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
 
-              {/* Unit */}
-              <motion.div className="mb-4" variants={fieldVariants}>
-                <label
-                  htmlFor="unit"
-                  className="block mb-2 text-gray-700 font-medium"
-                >
-                  Unit: <span className="text-red-500">*</span>
-                </label>
-                <motion.select
-                  id="unit"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  value={unit}
-                  onChange={(e) => setUnit(e.target.value)}
-                  required
-                  whileFocus={{ scale: 1.02 }}
-                >
-                  <option value="">- Pilih Unit -</option>
-                  {dummyUnitData.map((u) => (
-                    <option key={u.id} value={u.nama}>
-                      {u.nama}
-                    </option>
-                  ))}
-                </motion.select>
-              </motion.div>
-
-              {/* Sub Unit */}
-              <motion.div className="mb-4" variants={fieldVariants}>
-                <label
-                  htmlFor="subUnit"
-                  className="block mb-2 text-gray-700 font-medium"
-                >
-                  Sub Unit: <span className="text-red-500">*</span>
-                </label>
-                <motion.select
-                  id="subUnit"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  value={subUnit}
-                  onChange={(e) => setSubUnit(e.target.value)}
-                  required
-                  whileFocus={{ scale: 1.02 }}
-                >
-                  <option value="">- Pilih Sub Unit -</option>
-                  {dummySubUnitData.map((s) => (
-                    <option key={s.id} value={s.nama}>
-                      {s.nama}
-                    </option>
-                  ))}
-                </motion.select>
-              </motion.div>
-
-              {/* UPB */}
-              <motion.div className="mb-4" variants={fieldVariants}>
-                <label
-                  htmlFor="upb"
-                  className="block mb-2 text-gray-700 font-medium"
-                >
-                  UPB: <span className="text-red-500">*</span>
-                </label>
-                <motion.select
-                  id="upb"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  value={upb}
-                  onChange={(e) => setUpb(e.target.value)}
-                  required
-                  whileFocus={{ scale: 1.02 }}
-                >
-                  <option value="">- Pilih UPB -</option>
-                  {dummyUpbData.map((u) => (
-                    <option key={u.id} value={u.nama}>
-                      {u.nama}
-                    </option>
-                  ))}
-                </motion.select>
-              </motion.div>
-
-              {/* Kualifikasi Aset */}
-              <motion.div className="mb-4" variants={fieldVariants}>
-                <label
-                  htmlFor="kualifikasiAset"
-                  className="block mb-2 text-gray-700 font-medium"
-                >
-                  Kualifikasi Aset: <span className="text-red-500">*</span>
-                </label>
-                <motion.select
-                  id="kualifikasiAset"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  value={kualifikasiAset}
-                  onChange={(e) => setKualifikasiAset(e.target.value)}
-                  required
-                  whileFocus={{ scale: 1.02 }}
-                >
-                  <option value="">- Pilih Kualifikasi Aset -</option>
-                  {dummyKualifikasiAsetData.map((k) => (
-                    <option key={k.id} value={k.nama}>
-                      {k.nama}
-                    </option>
-                  ))}
-                </motion.select>
-              </motion.div>
-
-              {/* Kelompok Aset */}
-              <motion.div className="mb-4" variants={fieldVariants}>
-                <label
-                  htmlFor="kelompokAset"
-                  className="block mb-2 text-gray-700 font-medium"
-                >
-                  Kelompok Aset: <span className="text-red-500">*</span>
-                </label>
-                <motion.select
-                  id="kelompokAset"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  value={kelompokAset}
-                  onChange={(e) => setKelompokAset(e.target.value)}
-                  required
-                  whileFocus={{ scale: 1.02 }}
-                >
-                  <option value="">- Pilih Kelompok Aset -</option>
-                  {dummyKelompokAsetData.map((k) => (
-                    <option key={k.id} value={k.nama}>
-                      {k.nama}
-                    </option>
-                  ))}
-                </motion.select>
-              </motion.div>
-
-              {/* Jenis Aset */}
-              <motion.div className="mb-4" variants={fieldVariants}>
-                <label
-                  htmlFor="jenisAset"
-                  className="block mb-2 text-gray-700 font-medium"
-                >
-                  Jenis Aset: <span className="text-red-500">*</span>
-                </label>
-                <motion.select
-                  id="jenisAset"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  value={jenisAset}
-                  onChange={(e) => setJenisAset(e.target.value)}
-                  required
-                  whileFocus={{ scale: 1.02 }}
-                >
-                  <option value="">- Pilih Jenis Aset -</option>
-                  {dummyJenisAsetData.map((j) => (
-                    <option key={j.id} value={j.nama}>
-                      {j.nama}
-                    </option>
-                  ))}
-                </motion.select>
-              </motion.div>
-
-              {/* Objek Aset */}
-              <motion.div className="mb-4" variants={fieldVariants}>
-                <label
-                  htmlFor="objekAset"
-                  className="block mb-2 text-gray-700 font-medium"
-                >
-                  Objek Aset: <span className="text-red-500">*</span>
-                </label>
-                <motion.select
-                  id="objekAset"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  value={objekAset}
-                  onChange={(e) => setObjekAset(e.target.value)}
-                  required
-                  whileFocus={{ scale: 1.02 }}
-                >
-                  <option value="">- Pilih Objek Aset -</option>
-                  {dummyObjekAsetData.map((o) => (
-                    <option key={o.id} value={o.nama}>
-                      {o.nama}
-                    </option>
-                  ))}
-                </motion.select>
-              </motion.div>
-
-              {/* Jumlah Barang */}
-              <motion.div className="mb-4" variants={fieldVariants}>
-                <label
-                  htmlFor="jumlahBarang"
-                  className="block mb-2 text-gray-700 font-medium"
-                >
-                  Jumlah Barang: <span className="text-red-500">*</span>
-                </label>
-                <motion.input
-                  type="number"
-                  id="jumlahBarang"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  value={jumlahBarang}
-                  onChange={(e) => setJumlahBarang(e.target.value)}
-                  required
-                  min="0"
-                  whileFocus={{ scale: 1.02 }}
-                />
-              </motion.div>
-
-              {/* Nilai Barang */}
-              <motion.div className="mb-6" variants={fieldVariants}>
-                <label
-                  htmlFor="nilaiBarang"
-                  className="block mb-2 text-gray-700 font-medium"
-                >
-                  Nilai Barang: <span className="text-red-500">*</span>
-                </label>
-                <motion.input
-                  type="number"
-                  id="nilaiBarang"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  value={nilaiBarang}
-                  onChange={(e) => setNilaiBarang(e.target.value)}
-                  required
-                  min="0"
-                  whileFocus={{ scale: 1.02 }}
-                />
-              </motion.div>
-            </motion.form>
-
-            {/* Footer Buttons */}
-            <motion.div
-              className="flex justify-end space-x-4 pt-4 border-t border-gray-200 mt-4"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.3 }}
-            >
-              <motion.button
-                type="button"
-                onClick={onClose}
-                className="px-6 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 cursor-pointer transition-colors"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Batal
-              </motion.button>
-              <motion.button
-                type="submit"
-                onClick={handleSubmit}
-                className="px-6 py-2 text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer transition-colors"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                {initialData ? "Simpan Perubahan" : "Simpan"}
-              </motion.button>
-            </motion.div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        {/* Footer */}
+        <div className="flex justify-end gap-3 p-6 border-t border-gray-200">
+          <button
+            onClick={onClose}
+            disabled={uploading}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors cursor-pointer"
+          >
+            Batal
+          </button>
+          <button
+            onClick={handleImport}
+            disabled={!selectedFile || uploading}
+            className="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2 cursor-pointer"
+          >
+            {uploading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                Importing...
+              </>
+            ) : (
+              <>
+                <Upload size={16} />
+                Import
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 
