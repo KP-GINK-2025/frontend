@@ -15,7 +15,6 @@ import {
 // Constants
 const ENTRIES_PER_PAGE_OPTIONS = [5, 10, 25, 50, 100];
 const DEFAULT_ENTRIES_PER_PAGE = 10;
-
 const INITIAL_FILTERS = {
   tahun: "",
   bidang: "",
@@ -23,8 +22,31 @@ const INITIAL_FILTERS = {
   subUnit: "",
   upb: "",
 };
+const TOAST_OPTIONS = {
+  toast: true,
+  position: "top-end",
+  showConfirmButton: false,
+  timer: 2000,
+  timerProgressBar: true,
+};
+const SWAL_DELETE_OPTIONS = {
+  title: "Apakah Anda yakin?",
+  text: "Data ruangan yang dihapus tidak dapat dikembalikan!",
+  icon: "warning",
+  showCancelButton: true,
+  confirmButtonText: "Ya, hapus!",
+  cancelButtonText: "Batal",
+  buttonsStyling: false,
+  customClass: {
+    confirmButton:
+      "bg-red-600 text-white px-4 py-2 mr-1 rounded-md hover:bg-red-700 hover:outline-none cursor-pointer",
+    cancelButton:
+      "bg-gray-200 text-gray-700 px-4 py-2 ml-1 rounded-md hover:bg-gray-300 hover:outline-none cursor-pointer",
+    popup: "rounded-lg shadow-lg",
+  },
+};
 
-// Utility Components
+// Utility Components (moved out for better readability)
 const FilterSelect = ({
   label,
   value,
@@ -62,6 +84,15 @@ const DataRuanganPage = () => {
   const [entriesPerPage, setEntriesPerPage] = useState(
     DEFAULT_ENTRIES_PER_PAGE
   );
+  const [filters, setFilters] = useState(INITIAL_FILTERS);
+  const [ruanganData, setRuanganData] = useState([]);
+  const [editingRuangan, setEditingRuangan] = useState(null);
+
+  // State for UI and data fetching status
+  const [loading, setLoading] = useState(true);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [error, setError] = useState(null);
 
   // State for dropdown data and loading
   const [tahunList, setTahunList] = useState([]);
@@ -70,96 +101,26 @@ const DataRuanganPage = () => {
   const [subUnitList, setSubUnitList] = useState([]);
   const [upbList, setUpbList] = useState([]);
 
-  // State untuk menyimpan semua data klasifikasi dari API
-  const [allBidangs, setAllBidangs] = useState([]);
-  const [allUnits, setAllUnits] = useState([]);
-  const [allSubUnits, setAllSubUnits] = useState([]);
-  const [allUpbs, setAllUpbs] = useState([]);
+  // Memoized data for cascading dropdowns
+  const [allKlasifikasi, setAllKlasifikasi] = useState({
+    bidangs: [],
+    units: [],
+    subUnits: [],
+    upbs: [],
+  });
+  const [loadingDropdowns, setLoadingDropdowns] = useState({
+    bidang: false,
+    unit: false,
+    subUnit: false,
+    upb: false,
+  });
 
-  const [loadingBidang, setLoadingBidang] = useState(false);
-  const [loadingUnits, setLoadingUnits] = useState(false);
-  const [loadingSubUnits, setLoadingSubUnits] = useState(false);
-  const [loadingUpbs, setLoadingUpbs] = useState(false);
-
-  const [filters, setFilters] = useState(INITIAL_FILTERS);
-  const [ruanganData, setRuanganData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [editingRuangan, setEditingRuangan] = useState(null);
   const [dataTablePaginationModel, setDataTablePaginationModel] = useState({
     page: 0,
     pageSize: DEFAULT_ENTRIES_PER_PAGE,
   });
-  const [error, setError] = useState(null);
-  const [isExporting, setIsExporting] = useState(false);
 
-  // Fungsi untuk mengambil units berdasarkan bidang
-  const fetchUnits = useCallback(
-    (bidangId) => {
-      setLoadingUnits(true);
-      try {
-        const filteredUnits = allUnits.filter(
-          (unit) => unit.bidang?.id === parseInt(bidangId)
-        );
-        const sortedUnits = filteredUnits.sort(
-          (a, b) => parseInt(a.kode_unit) - parseInt(b.kode_unit)
-        );
-        setUnitList(sortedUnits);
-      } catch (error) {
-        console.error("Error filtering units:", error);
-        setUnitList([]);
-      } finally {
-        setLoadingUnits(false);
-      }
-    },
-    [allUnits]
-  );
-
-  // Fungsi untuk mengambil subunits berdasarkan unit
-  const fetchSubUnits = useCallback(
-    (unitId) => {
-      setLoadingSubUnits(true);
-      try {
-        const filteredSubUnits = allSubUnits.filter(
-          (subUnit) => subUnit.unit?.id === parseInt(unitId)
-        );
-        const sortedSubUnits = filteredSubUnits.sort(
-          (a, b) => parseInt(a.kode_sub_unit) - parseInt(b.kode_sub_unit)
-        );
-        setSubUnitList(sortedSubUnits);
-      } catch (error) {
-        console.error("Error filtering sub units:", error);
-        setSubUnitList([]);
-      } finally {
-        setLoadingSubUnits(false);
-      }
-    },
-    [allSubUnits]
-  );
-
-  // Fungsi untuk mengambil UPBs berdasarkan subunit
-  const fetchUpbs = useCallback(
-    (subUnitId) => {
-      setLoadingUpbs(true);
-      try {
-        const filteredUpbs = allUpbs.filter(
-          (upb) => upb.sub_unit?.id === parseInt(subUnitId)
-        );
-        const sortedUpbs = filteredUpbs.sort(
-          (a, b) => parseInt(a.kode_upb) - parseInt(b.kode_upb)
-        );
-        setUpbList(sortedUpbs);
-      } catch (error) {
-        console.error("Error filtering UPBs:", error);
-        setUpbList([]);
-      } finally {
-        setLoadingUpbs(false);
-      }
-    },
-    [allUpbs]
-  );
-
-  // Fungsi inti untuk mengambil data
+  // Data fetching functions
   const fetchAllInitialData = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -174,71 +135,80 @@ const DataRuanganPage = () => {
         ]);
 
       const ruanganDataRaw = ruanganRes.data.data || [];
-      const bidangData = bidangRes.data.data || [];
-      const unitData = unitRes.data.data || [];
-      const subUnitData = subUnitRes.data.data || [];
-      const upbData = upbRes.data.data || [];
+      const { data: bidangData } = bidangRes.data;
+      const { data: unitData } = unitRes.data;
+      const { data: subUnitData } = subUnitRes.data;
+      const { data: upbData } = upbRes.data;
 
-      // Set all data untuk referensi
-      setAllBidangs(bidangData);
-      setAllUnits(unitData);
-      setAllSubUnits(subUnitData);
-      setAllUpbs(upbData);
+      setAllKlasifikasi({
+        bidangs: bidangData,
+        units: unitData,
+        subUnits: subUnitData,
+        upbs: upbData,
+      });
 
-      // Create maps untuk enrichment
       const createMap = (data) =>
-        data.reduce((acc, item) => {
-          acc[item.id] = item;
-          return acc;
-        }, {});
-
+        data.reduce((acc, item) => ({ ...acc, [item.id]: item }), {});
       const bidangMap = createMap(bidangData);
       const unitMap = createMap(unitData);
       const subUnitMap = createMap(subUnitData);
       const upbMap = createMap(upbData);
 
-      // Enrich ruangan data
       const enrichedRuanganData = ruanganDataRaw.map((ruangan) => {
-        const upbId = ruangan.upb?.id || ruangan.upb_1?.id;
-        const enrichedUpb = upbMap[upbId];
+        const upb = ruangan.upb || upbMap[ruangan.upb?.id];
+        const subUnit = upb?.sub_unit || subUnitMap[upb?.sub_unit_id];
+        const unit = subUnit?.unit || unitMap[subUnit?.unit_id];
+        const bidang = unit?.bidang || bidangMap[unit?.bidang_id];
 
-        const enrichedSubUnit =
-          enrichedUpb?.sub_unit || subUnitMap[enrichedUpb?.sub_unit_id];
-        const enrichedUnit =
-          enrichedSubUnit?.unit || unitMap[enrichedSubUnit?.unit_id];
-        const enrichedBidang =
-          enrichedUnit?.bidang || bidangMap[enrichedUnit?.bidang_id];
-
-        return {
-          ...ruangan,
-          bidang: enrichedBidang || null,
-          unit: enrichedUnit || null,
-          subUnit: enrichedSubUnit || null,
-          upb: enrichedUpb || null,
-        };
+        return { ...ruangan, bidang, unit, subUnit, upb };
       });
 
       setRuanganData(enrichedRuanganData);
 
-      // Set tahun list
       const uniqueYears = [
         ...new Set(ruanganDataRaw.map((item) => item.tahun).filter(Boolean)),
       ].sort((a, b) => a - b);
       setTahunList(uniqueYears);
 
-      // Set bidang list (sorted)
       const sortedBidang = bidangData.sort(
         (a, b) => parseInt(a.kode_bidang) - parseInt(b.kode_bidang)
       );
       setBidangList(sortedBidang);
-    } catch (error) {
-      console.error("Gagal mengambil data:", error);
+    } catch (err) {
+      console.error("Gagal mengambil data:", err);
       setError("Gagal mengambil data dari server.");
-      throw error;
     } finally {
       setLoading(false);
     }
   }, []);
+
+  // Cascading dropdown logic
+  const fetchDropdownData = useCallback(
+    (type, parentId) => {
+      setLoadingDropdowns((prev) => ({ ...prev, [type]: true }));
+      let filteredData = [];
+      const parentKey =
+        type === "unit" ? "bidang" : type === "subUnit" ? "unit" : "sub_unit";
+      const dataSet = allKlasifikasi[`${type}s`];
+
+      if (parentId) {
+        filteredData = dataSet.filter(
+          (item) => item[parentKey]?.id === parseInt(parentId)
+        );
+      }
+
+      const sortedData = filteredData.sort(
+        (a, b) => parseInt(a[`kode_${type}`]) - parseInt(b[`kode_${type}`])
+      );
+
+      if (type === "unit") setUnitList(sortedData);
+      if (type === "subUnit") setSubUnitList(sortedData);
+      if (type === "upb") setUpbList(sortedData);
+
+      setLoadingDropdowns((prev) => ({ ...prev, [type]: false }));
+    },
+    [allKlasifikasi]
+  );
 
   // Effects
   useEffect(() => {
@@ -253,55 +223,187 @@ const DataRuanganPage = () => {
     }));
   }, [entriesPerPage]);
 
-  // Handle cascading dropdowns dengan cleanup
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
+
+  // Handle cascading dropdowns
   useEffect(() => {
     if (filters.bidang) {
-      fetchUnits(filters.bidang);
-      // Reset dependent filters
+      fetchDropdownData("unit", filters.bidang);
       setFilters((prev) => ({ ...prev, unit: "", subUnit: "", upb: "" }));
-      setSubUnitList([]);
-      setUpbList([]);
     } else {
       setUnitList([]);
       setSubUnitList([]);
       setUpbList([]);
     }
-  }, [filters.bidang, fetchUnits]);
+  }, [filters.bidang, fetchDropdownData]);
 
   useEffect(() => {
     if (filters.unit) {
-      fetchSubUnits(filters.unit);
-      // Reset dependent filters
+      fetchDropdownData("subUnit", filters.unit);
       setFilters((prev) => ({ ...prev, subUnit: "", upb: "" }));
-      setUpbList([]);
     } else {
       setSubUnitList([]);
       setUpbList([]);
     }
-  }, [filters.unit, fetchSubUnits]);
+  }, [filters.unit, fetchDropdownData]);
 
   useEffect(() => {
     if (filters.subUnit) {
-      fetchUpbs(filters.subUnit);
-      // Reset dependent filter
+      fetchDropdownData("upb", filters.subUnit);
       setFilters((prev) => ({ ...prev, upb: "" }));
     } else {
       setUpbList([]);
     }
-  }, [filters.subUnit, fetchUpbs]);
+  }, [filters.subUnit, fetchDropdownData]);
 
-  // Debounce effect untuk search term
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, 500);
+  // Data filtering logic
+  const filteredData = ruanganData.filter((item) => {
+    const debouncedSearchLower = debouncedSearchTerm.toLowerCase();
+    const matchesSearch = [
+      item.nama_ruangan,
+      item.kode_ruangan,
+      item.nama_penanggung_jawab,
+      item.nip_penanggung_jawab,
+      item.bidang?.nama_bidang,
+      item.unit?.nama_unit,
+      item.subUnit?.nama_sub_unit,
+      item.upb?.nama_upb,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase()
+      .includes(debouncedSearchLower);
 
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [searchTerm]);
+    const filterChecks = [
+      !filters.tahun || String(item.tahun) === String(filters.tahun),
+      !filters.bidang || String(item.bidang?.id) === String(filters.bidang),
+      !filters.unit || String(item.unit?.id) === String(filters.unit),
+      !filters.subUnit || String(item.subUnit?.id) === String(filters.subUnit),
+      !filters.upb || String(item.upb?.id) === String(filters.upb),
+    ];
 
-  // Kolom untuk DataTable
+    return matchesSearch && filterChecks.every(Boolean);
+  });
+
+  // Event handlers
+  const handleFilterChange = (filterType, value) => {
+    setFilters((prev) => ({ ...prev, [filterType]: value }));
+  };
+
+  const handleExport = async () => {
+    try {
+      const exportConfig = createExportConfig({
+        data: filteredData,
+        columns: exportColumns,
+        filename: "Data_Ruangan",
+        sheetName: "Ruangan",
+        setExporting: setIsExporting,
+      });
+      await universalHandleExport(exportConfig);
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data berhasil diexport.",
+        ...TOAST_OPTIONS,
+      });
+    } catch (error) {
+      console.error("Export error:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Gagal mengexport data.",
+        ...TOAST_OPTIONS,
+      });
+    }
+  };
+
+  const handleRefresh = async () => {
+    setSearchTerm("");
+    setFilters(INITIAL_FILTERS);
+    try {
+      await fetchAllInitialData();
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data berhasil dimuat ulang.",
+        ...TOAST_OPTIONS,
+      });
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Gagal memuat ulang data.",
+        ...TOAST_OPTIONS,
+      });
+    }
+  };
+
+  const handleOpenAddModal = () => {
+    setEditingRuangan(null);
+    setIsAddModalOpen(true);
+  };
+
+  const handleCloseAddModal = () => {
+    setIsAddModalOpen(false);
+    setEditingRuangan(null);
+  };
+
+  const handleSaveRuangan = (ruanganToSave) => {
+    if (ruanganToSave.id) {
+      setRuanganData((prevData) =>
+        prevData.map((item) =>
+          item.id === ruanganToSave.id ? ruanganToSave : item
+        )
+      );
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data ruangan berhasil diperbarui",
+        ...TOAST_OPTIONS,
+      });
+    } else {
+      setRuanganData((prevData) => [
+        ...prevData,
+        { id: Date.now(), ...ruanganToSave },
+      ]);
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Data ruangan baru berhasil ditambahkan",
+        ...TOAST_OPTIONS,
+      });
+    }
+    handleCloseAddModal();
+  };
+
+  const handleEditClick = (id) => {
+    const ruanganToEdit = ruanganData.find((item) => item.id === id);
+    if (ruanganToEdit) {
+      setEditingRuangan(ruanganToEdit);
+      setIsAddModalOpen(true);
+    }
+  };
+
+  const handleDeleteClick = (id) => {
+    Swal.fire(SWAL_DELETE_OPTIONS).then((result) => {
+      if (result.isConfirmed) {
+        setRuanganData((prevData) => prevData.filter((item) => item.id !== id));
+        Swal.fire({
+          icon: "success",
+          title: "Terhapus!",
+          text: "Data ruangan berhasil dihapus.",
+          ...TOAST_OPTIONS,
+        });
+      }
+    });
+  };
+
+  // Columns for DataTable
   const allTableColumns = [
     {
       field: "action",
@@ -330,13 +432,10 @@ const DataRuanganPage = () => {
       headerName: "No",
       width: 70,
       sortable: false,
-      renderCell: (params) => {
-        return (
-          params.api.getRowIndexRelativeToVisibleRows(params.id) +
-          1 +
-          dataTablePaginationModel.page * dataTablePaginationModel.pageSize
-        );
-      },
+      renderCell: (params) =>
+        params.api.getRowIndexRelativeToVisibleRows(params.id) +
+        1 +
+        dataTablePaginationModel.page * dataTablePaginationModel.pageSize,
     },
     { field: "tahun", headerName: "Tahun", width: 100 },
     {
@@ -367,22 +466,27 @@ const DataRuanganPage = () => {
       headerName: "Unit",
       width: 200,
       renderCell: (params) =>
-        `${params.row.unit?.kode_unit} - ${params.row.unit?.nama_unit}` || "-",
+        `${params.row.unit?.kode_unit || ""} - ${
+          params.row.unit?.nama_unit || ""
+        }`.trim() || "-",
     },
     {
       field: "subUnit",
       headerName: "Sub Unit",
       width: 200,
       renderCell: (params) =>
-        `${params.row.subUnit?.kode_sub_unit} - ${params.row.subUnit?.nama_sub_unit}` ||
-        "-",
+        `${params.row.subUnit?.kode_sub_unit || ""} - ${
+          params.row.subUnit?.nama_sub_unit || ""
+        }`.trim() || "-",
     },
     {
       field: "upb",
       headerName: "UPB",
       width: 200,
       renderCell: (params) =>
-        `${params.row.upb?.kode_upb} - ${params.row.upb?.nama_upb}` || "-",
+        `${params.row.upb?.kode_upb || ""} - ${
+          params.row.upb?.nama_upb || ""
+        }`.trim() || "-",
     },
     { field: "kode_ruangan", headerName: "Kode Ruangan", width: 150 },
     { field: "nama_ruangan", headerName: "Nama Ruangan", width: 200 },
@@ -405,73 +509,72 @@ const DataRuanganPage = () => {
       field: "bidang1",
       headerName: "Bidang 1",
       width: 150,
-      renderCell: (params) => params.row.bidang1?.nama || "-",
+      valueGetter: (params) => params.row.bidang1?.nama || "-",
     },
     {
       field: "unit1",
       headerName: "Unit 1",
       width: 150,
-      renderCell: (params) => params.row.unit1?.nama || "-",
+      valueGetter: (params) => params.row.unit1?.nama || "-",
     },
     {
       field: "subunit1",
       headerName: "Sub Unit 1",
       width: 150,
-      renderCell: (params) => params.row.subunit1?.nama || "-",
+      valueGetter: (params) => params.row.subunit1?.nama || "-",
     },
     {
       field: "upb1",
       headerName: "UPB 1",
       width: 150,
-      renderCell: (params) => params.row.upb1?.nama || "-",
+      valueGetter: (params) => params.row.upb1?.nama || "-",
     },
     {
       field: "akun",
       headerName: "Akun",
       width: 150,
-      renderCell: (params) => params.row.akun?.nama || "-",
+      valueGetter: (params) => params.row.akun?.nama || "-",
     },
     {
       field: "kelompok",
       headerName: "Kelompok",
       width: 150,
-      renderCell: (params) => params.row.kelompok?.nama || "-",
+      valueGetter: (params) => params.row.kelompok?.nama || "-",
     },
     {
       field: "jenis",
       headerName: "Jenis",
       width: 150,
-      renderCell: (params) => params.row.jenis?.nama || "-",
+      valueGetter: (params) => params.row.jenis?.nama || "-",
     },
     {
       field: "objek",
       headerName: "Objek",
       width: 150,
-      renderCell: (params) => params.row.objek?.nama || "-",
+      valueGetter: (params) => params.row.objek?.nama || "-",
     },
     {
       field: "rincian_objek",
       headerName: "Rincian Objek",
       width: 150,
-      renderCell: (params) => params.row.rincian_objek?.nama || "-",
+      valueGetter: (params) => params.row.rincian_objek?.nama || "-",
     },
     {
       field: "sub_rincian",
       headerName: "Sub Rincian",
       width: 150,
-      renderCell: (params) => params.row.sub_rincian?.nama || "-",
+      valueGetter: (params) => params.row.sub_rincian?.nama || "-",
     },
     {
       field: "sub_sub_rincian",
       headerName: "Sub Sub Rincian",
       width: 150,
-      renderCell: (params) => params.row.sub_sub_rincian?.nama || "-",
+      valueGetter: (params) => params.row.sub_sub_rincian?.nama || "-",
     },
     { field: "no_register", headerName: "No Register", width: 150 },
     { field: "pemilik", headerName: "Pemilik", width: 120 },
   ];
 
-  // Kolom untuk Export
   const exportColumns = [
     {
       field: "no",
@@ -591,7 +694,7 @@ const DataRuanganPage = () => {
     { field: "pemilik", headerName: "Pemilik" },
   ];
 
-  // State untuk mengelola visibilitas kolom
+  // State for column visibility
   const [columnVisibility, setColumnVisibility] = useState(() => {
     const defaultVisibleFields = [
       "no",
@@ -603,206 +706,15 @@ const DataRuanganPage = () => {
       "nama_ruangan",
       "action",
     ];
-
-    const initialVisibility = {};
-    allTableColumns.forEach((col) => {
-      initialVisibility[col.field] = defaultVisibleFields.includes(col.field);
-    });
-    return initialVisibility;
+    return allTableColumns.reduce((acc, col) => {
+      acc[col.field] = defaultVisibleFields.includes(col.field);
+      return acc;
+    }, {});
   });
 
-  // Filter kolom yang akan ditampilkan di DataTable
   const visibleColumns = allTableColumns.filter(
     (col) => columnVisibility[col.field] !== false
   );
-
-  // Data filtering
-  const filteredData = ruanganData.filter((item) => {
-    const debouncedSearchLower = debouncedSearchTerm.toLowerCase();
-
-    // Logika pencarian yang lebih komprehensif
-    const matchesSearch = [
-      item.nama_ruangan,
-      item.kode_ruangan,
-      item.nama_penanggung_jawab,
-      item.nip_penanggung_jawab,
-      item.bidang?.nama_bidang,
-      item.unit?.nama_unit,
-      item.subUnit?.nama_sub_unit,
-      item.upb?.nama_upb,
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase()
-      .includes(debouncedSearchLower);
-
-    const filterChecks = [
-      !filters.tahun || String(item.tahun) === String(filters.tahun),
-      !filters.bidang || String(item.bidang?.id) === String(filters.bidang),
-      !filters.unit || String(item.unit?.id) === String(filters.unit),
-      !filters.subUnit || String(item.subUnit?.id) === String(filters.subUnit),
-      !filters.upb || String(item.upb?.id) === String(filters.upb),
-    ];
-
-    // Jika tidak ada filter dan tidak ada search term, tampilkan semua data
-    if (!debouncedSearchTerm && Object.values(filters).every((val) => !val)) {
-      return true;
-    }
-
-    return matchesSearch && filterChecks.every(Boolean);
-  });
-
-  // Event handlers
-  const handleFilterChange = (filterType, value) => {
-    setFilters((prev) => ({ ...prev, [filterType]: value }));
-  };
-
-  const handleExport = async () => {
-    try {
-      const exportConfig = createExportConfig({
-        data: ruanganData,
-        searchTerm: debouncedSearchTerm,
-        filters: filters,
-        columns: exportColumns,
-        filename: "Data_Ruangan",
-        sheetName: "Ruangan",
-        setExporting: setIsExporting,
-        customFilters: {
-          bidang: (item, value) => String(item.bidang?.id) === String(value),
-          unit: (item, value) => String(item.unit?.id) === String(value),
-          subUnit: (item, value) => String(item.subUnit?.id) === String(value),
-          upb: (item, value) => String(item.upb?.id) === String(value),
-        },
-      });
-      await universalHandleExport(exportConfig);
-    } catch (error) {
-      console.error("Export error:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Error!",
-        text: "Gagal mengexport data.",
-        toast: true,
-        position: "top-end",
-        showConfirmButton: false,
-        timer: 2000,
-        timerProgressBar: true,
-      });
-    }
-  };
-
-  const handleRefresh = async () => {
-    setSearchTerm("");
-    setFilters(INITIAL_FILTERS);
-    try {
-      await fetchAllInitialData();
-      Swal.fire({
-        icon: "success",
-        title: "Berhasil!",
-        text: "Data berhasil dimuat ulang.",
-        toast: true,
-        position: "top-end",
-        showConfirmButton: false,
-        timer: 2000,
-        timerProgressBar: true,
-      });
-    } catch (error) {
-      Swal.fire({
-        icon: "error",
-        title: "Error!",
-        text: "Gagal memuat ulang data.",
-        toast: true,
-        position: "top-end",
-        showConfirmButton: false,
-        timer: 2000,
-        timerProgressBar: true,
-      });
-    }
-  };
-
-  const handleOpenAddModal = () => {
-    setEditingRuangan(null);
-    setIsAddModalOpen(true);
-  };
-
-  const handleCloseAddModal = () => {
-    setIsAddModalOpen(false);
-    setEditingRuangan(null);
-  };
-
-  const handleSaveRuangan = (ruanganToSave) => {
-    if (ruanganToSave.id) {
-      setRuanganData((prevData) =>
-        prevData.map((item) =>
-          item.id === ruanganToSave.id ? ruanganToSave : item
-        )
-      );
-      Swal.fire({
-        icon: "success",
-        title: "Berhasil!",
-        text: "Data ruangan berhasil diperbarui",
-        toast: true,
-        position: "top-end",
-        showConfirmButton: false,
-        timer: 2000,
-        timerProgressBar: true,
-      });
-    } else {
-      const newRuangan = { id: Date.now(), ...ruanganToSave };
-      setRuanganData((prevData) => [...prevData, newRuangan]);
-      Swal.fire({
-        icon: "success",
-        title: "Berhasil!",
-        text: "Data ruangan baru berhasil ditambahkan",
-        toast: true,
-        position: "top-end",
-        showConfirmButton: false,
-        timer: 2000,
-        timerProgressBar: true,
-      });
-    }
-    handleCloseAddModal();
-  };
-
-  const handleEditClick = (id) => {
-    const ruanganToEdit = ruanganData.find((item) => item.id === id);
-    if (ruanganToEdit) {
-      setEditingRuangan(ruanganToEdit);
-      setIsAddModalOpen(true);
-    }
-  };
-
-  const handleDeleteClick = (id) => {
-    Swal.fire({
-      title: "Apakah Anda yakin?",
-      text: "Data ruangan yang dihapus tidak dapat dikembalikan!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Ya, hapus!",
-      cancelButtonText: "Batal",
-      buttonsStyling: false,
-      customClass: {
-        confirmButton:
-          "bg-red-600 text-white px-4 py-2 mr-1 rounded-md hover:bg-red-700 hover:outline-none cursor-pointer",
-        cancelButton:
-          "bg-gray-200 text-gray-700 px-4 py-2 ml-1 rounded-md hover:bg-gray-300 hover:outline-none cursor-pointer",
-        popup: "rounded-lg shadow-lg",
-      },
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setRuanganData((prevData) => prevData.filter((item) => item.id !== id));
-        Swal.fire({
-          icon: "success",
-          title: "Terhapus!",
-          text: "Data ruangan berhasil dihapus.",
-          toast: true,
-          position: "top-end",
-          showConfirmButton: false,
-          timer: 2000,
-          timerProgressBar: true,
-        });
-      }
-    });
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -811,7 +723,6 @@ const DataRuanganPage = () => {
       <div className="px-8 py-8">
         <Breadcrumbs />
 
-        {/* Export Button */}
         <div className="flex justify-end mb-4">
           <button
             onClick={handleExport}
@@ -832,9 +743,7 @@ const DataRuanganPage = () => {
           </button>
         </div>
 
-        {/* Main Content */}
         <div className="bg-white rounded-lg shadow-sm p-6">
-          {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-gray-800">Daftar Ruangan</h1>
             <div className="flex gap-3">
@@ -859,7 +768,6 @@ const DataRuanganPage = () => {
             </div>
           </div>
 
-          {/* Filters */}
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
             <FilterSelect
               label="-- Tahun --"
@@ -875,7 +783,6 @@ const DataRuanganPage = () => {
               valueKey="id"
               labelKey="nama_bidang"
               codeKey="kode_bidang"
-              loading={loadingBidang}
             />
             <FilterSelect
               label="-- Unit --"
@@ -885,7 +792,7 @@ const DataRuanganPage = () => {
               valueKey="id"
               labelKey="nama_unit"
               codeKey="kode_unit"
-              loading={loadingUnits}
+              loading={loadingDropdowns.unit}
               disabled={!filters.bidang}
             />
             <FilterSelect
@@ -896,7 +803,7 @@ const DataRuanganPage = () => {
               valueKey="id"
               labelKey="nama_sub_unit"
               codeKey="kode_sub_unit"
-              loading={loadingSubUnits}
+              loading={loadingDropdowns.subUnit}
               disabled={!filters.unit}
             />
             <FilterSelect
@@ -907,12 +814,11 @@ const DataRuanganPage = () => {
               valueKey="id"
               labelKey="nama_upb"
               codeKey="kode_upb"
-              loading={loadingUpbs}
+              loading={loadingDropdowns.upb}
               disabled={!filters.subUnit}
             />
           </div>
 
-          {/* Controls */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <span>Show</span>
@@ -954,7 +860,6 @@ const DataRuanganPage = () => {
             </div>
           </div>
 
-          {/* Search Info */}
           {debouncedSearchTerm && (
             <div className="mb-4 p-3 bg-blue-50 border-l-4 border-blue-400 text-blue-700">
               <p className="text-sm">
@@ -970,7 +875,6 @@ const DataRuanganPage = () => {
             </div>
           )}
 
-          {/* Data Table */}
           {error ? (
             <div className="text-center py-12">
               <div className="text-red-600 mb-2">⚠️ Error</div>
@@ -994,7 +898,6 @@ const DataRuanganPage = () => {
         </div>
       </div>
 
-      {/* Modal */}
       <AddRuanganModal
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
