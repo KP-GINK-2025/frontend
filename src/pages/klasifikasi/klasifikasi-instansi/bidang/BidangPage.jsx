@@ -38,7 +38,7 @@ const BidangPage = () => {
                 Edit
               </button>
               <button
-                onClick={() => handler.handleDeleteUnit(params.row.id)}
+                onClick={() => handler.handleDeleteBidang(params.row.id)}
                 className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
               >
                 Delete

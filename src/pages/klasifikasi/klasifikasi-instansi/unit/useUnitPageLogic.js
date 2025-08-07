@@ -6,7 +6,7 @@ import {
   updateUnit,
   deleteUnit,
   getBidangOptions,
-} from "../../../../api/klasifikasiInstansiService";
+} from "../../../../api/service/klasifikasiInstansiService";
 import {
   showSuccessToast,
   showErrorToast,

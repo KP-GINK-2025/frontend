@@ -1,258 +1,227 @@
 import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Buttons } from "@/components/ui";
+import { InputForm, SelectForm } from "@/components/form";
+import { useSubRincianForm } from "./useSubRincianForm";
+import { showInfoAlert } from "../../../../utils/notificationService";
 
 const AddSubRincianModal = ({ isOpen, onClose, onSave, initialData }) => {
-  const [namaAsetSatu, setNamaAsetSatu] = useState("");
-  const [namaAsetDua, setNamaAsetDua] = useState("");
-  const [namaAsetTiga, setNamaAsetTiga] = useState("");
-  const [namaAsetEmpat, setNamaAsetEmpat] = useState("");
-  const [namaAsetLima, setNamaAsetLima] = useState("");
-  const [kodeAsetEnam, setKodeAsetEnam] = useState("");
-  const [namaAsetEnam, setNamaAsetEnam] = useState("");
-  const [kode, setKode] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  const {
+    formState,
+    handleInputChange,
+    resetForm,
+    akun,
+    kelompok,
+    jenis,
+    objek,
+    rincianObjek,
+    isFormValid,
+    dataToSave,
+  } = useSubRincianForm(initialData, isOpen);
 
   useEffect(() => {
-    if (isOpen && initialData) {
-      // Mengisi form saat mode edit
-      setNamaAsetSatu(initialData.aset1 || "");
-      setNamaAsetDua(initialData.aset2 || "");
-      setNamaAsetTiga(initialData.aset3 || "");
-      setNamaAsetEmpat(initialData.aset4 || "");
-      setNamaAsetLima(initialData.aset5 || "");
-      setKodeAsetEnam(initialData.kodeAset6 || "");
-      setNamaAsetEnam(initialData.namaAset6 || "");
-      setKode(initialData.kode || "");
-    } else if (isOpen && !initialData) {
-      // Mereset form saat mode tambah baru
-      setNamaAsetSatu("");
-      setNamaAsetDua("");
-      setNamaAsetTiga("");
-      setNamaAsetEmpat("");
-      setNamaAsetLima("");
-      setKodeAsetEnam("");
-      setNamaAsetEnam("");
-      setKode("");
-    }
-  }, [isOpen, initialData]);
+    if (!isOpen) setIsSaving(false);
+  }, [isOpen]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Validasi manual untuk semua field yang wajib diisi
-    if (
-      !namaAsetSatu ||
-      !namaAsetDua ||
-      !namaAsetTiga ||
-      !namaAsetEmpat ||
-      !namaAsetLima ||
-      !kodeAsetEnam ||
-      !namaAsetEnam
-    ) {
-      alert("Harap lengkapi semua field yang wajib diisi (*).");
+    if (!isFormValid) {
+      showInfoAlert(
+        "Harap lengkapi semua field yang wajib diisi (*)",
+        "Form Belum Lengkap"
+      );
       return;
     }
 
-    const dataToSave = {
-      // PENTING: Nama properti ini harus sesuai dengan 'field' di columns DataTable di RincianObjekPage
-      aset1: namaAsetSatu,
-      aset2: namaAsetDua,
-      aset3: namaAsetTiga,
-      aset4: namaAsetEmpat,
-      aset5: namaAsetLima,
-      kodeAset6: kodeAsetEnam,
-      namaAset6: namaAsetEnam,
-      kode: kode,
-    };
-
-    if (initialData && initialData.id) {
-      onSave({ ...dataToSave, id: initialData.id });
-    } else {
-      onSave(dataToSave);
+    setIsSaving(true);
+    try {
+      await onSave(
+        initialData ? { ...dataToSave, id: initialData.id } : dataToSave
+      );
+    } catch (error) {
+      console.error("Proses penyimpanan gagal di level modal:", error);
+    } finally {
+      setIsSaving(false);
     }
-    onClose();
   };
 
-  if (!isOpen) {
-    return null;
-  }
+  if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-opacity-50">
-      <div className="relative w-full max-w-lg p-6 bg-white rounded-lg shadow-lg">
-        <div className="flex items-center justify-between pb-4 mb-4 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-800">
-            {initialData ? "EDIT ASET 5" : "TAMBAH ASET 5"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer"
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          key="modal-backdrop"
+          className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/20"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+        >
+          <motion.div
+            key="modal-content"
+            initial={{ opacity: 0, scale: 0.95, y: -20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -20 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="relative w-full max-w-lg p-6 mx-4 bg-white rounded-lg shadow-lg"
+            onClick={(e) => e.stopPropagation()}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-6 h-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+            {/* --- Modal Content Mulai dari sini --- */}
+            <div className="flex items-center justify-between pb-4 mb-4 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-800">
+                {initialData ? "EDIT SUB RINCIAN" : "TAMBAH SUB RINCIAN"}
+              </h2>
+              <button
+                onClick={onClose}
+                disabled={isSaving}
+                className={`text-2xl cursor-pointer ${
+                  isSaving
+                    ? "text-gray-300 cursor-not-allowed"
+                    : "text-gray-500 hover:text-red-700"
+                }`}
+              >
+                &times;
+              </button>
+            </div>
+
+            <form
+              onSubmit={handleSubmit}
+              className="max-h-[calc(100vh-220px)] overflow-y-auto pr-2 pb-4"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
+              {/* --- Isi Form --- */}
+              <SelectForm
+                formTitle="Akun"
+                id="akun"
+                options={akun.options}
+                value={akun.selectedValue}
+                onChange={akun.handleChange}
+                isLoading={akun.isLoading}
+                placeholder="Pilih akun..."
+                isDisabled={isSaving}
               />
-            </svg>
-          </button>
-        </div>
+              <SelectForm
+                formTitle="Kelompok"
+                id="kelompok"
+                options={kelompok.options}
+                value={kelompok.selectedValue}
+                onChange={kelompok.handleChange}
+                isLoading={kelompok.isLoading}
+                placeholder={
+                  akun.selectedValue ? "Pilih kelompok..." : "Pilih akun dahulu"
+                }
+                isDisabled={!akun.selectedValue || isSaving}
+              />
+              <SelectForm
+                formTitle="Jenis"
+                id="jenis"
+                options={jenis.options}
+                value={jenis.selectedValue}
+                onChange={jenis.handleChange}
+                isLoading={jenis.isLoading}
+                placeholder={
+                  kelompok.selectedValue
+                    ? "Pilih jenis..."
+                    : "Pilih kelompok dahulu"
+                }
+                isDisabled={!kelompok.selectedValue || isSaving}
+              />
+              <SelectForm
+                formTitle="Objek"
+                id="objek"
+                options={objek.options}
+                value={objek.selectedValue}
+                onChange={objek.handleChange}
+                isLoading={objek.isLoading}
+                placeholder={
+                  jenis.selectedValue ? "Pilih objek..." : "Pilih jenis dahulu"
+                }
+                isDisabled={!jenis.selectedValue || isSaving}
+              />
+              <SelectForm
+                formTitle="Rincian Objek"
+                id="rincianObjek"
+                options={rincianObjek.options}
+                value={rincianObjek.selectedValue}
+                onChange={rincianObjek.handleChange}
+                isLoading={rincianObjek.isLoading}
+                placeholder={
+                  objek.selectedValue
+                    ? "Pilih rincian objek..."
+                    : "Pilih objek dahulu"
+                }
+                isDisabled={!objek.selectedValue || isSaving}
+              />
 
-        <form className="max-h-[calc(100vh-180px)] overflow-y-auto pr-2 pb-4">
-          <div className="mb-4">
-            <label htmlFor="namaAsetSatu" className="block mb-2 text-gray-700">
-              Nama Aset 1: <span className="text-red-500">*</span>
-            </label>
-            <select
-              id="namaAsetSatu"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={namaAsetSatu}
-              onChange={(e) => setNamaAsetSatu(e.target.value)}
-              required
-            >
-              <option value="">- Pilih Aset 1 -</option>
-              <option value="Aset">Aset</option>
-            </select>
-          </div>
+              <InputForm
+                formTitle="Kode Sub Rincian"
+                id="kodeSubRincian"
+                type="text"
+                value={formState.kodeSubRincian}
+                onChange={handleInputChange}
+                min="0"
+                disabled={isSaving}
+              />
 
-          <div className="mb-4">
-            <label htmlFor="namaAsetDua" className="block mb-2 text-gray-700">
-              Nama Aset 2: <span className="text-red-500">*</span>
-            </label>
-            <select
-              id="namaAsetDua"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={namaAsetDua}
-              onChange={(e) => setNamaAsetDua(e.target.value)}
-              required
-            >
-              <option value="">- Pilih Aset 2 -</option>
-              <option value="Aset Lancar">Aset Lancar</option>
-              <option value="Aset Tetap">Aset Tetap</option>
-              <option value="Aset Lainnya">Aset Lainnya</option>
-            </select>
-          </div>
+              <InputForm
+                formTitle="Nama Sub Rincian"
+                id="namaSubRincian"
+                type="text"
+                value={formState.namaSubRincian}
+                onChange={handleInputChange}
+                disabled={isSaving}
+              />
 
-          <div className="mb-4">
-            <label htmlFor="namaAsetTiga" className="block mb-2 text-gray-700">
-              Nama Aset 3: <span className="text-red-500">*</span>
-            </label>
-            <select
-              id="namaAsetTiga"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={namaAsetTiga}
-              onChange={(e) => setNamaAsetTiga(e.target.value)}
-              required
-            >
-              <option value="">- Pilih Aset 3 -</option>
-              <option value="Tanah">Tanah</option>
-              <option value="Peralatan dan Mesin">Peralatan dan Mesin</option>
-              <option value="Gedung dan Bangunan">Gedung dan Bangunan</option>
-            </select>
-          </div>
+              <InputForm
+                formTitle="Kode"
+                id="kode"
+                type="text"
+                value={formState.kode}
+                onChange={handleInputChange}
+                disabled={isSaving}
+              />
+            </form>
 
-          <div className="mb-4">
-            <label htmlFor="namaAsetEmpat" className="block mb-2 text-gray-700">
-              Nama Aset 4: <span className="text-red-500">*</span>
-            </label>
-            <select
-              id="namaAsetEmpat"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={namaAsetEmpat}
-              onChange={(e) => setNamaAsetEmpat(e.target.value)}
-              required
-            >
-              <option value="">- Pilih Aset 4 -</option>
-              <option value="Tanah">Tanah</option>
-              <option value="Alat Berat">Alat Berat</option>
-              <option value="Alat Angkutan">Alat Angkutan</option>
-            </select>
-          </div>
+            <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200 mt-4">
+              <Buttons
+                variant="secondary"
+                onClick={resetForm}
+                disabled={isSaving}
+                className="mr-auto"
+              >
+                Reset
+              </Buttons>
 
-          <div className="mb-4">
-            <label htmlFor="namaAsetLima" className="block mb-2 text-gray-700">
-              Nama Aset 5: <span className="text-red-500">*</span>
-            </label>
-            <select
-              id="namaAsetLima"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={namaAsetLima}
-              onChange={(e) => setNamaAsetLima(e.target.value)}
-              required
-            >
-              <option value="">- Pilih Aset 5 -</option>
-              <option value="Tanah">Tanah</option>
-              <option value="Alat Berat">Alat Berat</option>
-              <option value="Alat Angkutan">Alat Angkutan</option>
-            </select>
-          </div>
+              <Buttons
+                variant="secondary"
+                onClick={onClose}
+                disabled={isSaving}
+              >
+                Batal
+              </Buttons>
 
-          <div className="mb-4">
-            <label htmlFor="kodeAsetEnam" className="block mb-2 text-gray-700">
-              Kode Aset 6: <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              id="kodeAsetEnam"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={kodeAsetEnam}
-              onChange={(e) => setKodeAsetEnam(e.target.value)}
-              required
-              min="0"
-            />
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="namaAsetEnam" className="block mb-2 text-gray-700">
-              Nama Aset 6: <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="namaAsetEnam"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={namaAsetEnam}
-              onChange={(e) => setNamaAsetEnam(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="mb-6">
-            <label htmlFor="kode" className="block mb-2 text-gray-700">
-              Kode:
-            </label>
-            <input
-              type="text"
-              id="kode"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={kode}
-              onChange={(e) => setKode(e.target.value)}
-            />
-          </div>
-        </form>
-
-        <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200 mt-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-6 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 cursor-pointer"
-          >
-            Batal
-          </button>
-          <button
-            type="submit"
-            onClick={handleSubmit}
-            className="px-6 py-2 text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
-          >
-            {initialData ? "Simpan Perubahan" : "Simpan"}
-          </button>
-        </div>
-      </div>
-    </div>
+              <Buttons
+                type="submit"
+                variant="danger"
+                onClick={handleSubmit}
+                disabled={isSaving}
+              >
+                {isSaving
+                  ? initialData
+                    ? "Menyimpan Perubahan..."
+                    : "Menyimpan..."
+                  : initialData
+                  ? "Simpan Perubahan"
+                  : "Simpan"}
+              </Buttons>
+            </div>
+            {/* --- Modal Content Selesai --- */}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 

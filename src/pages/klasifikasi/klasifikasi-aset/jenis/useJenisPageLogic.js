@@ -1,11 +1,13 @@
-// src/pages/klasifikasi/klasifikasi-instansi/bidang/useBidangPageLogic.js
+// src/pages/klasifikasi/klasifikasi-aset/jenis/useJenisPageLogic.js
 import { useState, useEffect } from "react";
 import {
-  getBidangs,
-  createBidang,
-  updateBidang,
-  deleteBidang,
-} from "../../../../api/service/klasifikasiInstansiService";
+  getJenises,
+  createJenis,
+  updateJenis,
+  deleteJenis,
+  getAkunOptions,
+  getKelompokByAkun,
+} from "../../../../api/service/klasifikasiAsetService";
 import {
   showSuccessToast,
   showErrorToast,
@@ -14,9 +16,9 @@ import {
 } from "../../../../utils/notificationService";
 import { handleExport as exportHandler } from "../../../../handlers/exportHandler";
 
-export const useBidangPageLogic = () => {
+export const useJenisPageLogic = () => {
   // State untuk Data Tabel & Paginasi
-  const [bidangData, setBidangData] = useState([]);
+  const [jenisData, setJenisData] = useState([]);
   const [totalRows, setTotalRows] = useState(0);
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
@@ -33,9 +35,16 @@ export const useBidangPageLogic = () => {
   const [exporting, setExporting] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
+  const [selectedAkun, setSelectedAkun] = useState("");
+  const [akunList, setAkunList] = useState([]);
+  const [loadingAkun, setLoadingAkun] = useState(false);
+  const [selectedKelompok, setSelectedKelompok] = useState("");
+  const [kelompokList, setKelompokList] = useState([]);
+  const [loadingKelompok, setLoadingKelompok] = useState(false);
+
   // State untuk Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingBidang, setEditingBidang] = useState(null);
+  const [editingJenis, setEditingJenis] = useState(null);
 
   // Debounce untuk input pencarian
   useEffect(() => {
@@ -46,11 +55,48 @@ export const useBidangPageLogic = () => {
   // Reset pagination saat filter berubah
   useEffect(() => {
     setPaginationModel((prev) => ({ ...prev, page: 0 }));
-  }, [debouncedSearchTerm]);
+  }, [debouncedSearchTerm, selectedAkun, selectedKelompok]);
+
+  // Fetch daftar akun untuk filter
+  useEffect(() => {
+    const fetchAkunList = async () => {
+      setLoadingAkun(true);
+      try {
+        const res = await getAkunOptions();
+        setAkunList(res); // Service sudah melakukan sorting/mapping jika perlu
+      } catch (error) {
+        console.error("Gagal mendapatkan akun list:", error);
+      } finally {
+        setLoadingAkun(false);
+      }
+    };
+    fetchAkunList();
+  }, []);
+
+  // Fetch daftar kelompok untuk filter
+  useEffect(() => {
+    if (!selectedAkun) {
+      setKelompokList([]);
+      return;
+    }
+    const fetchKelompokList = async () => {
+      setLoadingKelompok(true);
+      try {
+        const res = await getKelompokByAkun(selectedAkun);
+        setKelompokList(res);
+      } catch (error) {
+        console.error("Gagal mendapatkan kelompok list:", error);
+        setKelompokList([]);
+      } finally {
+        setLoadingKelompok(false);
+      }
+    };
+    fetchKelompokList();
+  }, [selectedAkun]);
 
   // Fetch data utama untuk tabel
   useEffect(() => {
-    const fetchBidangData = async () => {
+    const fetchJenisData = async () => {
       setLoading(true);
       if (refreshTrigger > 0) setRefreshing(true);
       try {
@@ -58,30 +104,38 @@ export const useBidangPageLogic = () => {
           page: paginationModel.page + 1,
           per_page: paginationModel.pageSize,
           search: debouncedSearchTerm,
+          akun_aset_id: selectedAkun,
+          kelompok_aset_id: selectedKelompok,
         };
-        const res = await getBidangs(params);
-        setBidangData(res.data);
+        const res = await getJenises(params);
+        setJenisData(res.data);
         setTotalRows(res.meta.total);
       } catch (err) {
-        setBidangData([]);
+        setJenisData([]);
         setTotalRows(0);
       } finally {
         setLoading(false);
         setRefreshing(false);
       }
     };
-    fetchBidangData();
-  }, [paginationModel, debouncedSearchTerm, refreshTrigger]);
+    fetchJenisData();
+  }, [
+    paginationModel,
+    debouncedSearchTerm,
+    selectedAkun,
+    selectedKelompok,
+    refreshTrigger,
+  ]);
 
   // Handler untuk modal
-  const handleOpenModal = (bidang = null) => {
-    setEditingBidang(bidang);
+  const handleOpenModal = (jenis = null) => {
+    setEditingJenis(jenis);
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setEditingBidang(null);
+    setEditingJenis(null);
   };
 
   // Handler untuk aksi
@@ -100,14 +154,14 @@ export const useBidangPageLogic = () => {
     }
   };
 
-  const handleSaveBidang = async (bidangToSave) => {
+  const handleSaveJenis = async (jenisToSave) => {
     try {
-      if (bidangToSave.id) {
-        await updateBidang(bidangToSave.id, bidangToSave);
+      if (jenisToSave.id) {
+        await updateJenis(jenisToSave.id, jenisToSave);
       } else {
-        await createBidang(bidangToSave);
+        await createJenis(jenisToSave);
       }
-      showSuccessToast("Data bidang berhasil disimpan");
+      showSuccessToast("Data jenis berhasil disimpan");
       handleRefresh();
       handleCloseModal();
     } catch (err) {
@@ -122,7 +176,7 @@ export const useBidangPageLogic = () => {
     }
   };
 
-  const handleDeleteBidang = async (id) => {
+  const handleDeleteJenis = async (id) => {
     const isConfirmed = await showConfirmationDialog({
       text: "Data yang dihapus tidak dapat dikembalikan",
       confirmButtonText: "Ya, hapus",
@@ -131,11 +185,11 @@ export const useBidangPageLogic = () => {
     if (!isConfirmed) return;
 
     try {
-      await deleteBidang(id);
+      await deleteJenis(id);
       showSuccessToast("Data berhasil dihapus");
       handleRefresh();
     } catch (err) {
-      console.error("Gagal menghapus bidang:", err);
+      console.error("Gagal menghapus jenis:", err);
       const errorData = err.response?.data;
       const errorMessages = errorData?.errors
         ? Object.values(errorData.errors).flat().join("\n")
@@ -147,9 +201,11 @@ export const useBidangPageLogic = () => {
 
   const handleExport = () => {
     const fetchAllData = async () => {
-      const res = await getBidangs({
+      const res = await getJenises({
         per_page: totalRows,
         search: debouncedSearchTerm,
+        akun_aset_id: selectedAkun,
+        kelompok_aset_id: selectedKelompok,
       });
       return res.data;
     };
@@ -157,30 +213,31 @@ export const useBidangPageLogic = () => {
     const exportColumns = [
       { field: "no", headerName: "No", formatter: (_, __, index) => index + 1 },
       {
-        field: "provinsi",
-        headerName: "Provinsi",
+        field: "akun_aset",
+        headerName: "Akun",
         formatter: (_, item) =>
-          item.kabupaten_kota?.provinsi
-            ? `${item.kabupaten_kota.provinsi.kode_provinsi} - ${item.kabupaten_kota.provinsi.nama_provinsi}`
+          item.kelompok_aset?.akun_aset
+            ? `${item.kelompok_aset.akun_aset.kode_akun_aset} - ${item.kelompok_aset.akun_aset.nama_akun_aset}`
             : "N/A",
       },
       {
-        field: "kabupaten_kota",
-        headerName: "Kabupaten/Kota",
+        field: "kelompok_aset",
+        headerName: "Kelompok",
         formatter: (_, item) =>
-          item.kabupaten_kota
-            ? `${item.kabupaten_kota.kode_kabupaten_kota} - ${item.kabupaten_kota.nama_kabupaten_kota}`
+          item.kelompok_aset
+            ? `${item.kelompok_aset.kode_kelompok_aset} - ${item.kelompok_aset.nama_kelompok_aset}`
             : "N/A",
       },
-      { field: "kode_bidang", headerName: "Kode Bidang" },
-      { field: "nama_bidang", headerName: "Nama Bidang" },
+
+      { field: "kode_jenis_aset", headerName: "Kode Jenis" },
+      { field: "nama_jenis_aset", headerName: "Nama Jenis" },
       { field: "kode", headerName: "Kode" },
     ];
     exportHandler({
       fetchDataFunction: fetchAllData,
       columns: exportColumns,
-      filename: "daftar-bidang",
-      sheetName: "Data Bidang",
+      filename: "daftar-jenis-aset",
+      sheetName: "Data Jenis",
       setExporting,
     });
   };
@@ -188,25 +245,33 @@ export const useBidangPageLogic = () => {
   // Mengembalikan semua state dan handler yang dibutuhkan oleh UI
   return {
     state: {
-      bidangData,
+      jenisData,
       totalRows,
       paginationModel,
       searchTerm,
+      selectedAkun,
+      akunList,
+      loadingAkun,
+      selectedKelompok,
+      kelompokList,
+      loadingKelompok,
       loading,
       refreshing,
       exporting,
       isModalOpen,
-      editingBidang,
+      editingJenis,
     },
     handler: {
       setPaginationModel,
       setSearchTerm,
+      setSelectedAkun,
+      setSelectedKelompok,
       handleRefresh,
       handleExport,
       handleOpenModal,
       handleCloseModal,
-      handleSaveBidang,
-      handleDeleteBidang,
+      handleSaveJenis,
+      handleDeleteJenis,
     },
   };
 };
