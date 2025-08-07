@@ -1,69 +1,43 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Swal from "sweetalert2";
+import { Buttons } from "@/components/ui";
+import { InputForm, SelectForm } from "@/components/form";
+import { useAkunForm } from "./useAkunForm";
+import { showInfoAlert } from "../../../../utils/notificationService";
 
 const AddAkunModal = ({ isOpen, onClose, onSave, initialData }) => {
-  const [kodeAkunAset, setKodeAkunAset] = useState("");
-  const [namaAkunAset, setNamaAkunAset] = useState("");
-  const [kode, setKode] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
+  const { formState, handleInputChange, resetForm, isFormValid, dataToSave } =
+    useAkunForm(initialData, isOpen);
+
   useEffect(() => {
-    if (isOpen) {
-      if (initialData) {
-        // --- MODE EDIT ---
-        setKodeAkunAset(initialData.kode_akun_aset || "");
-        setNamaAkunAset(initialData.nama_akun_aset || "");
-        setKode(initialData.kode || "");
-      } else {
-        // --- MODE TAMBAH BARU (Reset semua form) ---
-        setKodeAkunAset("");
-        setNamaAkunAset("");
-        setKode("");
-      }
-    }
-  }, [isOpen, initialData]);
+    if (!isOpen) setIsSaving(false);
+  }, [isOpen]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!kodeAkunAset.trim() || !namaAkunAset.trim() || !kode.trim()) {
-      Swal.fire({
-        text: "Harap lengkapi semua field yang wajib diisi (*)",
-        icon: "info",
-        timer: 2500,
-        showConfirmButton: false,
-      });
+    if (!isFormValid) {
+      showInfoAlert(
+        "Harap lengkapi semua field yang wajib diisi (*)",
+        "Form Belum Lengkap"
+      );
       return;
     }
 
-    const dataToSave = {
-      kode_akun_aset: kodeAkunAset,
-      nama_akun_aset: namaAkunAset,
-      kode,
-    };
-
+    setIsSaving(true);
     try {
-      setIsSaving(true);
-      if (initialData && initialData.id) {
-        await onSave({ ...dataToSave, id: initialData.id });
-      } else {
-        await onSave(dataToSave);
-      }
-    } catch (err) {
-      Swal.fire({
-        title: "Gagal",
-        text: "Terjadi kesalahan saat menyimpan data.",
-        icon: "error",
-      });
-      console.error("Gagal menyimpan: ", err);
+      await onSave(
+        initialData ? { ...dataToSave, id: initialData.id } : dataToSave
+      );
+    } catch (error) {
+      console.error("Proses penyimpanan gagal di level modal:", error);
     } finally {
       setIsSaving(false);
     }
   };
 
-  if (!isOpen) {
-    return null;
-  }
+  if (!isOpen) return null;
 
   return (
     <AnimatePresence>
@@ -74,102 +48,90 @@ const AddAkunModal = ({ isOpen, onClose, onSave, initialData }) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          onClick={onClose}
         >
           <motion.div
             key="modal-content"
             initial={{ opacity: 0, scale: 0.95, y: -20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -20 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className="relative w-full max-w-lg p-6 bg-white rounded-lg shadow-lg"
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="relative w-full max-w-lg p-6 mx-4 bg-white rounded-lg shadow-lg"
+            onClick={(e) => e.stopPropagation()}
           >
+            {/* --- Modal Content Mulai dari sini --- */}
             <div className="flex items-center justify-between pb-4 mb-4 border-b border-gray-200">
               <h2 className="text-xl font-bold text-gray-800">
-                {initialData ? "EDIT AKUN ASET" : "TAMBAH AKUN ASET"}
+                {initialData ? "EDIT AKUN" : "TAMBAH AKUN"}
               </h2>
-              <button onClick={onClose} disabled={isSaving} className="...">
+              <button
+                onClick={onClose}
+                disabled={isSaving}
+                className={`text-2xl cursor-pointer ${
+                  isSaving
+                    ? "text-gray-300 cursor-not-allowed"
+                    : "text-gray-500 hover:text-red-700"
+                }`}
+              >
                 &times;
               </button>
             </div>
 
-            {/* Form tidak perlu event onSubmit karena button sudah handle, tapi tetap bagus untuk semantic */}
             <form
               onSubmit={handleSubmit}
               className="max-h-[calc(100vh-220px)] overflow-y-auto pr-2 pb-4"
             >
-              <div className="mb-4">
-                <label
-                  htmlFor="kodeAkunAset"
-                  className="block mb-2 text-gray-700"
-                >
-                  Kode Akun: <span className="text-red-600">*</span>
-                </label>
-                <input
-                  type="number"
-                  id="kodeAkunAset"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                  value={kodeAkunAset}
-                  onChange={(e) => setKodeAkunAset(e.target.value)}
-                  required
-                  min="0"
-                />
-              </div>
-
-              <div className="mb-4">
-                <label
-                  htmlFor="namaAkunAset"
-                  className="block mb-2 text-gray-700"
-                >
-                  Nama Akun: <span className="text-red-600">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="namaAkunAset"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                  value={namaAkunAset}
-                  onChange={(e) => setNamaAkunAset(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="mb-6">
-                <label htmlFor="kode" className="block mb-2 text-gray-700">
-                  Kode: <span className="text-red-600">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="kode"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                  value={kode}
-                  onChange={(e) => setKode(e.target.value)}
-                  required
-                />
-              </div>
+              {/* --- Isi Form --- */}
+              <InputForm
+                formTitle="Kode Akun"
+                id="kodeAkun"
+                type="text"
+                value={formState.kodeAkun}
+                onChange={handleInputChange}
+                min="0"
+                disabled={isSaving}
+              />
+              <InputForm
+                formTitle="Nama Akun"
+                id="namaAkun"
+                type="text"
+                value={formState.namaAkun}
+                onChange={handleInputChange}
+                disabled={isSaving}
+              />
+              <InputForm
+                formTitle="Kode"
+                id="kode"
+                type="text"
+                value={formState.kode}
+                onChange={handleInputChange}
+                disabled={isSaving}
+              />
             </form>
 
             <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200 mt-4">
-              <button
-                type="button"
+              <Buttons
+                variant="secondary"
+                onClick={resetForm}
+                disabled={isSaving}
+                className="mr-auto"
+              >
+                Reset
+              </Buttons>
+
+              <Buttons
+                variant="secondary"
                 onClick={onClose}
                 disabled={isSaving}
-                className={`px-6 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400 cursor-pointer ${
-                  isSaving
-                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                }`}
               >
                 Batal
-              </button>
+              </Buttons>
 
-              <button
+              <Buttons
                 type="submit"
+                variant="danger"
                 onClick={handleSubmit}
                 disabled={isSaving}
-                className={`px-6 py-2 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-[#B53C3C] cursor-pointer ${
-                  isSaving
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-red-600 hover:bg-red-700"
-                }`}
               >
                 {isSaving
                   ? initialData
@@ -178,8 +140,9 @@ const AddAkunModal = ({ isOpen, onClose, onSave, initialData }) => {
                   : initialData
                   ? "Simpan Perubahan"
                   : "Simpan"}
-              </button>
+              </Buttons>
             </div>
+            {/* --- Modal Content Selesai --- */}
           </motion.div>
         </motion.div>
       )}

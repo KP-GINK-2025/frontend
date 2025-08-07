@@ -38,7 +38,7 @@ const UpbPage = () => {
                 Edit
               </button>
               <button
-                onClick={() => handler.handleDeleteSubUnit(params.row.id)}
+                onClick={() => handler.handleDeleteUpb(params.row.id)}
                 className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
               >
                 Delete
