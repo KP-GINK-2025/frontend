@@ -8,7 +8,7 @@ import {
   getBidangOptions,
   getUnitByBidang,
   getSubUnitByUnit,
-} from "../../../../api/klasifikasiInstansiService";
+} from "../../../../api/service/klasifikasiInstansiService";
 import {
   showSuccessToast,
   showErrorToast,

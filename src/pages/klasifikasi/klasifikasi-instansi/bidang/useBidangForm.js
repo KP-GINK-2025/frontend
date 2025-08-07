@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import {
   getProvinsiOptions,
   getKabupatenByProvinsi,
-} from "../../../../api/klasifikasiInstansiService";
+} from "../../../../api/service/klasifikasiInstansiService";
 import { useHierarchySelector } from "../../../../hooks/useHierarchySelector";
 
 export const useBidangForm = (initialData, isOpen) => {
@@ -40,8 +40,8 @@ export const useBidangForm = (initialData, isOpen) => {
 
   const resetForm = () => {
     setFormState({ kodeBidang: "", namaBidang: "", kode: "" });
-    provinsi.reset();
-    kabupaten.reset();
+    provinsi.handleChange(null);
+    kabupaten.handleChange(null);
   };
 
   useEffect(() => {

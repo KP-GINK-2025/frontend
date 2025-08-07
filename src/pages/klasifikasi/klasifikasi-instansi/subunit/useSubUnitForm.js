@@ -5,7 +5,7 @@ import {
   getKabupatenByProvinsi,
   getBidangByKabupaten,
   getUnitByBidang,
-} from "../../../../api/klasifikasiInstansiService";
+} from "../../../../api/service/klasifikasiInstansiService";
 import { useHierarchySelector } from "../../../../hooks/useHierarchySelector";
 
 export const useSubUnitForm = (initialData, isOpen) => {
@@ -63,10 +63,10 @@ export const useSubUnitForm = (initialData, isOpen) => {
 
   const resetForm = () => {
     setFormState({ kodeSubUnit: "", namaSubUnit: "", kode: "" });
-    provinsi.reset();
-    kabupaten.reset();
-    bidang.reset();
-    unit.reset();
+    provinsi.handleChange(null);
+    kabupaten.handleChange(null);
+    bidang.handleChange(null);
+    unit.handleChange(null);
   };
 
   useEffect(() => {

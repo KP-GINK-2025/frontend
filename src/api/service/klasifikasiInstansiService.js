@@ -1,5 +1,5 @@
-// src/api/klasifikasiInstansiService.js
-import api from "./axios";
+// src/api/service/klasifikasiInstansiService.js
+import api from "../axios";
 
 /* ========================== */
 /* PROVINSI          */
