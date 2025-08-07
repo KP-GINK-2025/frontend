@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Navbar, Breadcrumbs } from "@/components/layout";
 import { DataTable } from "@/components/table";
-import { RefreshCw, Download, Search } from "lucide-react";
+import { RefreshCw, Download, Search, Navigation } from "lucide-react";
 import Swal from "sweetalert2";
 
 const PostingMutasiPage = () => {
@@ -37,75 +37,58 @@ const PostingMutasiPage = () => {
       // Simulate API delay
       await new Promise((resolve) => setTimeout(resolve, 800));
 
-      // Dummy data untuk dropdown filter
+      // Dummy data untuk dropdown filter, diperbarui sesuai screenshot
       setKualifikasiPerolehanData([
-        { id: 1, nama: "Dropping Pusat" },
-        { id: 2, nama: "Dropping Pemda" },
-        { id: 3, nama: "Hibah" },
-        { id: 4, nama: "Pembelian" },
+        { id: 1, nama: "Mutasi SKPD Lain(Aset Lama)" },
+        { id: 2, nama: "Hibah Bertambah" },
       ]);
       setAsalData([
-        { id: 1, nama: "Jakarta" },
-        { id: 2, nama: "Lampung" },
+        {
+          id: 1,
+          nama: "Dinas Pariwisata, Kebudayaan, Kepemudaan dan Olahraga",
+        },
+        { id: 2, nama: "Pusat" }, // Added a placeholder for consistency
       ]);
       setTujuanData([
-        { id: 1, nama: "Bandar Lampung" },
-        { id: 2, nama: "Metro" },
+        { id: 1, nama: "Dinas Pendidikan" },
+        { id: 2, nama: "Dinas Perhubungan" },
+        { id: 3, nama: "Bandar Lampung" }, // Added from original for filtering
       ]);
       setSemesterData([
         { id: 1, nama: "Ganjil" },
         { id: 2, nama: "Genap" },
       ]);
 
-      // Dummy data untuk tabel Posting Mutasi
+      // Dummy data untuk tabel Posting Mutasi, diperbarui sesuai screenshot
       const dummyPostingMutasiData = [
         {
           id: 1,
-          kualifikasiPerolehan: "Dropping Pusat",
-          asal: "Jakarta",
-          tujuan: "Bandar Lampung",
-          tahun: "2024",
-          semester: "Ganjil",
-          noBeritaAcara: "BA/DP/001",
-          tglBeritaAcara: "2024-01-20",
-          totalBarang: 50,
-          totalHarga: 250000000,
-          lampiran: "lampiran_dp001.pdf",
-          statusVerifikasi: "Diverifikasi",
-          catatanVerifikasi: "Dokumen lengkap",
-          posting: "Sudah Posting",
+          kualifikasiPerolehan: "Mutasi SKPD Lain(Aset Lama)",
+          asal: "Dinas Pariwisata, Kebudayaan, Kepemudaan dan Olahraga",
+          tujuan: "Dinas Pendidikan",
+          noBeritaAcara: "027/11222/22/2025",
+          tglBeritaAcara: "03/03/2025",
+          totalBarang: 12,
+          totalHarga: 41869429.0, // Stored as a number for sorting/calculations
+          lampiran:
+            "BA mutasi barang dispareklraf kpd disdikbud 2025-compressed.pdf",
+          statusVerifikasi: "Valid",
+          tahun: "2025", // Kept for filter functionality
+          semester: "Ganjil", // Kept for filter functionality
         },
         {
           id: 2,
-          kualifikasiPerolehan: "Dropping Pemda",
-          asal: "Metro",
-          tujuan: "Bandar Lampung",
-          tahun: "2024",
-          semester: "Ganjil",
-          noBeritaAcara: "BA/DPM/002",
-          tglBeritaAcara: "2024-02-25",
-          totalBarang: 20,
-          totalHarga: 75000000,
-          lampiran: "lampiran_dpm002.pdf",
-          statusVerifikasi: "Menunggu",
-          catatanVerifikasi: "",
-          posting: "Belum Posting",
-        },
-        {
-          id: 3,
-          kualifikasiPerolehan: "Pembelian",
-          asal: "Bandar Lampung",
-          tujuan: "Bandar Lampung",
-          tahun: "2023",
-          semester: "Genap",
-          noBeritaAcara: "BA/PBL/003",
-          tglBeritaAcara: "2023-08-10",
-          totalBarang: 5,
-          totalHarga: 10000000,
-          lampiran: "lampiran_pbl003.pdf",
-          statusVerifikasi: "Diverifikasi",
-          catatanVerifikasi: "Pembelian rutin",
-          posting: "Sudah Posting",
+          kualifikasiPerolehan: "Hibah Bertambah",
+          asal: "", // Empty as per screenshot
+          tujuan: "Dinas Perhubungan",
+          noBeritaAcara: "011/2025",
+          tglBeritaAcara: "01/07/2025",
+          totalBarang: 6,
+          totalHarga: 547862800.0, // Stored as a number
+          lampiran: "11_2025.pdf",
+          statusVerifikasi: "Valid",
+          tahun: "2025", // Kept for filter functionality
+          semester: "Genap", // Kept for filter functionality
         },
       ];
 
@@ -139,6 +122,7 @@ const PostingMutasiPage = () => {
   });
 
   const handleExport = () => console.log("Exporting Posting Mutasi...");
+  const handleLihatClick = (id) => console.log("Lihat clicked for ID:", id);
 
   const handleRefresh = async () => {
     setSearchTerm("");
@@ -161,56 +145,111 @@ const PostingMutasiPage = () => {
     });
   };
 
+  // Define columns for the DataTable.
+  // The first few columns will be hidden for the total row.
   const columns = [
-    { field: "id", headerName: "ID", width: 70 },
+    {
+      field: "action",
+      headerName: "Action",
+      width: 80,
+      sortable: false,
+      // Check if it's the total row, if so, render nothing
+      renderCell: (params) => {
+        if (params.row.id === "total") return null;
+        return (
+          <div className="flex items-center gap-3 h-full">
+            <button
+              onClick={() => handleLihatClick(params.row.id)}
+              className="text-blue-600 hover:text-blue-800 cursor-pointer p-1 hover:bg-blue-50 rounded"
+              title="Lihat"
+            >
+              <Navigation size={16} />
+            </button>
+          </div>
+        );
+      },
+    },
+    {
+      field: "no",
+      headerName: "No",
+      width: 70,
+      sortable: false,
+      // Check if it's the total row, if so, render nothing
+      renderCell: (params) => {
+        if (params.row.id === "total") return null;
+        return (
+          params.api.getRowIndexRelativeToVisibleRows(params.id) +
+          1 +
+          dataTablePaginationModel.page * dataTablePaginationModel.pageSize
+        );
+      },
+    },
     {
       field: "kualifikasiPerolehan",
       headerName: "Kualifikasi Perolehan",
-      width: 180,
+      width: 220,
+      renderCell: (params) => {
+        // Check if it's the total row, and render "Total" label
+        if (params.row.id === "total")
+          return <span className="font-bold">{params.value}</span>;
+        return params.value;
+      },
     },
-    { field: "asal", headerName: "Asal", width: 120 },
-    { field: "tujuan", headerName: "Tujuan", width: 120 },
-    { field: "tahun", headerName: "Tahun", width: 100 },
-    { field: "semester", headerName: "Semester", width: 100 },
-    { field: "noBeritaAcara", headerName: "No. Berita Acara", width: 150 },
+    { field: "asal", headerName: "Asal", width: 250 },
+    { field: "tujuan", headerName: "Tujuan", width: 200 },
+    { field: "noBeritaAcara", headerName: "No. Berita Acara", width: 180 },
     { field: "tglBeritaAcara", headerName: "Tgl. Berita Acara", width: 150 },
     {
       field: "totalBarang",
       headerName: "Total Barang",
       type: "number",
       width: 120,
+      renderCell: (params) => (
+        <span className="font-semibold">{params.value}</span>
+      ),
     },
     {
       field: "totalHarga",
       headerName: "Total Harga",
       type: "number",
       width: 150,
+      renderCell: (params) => {
+        // Format the number with a comma as a thousands separator and two decimal places
+        const formattedPrice = new Intl.NumberFormat("id-ID", {
+          style: "currency",
+          currency: "IDR",
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
+          .format(params.value)
+          .replace("Rp", ""); // Remove 'Rp' currency symbol
+        return <span className="font-semibold">{formattedPrice}</span>;
+      },
     },
-    { field: "lampiran", headerName: "Lampiran", width: 100 },
+    { field: "lampiran", headerName: "Lampiran", width: 280 },
     { field: "statusVerifikasi", headerName: "Status Verifikasi", width: 150 },
-    {
-      field: "catatanVerifikasi",
-      headerName: "Catatan Verifikasi",
-      width: 200,
-    },
-    { field: "posting", headerName: "Posting", width: 120 },
-    {
-      field: "action",
-      headerName: "Action",
-      width: 100,
-      sortable: false,
-      renderCell: (params) => (
-        <div className="flex gap-2 items-center">
-          <button
-            onClick={() => console.log("Posting Mutasi ID:", params.row.id)}
-            className="bg-[#B53C3C] p-2 text-white hover:bg-gray-300 hover:text-[#B53C3C] rounded-md text-sm cursor-pointer"
-          >
-            Lihat
-          </button>
-        </div>
-      ),
-    },
   ];
+
+  // Calculate totals
+  const totalBarang = filteredData.reduce(
+    (sum, item) => sum + item.totalBarang,
+    0
+  );
+  const totalHarga = filteredData.reduce(
+    (sum, item) => sum + item.totalHarga,
+    0
+  );
+
+  // Create a total row object, removing unneeded fields
+  const totalRow = {
+    id: "total",
+    kualifikasiPerolehan: "Total", // Added "Total" label back for clarity
+    totalBarang,
+    totalHarga,
+  };
+
+  // Add a total row to the filtered data for display
+  const dataWithTotal = [...filteredData, totalRow];
 
   return (
     <div className="min-h-screen bg-[#f7f7f7]">
@@ -379,7 +418,7 @@ const PostingMutasiPage = () => {
               </div>
             ) : (
               <DataTable
-                rows={filteredData}
+                rows={dataWithTotal}
                 columns={columns}
                 initialPageSize={entriesPerPage}
                 pageSizeOptions={[5, 10, 25, 50, 100]}
@@ -388,6 +427,9 @@ const PostingMutasiPage = () => {
                 paginationModel={dataTablePaginationModel}
                 onPaginationModelChange={setDataTablePaginationModel}
                 loading={loading}
+                getRowClassName={(params) =>
+                  params.id === "total" ? "bg-gray-100 font-bold" : ""
+                }
               />
             )}
           </div>

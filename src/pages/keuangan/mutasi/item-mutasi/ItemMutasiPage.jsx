@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Navbar, Breadcrumbs } from "@/components/layout";
 import { DataTable } from "@/components/table";
-import { RefreshCw, Download, Search } from "lucide-react";
+import { RefreshCw, Download, Search, Sheet } from "lucide-react";
 import Swal from "sweetalert2";
 
 const ItemMutasiPage = () => {
@@ -51,12 +51,14 @@ const ItemMutasiPage = () => {
         { id: 4, nama: "Pembelian" },
       ]);
       setAsalData([
-        { id: 1, nama: "Jakarta" },
-        { id: 2, nama: "Lampung" },
+        { id: 1, nama: "Dinas Lingkungan Hidup" },
+        { id: 2, nama: "Dinas Perpustaan dan Kearsipan Daerah" },
+        { id: 3, nama: "Badan Pengelola Keuangan dan Aset Daerah" },
       ]);
       setTujuanData([
-        { id: 1, nama: "Bandar Lampung" },
-        { id: 2, nama: "Metro" },
+        { id: 1, nama: "Dinas Pekerjaan Umum dan Perumahan Rakyat" },
+        { id: 2, nama: "Sekretariat Daerah" },
+        { id: 3, nama: "Badan Pendapatan Daerah" },
       ]);
       setSemesterData([
         { id: 1, nama: "Ganjil" },
@@ -66,10 +68,12 @@ const ItemMutasiPage = () => {
         { id: 1, nama: "Diverifikasi" },
         { id: 2, nama: "Menunggu" },
         { id: 3, nama: "Ditolak" },
+        { id: 4, nama: "Draft" },
       ]);
       setKualifikasiAsetData([
-        { id: 1, nama: "Aset Tetap" },
-        { id: 2, nama: "Bukan Aset" },
+        { id: 1, nama: "INTRA COUNTABLE" },
+        { id: 2, nama: "Aset Tetap" },
+        { id: 3, nama: "Bukan Aset" },
       ]);
       setKondisiData([
         { id: 1, nama: "Baik" },
@@ -77,7 +81,7 @@ const ItemMutasiPage = () => {
         { id: 3, nama: "Rusak Berat" },
       ]);
 
-      // Dummy data untuk tabel Item Mutasi
+      // Dummy data untuk tabel Item Mutasi berdasarkan screenshot
       const dummyItemMutasiData = [
         {
           id: 1,
@@ -85,36 +89,35 @@ const ItemMutasiPage = () => {
           belanjaApbdId: "BLJ001",
           itemBelanjaApbdId: "ITBLJ001",
           kualifikasiPerolehan: "Dropping Pusat",
-          asalLokasi: "Jakarta",
-          asalBidang: "Pusat",
-          asalUnit: "Direktorat A",
-          tujuanLokasi: "Bandar Lampung",
-          tujuanBidang: "Dinas Pendidikan",
-          tujuanUnit: "SDN 1",
-          tujuanSubUnit: "Sub Unit 1",
-          tujuanUpb: "UPB SD1",
+          asalLokasi: "Dinas Lingkungan Hidup",
+          asalBidang: "Lingkungan Hidup",
+          asalUnit: "Seksi Pengelolaan",
+          tujuanLokasi: "Dinas Pekerjaan Umum dan Perumahan Rakyat",
+          tujuanBidang: "Pekerjaan Umum",
+          tujuanUnit: "Seksi Konstruksi",
+          tujuanSubUnit: "Sub Unit Konstruksi",
+          tujuanUpb: "UPB PU",
           semester: "Ganjil",
-          noBeritaAcara: "BA/MUT/001",
-          tglBeritaAcara: "2024-01-20",
-          tanggalPerolehan: "2024-01-15",
-          keteranganPerolehan: "Perolehan rutin dari pusat",
-          kodeBarang: "KB001",
+          noBeritaAcara: "028/374 a...",
+          tglBeritaAcara: "17/12/2024",
+          tanggalPerolehan: "24/11/2021",
+          keteranganPerolehan: "Transfer antar OPD",
+          kodeBarang: "1.3.1.01.01.0...",
           noRegister: "REG001",
-          namaBarang: "Laptop ASUS VivoBook",
-          merkType: "ASUS/X441",
-          tahunBarang: "2023",
-          ukuran: "14 inci",
-          bahan: "Plastik",
-          hargaSatuan: 5000000,
-          jumlahBarang: 10,
-          nilaiTotal: 50000000,
-          namaRuangan: "Ruang Guru",
-          kualifikasiAset: "Aset Tetap",
+          namaBarang: "Tanah Perumahan Gol 1 Griya Abd",
+          merkType: "-",
+          tahunBarang: "2021",
+          ukuran: "-",
+          bahan: "-",
+          hargaSatuan: 0,
+          jumlahBarang: 1,
+          nilaiTotal: 0,
+          namaRuangan: "-",
+          kualifikasiAset: "INTRA COUNTABLE",
           kondisi: "Baik",
-          keterangan: "Laptop untuk staf",
-          lampiran: "mutasi_lptp_001.pdf",
-          statusVerifikasi: "Diverifikasi",
-          catatanVerifikasi: "Sesuai dokumen",
+          keterangan: "-",
+          lampiran: "-",
+          statusVerifikasi: "Draft",
         },
         {
           id: 2,
@@ -122,73 +125,71 @@ const ItemMutasiPage = () => {
           belanjaApbdId: "BLJ002",
           itemBelanjaApbdId: "ITBLJ002",
           kualifikasiPerolehan: "Dropping Pemda",
-          asalLokasi: "Metro",
-          asalBidang: "Dinas Kesehatan",
-          asalUnit: "Puskesmas B",
-          tujuanLokasi: "Bandar Lampung",
-          tujuanBidang: "Dinas Kesehatan",
-          tujuanUnit: "Puskesmas A",
-          tujuanSubUnit: "Sub Unit A",
-          tujuanUpb: "UPB PuskA",
-          semester: "Ganjil",
-          noBeritaAcara: "BA/MUT/002",
-          tglBeritaAcara: "2024-02-25",
-          tanggalPerolehan: "2024-02-20",
-          keteranganPerolehan: "Transfer antar OPD",
-          kodeBarang: "KB002",
+          asalLokasi: "Dinas Perpustaan dan Kearsipan Daerah",
+          asalBidang: "Perpustakaan",
+          asalUnit: "Seksi Layanan",
+          tujuanLokasi: "Sekretariat Daerah",
+          tujuanBidang: "Sekretariat",
+          tujuanUnit: "Bagian Umum",
+          tujuanSubUnit: "Sub Bagian Umum",
+          tujuanUpb: "UPB Sekda",
+          semester: "Genap",
+          noBeritaAcara: "024/58/37...",
+          tglBeritaAcara: "04/06/2025",
+          tanggalPerolehan: "31/12/2005",
+          keteranganPerolehan: "Mutasi rutin",
+          kodeBarang: "1.3.2.02.01.0...",
           noRegister: "REG002",
-          namaBarang: "Kursi Ergonomis",
-          merkType: "IKEA/MARKUS",
-          tahunBarang: "2022",
-          ukuran: "Standar",
-          bahan: "Fabric",
-          hargaSatuan: 1500000,
-          jumlahBarang: 5,
-          nilaiTotal: 7500000,
-          namaRuangan: "Ruang TU",
-          kualifikasiAset: "Aset Tetap",
-          kondisi: "Rusak Ringan",
-          keterangan: "Ada goresan sedikit",
-          lampiran: "mutasi_kursi_002.pdf",
-          statusVerifikasi: "Menunggu",
-          catatanVerifikasi: "",
+          namaBarang: "Alat Angkutan Darat Bermotor",
+          merkType: "Toyota/Avanza",
+          tahunBarang: "2005",
+          ukuran: "1500cc",
+          bahan: "Metal",
+          hargaSatuan: 125000000,
+          jumlahBarang: 1,
+          nilaiTotal: 125000000,
+          namaRuangan: "Parkir",
+          kualifikasiAset: "INTRA COUNTABLE",
+          kondisi: "Baik",
+          keterangan: "Kendaraan operasional",
+          lampiran: "mutasi_kendaraan_002.pdf",
+          statusVerifikasi: "Draft",
         },
         {
           id: 3,
           mutasiId: "MUT003",
           belanjaApbdId: "BLJ003",
           itemBelanjaApbdId: "ITBLJ003",
-          kualifikasiPerolehan: "Pembelian",
-          asalLokasi: "Vendor X",
-          asalBidang: "N/A",
-          asalUnit: "N/A",
-          tujuanLokasi: "Bandar Lampung",
-          tujuanBidang: "Dinas Pendidikan",
-          tujuanUnit: "SMPN 3",
-          tujuanSubUnit: "Sub Unit 3",
-          tujuanUpb: "UPB SMP3",
-          semester: "Genap",
-          noBeritaAcara: "BA/MUT/003",
-          tglBeritaAcara: "2023-08-10",
-          tanggalPerolehan: "2023-08-05",
-          keteranganPerolehan: "Pembelian langsung",
-          kodeBarang: "KB003",
+          kualifikasiPerolehan: "Hibah",
+          asalLokasi: "Badan Pengelola Keuangan dan Aset Daerah",
+          asalBidang: "Pengelolaan Keuangan",
+          asalUnit: "Seksi Aset",
+          tujuanLokasi: "Badan Pendapatan Daerah",
+          tujuanBidang: "Pendapatan",
+          tujuanUnit: "Seksi Pajak",
+          tujuanSubUnit: "Sub Seksi Pajak",
+          tujuanUpb: "UPB Bapenda",
+          semester: "Ganjil",
+          noBeritaAcara: "900/1080/...",
+          tglBeritaAcara: "06/01/2025",
+          tanggalPerolehan: "31/12/2002",
+          keteranganPerolehan: "Hibah dari pemerintah pusat",
+          kodeBarang: "1.3.2.02.01.0...",
           noRegister: "REG003",
-          namaBarang: "Projector Epson",
-          merkType: "Epson/EB-X06",
-          tahunBarang: "2023",
-          ukuran: "Portabel",
-          bahan: "Plastik",
-          hargaSatuan: 4000000,
-          jumlahBarang: 2,
-          nilaiTotal: 8000000,
-          namaRuangan: "Aula",
-          kualifikasiAset: "Aset Tetap",
-          kondisi: "Baik",
-          keterangan: "Untuk presentasi",
-          lampiran: "mutasi_proj_003.pdf",
-          statusVerifikasi: "Diverifikasi",
-          catatanVerifikasi: "Unit baru",
+          namaBarang: "Alat Angkutan Darat",
+          merkType: "Suzuki/APV",
+          tahunBarang: "2002",
+          ukuran: "1500cc",
+          bahan: "Metal",
+          hargaSatuan: 65000000,
+          jumlahBarang: 1,
+          nilaiTotal: 65000000,
+          namaRuangan: "Parkir",
+          kualifikasiAset: "INTRA COUNTABLE",
+          kondisi: "Rusak Ringan",
+          keterangan: "Perlu perbaikan",
+          lampiran: "mutasi_kendaraan_003.pdf",
+          statusVerifikasi: "Draft",
         },
       ];
 
@@ -226,6 +227,20 @@ const ItemMutasiPage = () => {
     return matchesSearch && matchesAllFilters;
   });
 
+  const handleLihatClick = (id) => {
+    if (id !== "total") {
+      console.log("Lihat Item Mutasi clicked for ID:", id);
+      // Logic to view individual item details
+    }
+  };
+
+  const handleLihatDetailMutasiClick = (id) => {
+    if (id !== "total") {
+      console.log("Lihat Detail Mutasi clicked for ID:", id);
+      // Logic to view the detailed mutation document
+    }
+  };
+
   const handleExport = () => console.log("Exporting Item Mutasi...");
 
   const handleRefresh = async () => {
@@ -252,88 +267,138 @@ const ItemMutasiPage = () => {
     });
   };
 
+  // Format currency untuk display
+  const formatCurrency = (value) => {
+    if (!value || value === 0) return "0";
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  // --- LOGIKA TOTAL BARU DIMULAI DI SINI ---
+
+  // Hitung total dari data yang sudah difilter
+  const totalJumlahBarang = filteredData.reduce(
+    (sum, item) => sum + item.jumlahBarang,
+    0
+  );
+  const totalNilai = filteredData.reduce(
+    (sum, item) => sum + item.nilaiTotal,
+    0
+  );
+
+  // Buat objek baris total
+  const totalRow = {
+    id: "total",
+    asalLokasi: "Total", // Gunakan kolom yang relevan untuk label
+    jumlahBarang: totalJumlahBarang,
+    nilaiTotal: totalNilai,
+    // Kosongkan field lain yang tidak relevan di baris total
+    action: "",
+    no: "",
+    tujuanLokasi: "",
+    noBeritaAcara: "",
+    tglBeritaAcara: "",
+    tanggalPerolehan: "",
+    kodeBarang: "",
+    namaBarang: "",
+    merkType: "",
+    kualifikasiAset: "",
+    statusVerifikasi: "",
+  };
+
+  // Gabungkan baris total ke data yang akan ditampilkan
+  const dataWithTotal = [...filteredData, totalRow];
+
+  // --- LOGIKA TOTAL SELESAI ---
+
   // Definisi kolom untuk DataTable
   const columns = [
-    { field: "id", headerName: "ID", width: 70 },
-    { field: "mutasiId", headerName: "Mutasi", width: 100 },
-    { field: "belanjaApbdId", headerName: "No Belanja APBD", width: 150 },
-    {
-      field: "itemBelanjaApbdId",
-      headerName: "ID Item Belanja APBD",
-      width: 180,
-    },
-    {
-      field: "kualifikasiPerolehan",
-      headerName: "Kualifikasi Perolehan",
-      width: 180,
-    },
-    { field: "asalLokasi", headerName: "Asal", width: 120 }, // Asal (Lokasi)
-    { field: "asalBidang", headerName: "Bidang Asal", width: 150 },
-    { field: "asalUnit", headerName: "Unit Asal", width: 150 },
-    { field: "tujuanLokasi", headerName: "Tujuan", width: 120 }, // Tujuan (Lokasi)
-    { field: "tujuanBidang", headerName: "Bidang Tujuan", width: 150 },
-    { field: "tujuanUnit", headerName: "Unit Tujuan", width: 150 },
-    { field: "tujuanSubUnit", headerName: "Sub Unit Tujuan", width: 150 },
-    { field: "tujuanUpb", headerName: "UPB Tujuan", width: 150 },
-    { field: "semester", headerName: "Semester", width: 100 },
-    { field: "noBeritaAcara", headerName: "No. Berita Acara", width: 150 },
-    { field: "tglBeritaAcara", headerName: "Tgl. Berita Acara", width: 150 },
-    { field: "tanggalPerolehan", headerName: "Tanggal Perolehan", width: 150 },
-    {
-      field: "keteranganPerolehan",
-      headerName: "Keterangan Perolehan",
-      width: 200,
-    },
-    { field: "kodeBarang", headerName: "Kode Barang", width: 120 },
-    { field: "noRegister", headerName: "No Register", width: 120 },
-    { field: "namaBarang", headerName: "Nama Barang", width: 200 },
-    { field: "merkType", headerName: "Merk/Type", width: 150 },
-    { field: "tahunBarang", headerName: "Tahun Barang", width: 120 },
-    { field: "ukuran", headerName: "Ukuran", width: 100 },
-    { field: "bahan", headerName: "Bahan", width: 100 },
-    {
-      field: "hargaSatuan",
-      headerName: "Harga Satuan",
-      type: "number",
-      width: 150,
-    },
-    {
-      field: "jumlahBarang",
-      headerName: "Jumlah Barang",
-      type: "number",
-      width: 120,
-    },
-    {
-      field: "nilaiTotal",
-      headerName: "Nilai Total",
-      type: "number",
-      width: 150,
-    },
-    { field: "namaRuangan", headerName: "Nama Ruangan", width: 150 },
-    { field: "kualifikasiAset", headerName: "Kualifikasi Aset", width: 150 },
-    { field: "kondisi", headerName: "Kondisi", width: 120 },
-    { field: "keterangan", headerName: "Keterangan", width: 200 },
-    { field: "lampiran", headerName: "Lampiran", width: 100 },
-    { field: "statusVerifikasi", headerName: "Status Verifikasi", width: 150 },
-    { field: "catatanVerifikasi", headerName: "Catatan Verifikasi", flex: 1 }, // Flex untuk mengisi sisa ruang
     {
       field: "action",
       headerName: "Action",
       width: 100,
       sortable: false,
+      renderCell: (params) => {
+        // Jangan render action button untuk baris total
+        if (params.row.id === "total") return null;
+        return (
+          <div className="flex items-center gap-3 h-full">
+            <button
+              onClick={() => handleLihatClick(params.row.id)}
+              className="text-blue-600 hover:text-blue-800 cursor-pointer p-1 hover:bg-blue-50 rounded"
+              title="Lihat Item Mutasi"
+            >
+              <Search size={16} />
+            </button>
+            <button
+              onClick={() => handleLihatDetailMutasiClick(params.row.id)}
+              className="text-green-600 hover:text-green-800 cursor-pointer p-1 hover:bg-green-50 rounded"
+              title="Lihat Detail Mutasi"
+            >
+              <Sheet size={16} />
+            </button>
+          </div>
+        );
+      },
+    },
+    {
+      field: "no",
+      headerName: "No",
+      width: 70,
+      sortable: false,
+      renderCell: (params) => {
+        // Jangan render nomor untuk baris total
+        if (params.row.id === "total") return null;
+        return (
+          params.api.getRowIndexRelativeToVisibleRows(params.id) +
+          1 +
+          dataTablePaginationModel.page * dataTablePaginationModel.pageSize
+        );
+      },
+    },
+    {
+      field: "asalLokasi",
+      headerName: "Asal",
+      width: 200,
+      renderCell: (params) => {
+        // Tampilkan label "Total" dengan bold
+        if (params.row.id === "total")
+          return <span className="font-bold">{params.value}</span>;
+        return params.value;
+      },
+    },
+    { field: "tujuanLokasi", headerName: "Tujuan", width: 200 },
+    { field: "noBeritaAcara", headerName: "No. Berita Acara", width: 150 },
+    { field: "tglBeritaAcara", headerName: "Tgl. Berita Acara", width: 150 },
+    { field: "tanggalPerolehan", headerName: "Tanggal Perolehan", width: 150 },
+    { field: "kodeBarang", headerName: "Kode Barang", width: 150 },
+    { field: "namaBarang", headerName: "Nama Barang", width: 200 },
+    { field: "merkType", headerName: "Merk/Type", width: 150 },
+    {
+      field: "jumlahBarang",
+      headerName: "Jumlah Barang",
+      type: "number",
+      width: 120,
       renderCell: (params) => (
-        <div className="flex gap-2 items-center">
-          <button
-            onClick={() =>
-              console.log("Lihat Detail Item Mutasi ID:", params.row.id)
-            }
-            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
-          >
-            Lihat
-          </button>
-        </div>
+        // Tampilkan nilai total dengan bold
+        <span className="font-semibold">{params.value}</span>
       ),
     },
+    {
+      field: "nilaiTotal",
+      headerName: "Nilai Total",
+      width: 150,
+      renderCell: (params) => (
+        // Tampilkan nilai total dengan format mata uang dan bold
+        <span className="font-semibold">{formatCurrency(params.value)}</span>
+      ),
+    },
+    { field: "kualifikasiAset", headerName: "Kualifikasi Aset", width: 150 },
+    { field: "statusVerifikasi", headerName: "Status Verifikasi", width: 150 },
   ];
 
   return (
@@ -557,7 +622,7 @@ const ItemMutasiPage = () => {
               </div>
             ) : (
               <DataTable
-                rows={filteredData}
+                rows={dataWithTotal} // Gunakan dataWithTotal
                 columns={columns}
                 initialPageSize={entriesPerPage}
                 pageSizeOptions={[5, 10, 25, 50, 100]}
@@ -566,6 +631,10 @@ const ItemMutasiPage = () => {
                 paginationModel={dataTablePaginationModel}
                 onPaginationModelChange={setDataTablePaginationModel}
                 loading={loading}
+                // Tambahkan styling khusus untuk baris total
+                getRowClassName={(params) =>
+                  params.id === "total" ? "bg-gray-100 font-bold" : ""
+                }
               />
             )}
           </div>

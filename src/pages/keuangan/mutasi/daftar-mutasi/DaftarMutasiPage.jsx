@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { Navbar, Breadcrumbs } from "@/components/layout";
 import { DataTable } from "@/components/table";
-import { RefreshCw, Plus, Download, Search } from "lucide-react";
+import {
+  RefreshCw,
+  Plus,
+  Download,
+  Search,
+  Printer,
+  Trash2,
+  Navigation,
+} from "lucide-react";
 import AddMutasiModal from "./AddMutasiModal";
 import Swal from "sweetalert2";
 
@@ -62,10 +70,23 @@ const DaftarMutasiPage = () => {
         asal: [
           { id: 1, nama: "Jakarta" },
           { id: 2, nama: "Lampung" },
+          { id: 3, nama: "Dinas Lingkungan Hidup" },
+          { id: 4, nama: "Dinas Perpustakaan dan Kearsipan Daerah" },
+          { id: 5, nama: "Badan Pengelola Keuangan Daerah" },
+          {
+            id: 6,
+            nama: "Dinas Pariwisata, Kebudayaan, Kepemudaan dan Olahraga",
+          },
+          { id: 7, nama: "Sekretariat DPRD" },
         ],
         tujuan: [
           { id: 1, nama: "Bandar Lampung" },
           { id: 2, nama: "Metro" },
+          { id: 3, nama: "Dinas Pekerjaan Umum dan Perumahan Rakyat" },
+          { id: 4, nama: "Sekretariat Daerah" },
+          { id: 5, nama: "Badan Pendapatan Daerah" },
+          { id: 6, nama: "Dinas Pendidikan" },
+          { id: 7, nama: "Dinas Sosial" },
         ],
         semester: [
           { id: 1, nama: "Ganjil" },
@@ -75,6 +96,8 @@ const DaftarMutasiPage = () => {
           { id: 1, nama: "Diverifikasi" },
           { id: 2, nama: "Menunggu" },
           { id: 3, nama: "Ditolak" },
+          { id: 4, nama: "Draft" },
+          { id: 5, nama: "Valid" }, // Added 'Valid' from the other component's data
         ],
       };
 
@@ -82,54 +105,64 @@ const DaftarMutasiPage = () => {
       const dummyMutasiData = [
         {
           id: 1,
-          kualifikasiPerolehan: "Dropping Pusat",
-          asal: "Jakarta",
-          tujuan: "Bandar Lampung",
-          tanggalBeritaAcara: "2024-01-10",
-          nomorBeritaAcara: "BA/DP/001",
-          totalBarang: 50,
-          totalHarga: 250000000,
-          lampiran: "lampiran_dp001.pdf",
-          statusVerifikasi: "Diverifikasi",
-          catatanVerifikasi: "Dokumen lengkap",
-          tahunPerolehan: "2024",
-          nomorSp2d: "SP2D/001",
-          tanggalSp2d: "2024-01-05",
-          nomorSuratPengantar: "SP/PST/001",
-          tanggalSuratPengantar: "2024-01-01",
-          semester: "Ganjil",
+          kualifikasiPerolehan: "Mutasi SKPD Lain(Aset Lama)",
+          asal: "Dinas Lingkungan Hidup",
+          tujuan: "Dinas Pekerjaan Umum dan Perumahan Rakyat",
+          tanggalBeritaAcara: "17/12/2024",
+          nomorBeritaAcara: "028/374.a/33/2024",
+          totalBarang: 2,
+          totalHarga: 868400000,
+          lampiran: "",
+          statusVerifikasi: "Draft",
         },
         {
           id: 2,
-          kualifikasiPerolehan: "Dropping Pemda",
-          asal: "Metro",
-          tujuan: "Bandar Lampung",
-          tanggalBeritaAcara: "2024-02-15",
-          nomorBeritaAcara: "BA/DPM/002",
-          totalBarang: 20,
-          totalHarga: 75000000,
-          lampiran: "lampiran_dpm002.pdf",
-          statusVerifikasi: "Menunggu",
-          catatanVerifikasi: "",
-          opdAsal: "Dinas Pendidikan",
-          opdTujuan: "Dinas Kesehatan",
-          nomorSkpd: "SKPD/001",
-          tanggalSkpd: "2024-02-10",
-          semester: "Ganjil",
+          kualifikasiPerolehan: "Mutasi SKPD Lain(Aset Lama)",
+          asal: "Dinas Perpustakaan dan Kearsipan Daerah",
+          tujuan: "Sekretariat Daerah",
+          tanggalBeritaAcara: "04/06/2025",
+          nomorBeritaAcara: "024/58/37/2025",
+          totalBarang: 0,
+          totalHarga: 0,
+          lampiran: "B A S T Randis dpkd (perpus - sekda).jpg",
+          statusVerifikasi: "Draft",
         },
         {
           id: 3,
-          kualifikasiPerolehan: "Pembelian",
-          asal: "Bandar Lampung",
-          tujuan: "Bandar Lampung",
-          tanggalBeritaAcara: "2024-03-01",
-          nomorBeritaAcara: "BA/PBL/003",
-          totalBarang: 5,
-          totalHarga: 10000000,
-          lampiran: "lampiran_pbl003.pdf",
-          statusVerifikasi: "Diverifikasi",
-          catatanVerifikasi: "Pembelian rutin",
-          semester: "Genap",
+          kualifikasiPerolehan: "Mutasi SKPD Lain(Aset Lama)",
+          asal: "Badan Pengelola Keuangan Daerah",
+          tujuan: "Badan Pendapatan Daerah",
+          tanggalBeritaAcara: "06/01/2025",
+          nomorBeritaAcara: "900/1080/43/2025",
+          totalBarang: 344,
+          totalHarga: 22616897221.5,
+          lampiran: "BAST MUTASI KE BAAPENDA 2025.pdf",
+          statusVerifikasi: "Draft",
+        },
+        {
+          id: 4,
+          kualifikasiPerolehan: "Mutasi SKPD Lain(Aset Lama)",
+          asal: "Dinas Pariwisata, Kebudayaan, Kepemudaan dan Olahraga",
+          tujuan: "Dinas Pendidikan",
+          tanggalBeritaAcara: "03/03/2025",
+          nomorBeritaAcara: "027/1122/22/2025",
+          totalBarang: 12,
+          totalHarga: 41869429,
+          lampiran:
+            "BA mutasi barang disparekraf kpd disdikbud 2026-compressed.pdf",
+          statusVerifikasi: "Valid",
+        },
+        {
+          id: 5,
+          kualifikasiPerolehan: "Mutasi SKPD Lain(Aset Lama)",
+          asal: "Sekretariat DPRD",
+          tujuan: "Dinas Sosial",
+          tanggalBeritaAcara: "30/06/2025",
+          nomorBeritaAcara: "4567",
+          totalBarang: 0,
+          totalHarga: 0,
+          lampiran: "",
+          statusVerifikasi: "Draft",
         },
       ];
 
@@ -183,6 +216,32 @@ const DaftarMutasiPage = () => {
 
     return matchesSearch && matchesFilters;
   });
+
+  // Calculate totals from the filtered data
+  const totalBarang = filteredData.reduce(
+    (sum, item) => sum + item.totalBarang,
+    0
+  );
+  const totalHarga = filteredData.reduce(
+    (sum, item) => sum + item.totalHarga,
+    0
+  );
+
+  // Create a total row object and add it to the filtered data array
+  const totalRow = {
+    id: "total", // Unique ID for the total row
+    kualifikasiPerolehan: "Total",
+    totalBarang: totalBarang,
+    totalHarga: totalHarga,
+    // Set other fields to null or empty so they are not rendered
+    asal: null,
+    tujuan: null,
+    tanggalBeritaAcara: null,
+    nomorBeritaAcara: null,
+    lampiran: null,
+    statusVerifikasi: null,
+  };
+  const dataWithTotal = [...filteredData, totalRow];
 
   // Handle filter change
   const handleFilterChange = (filterType, value) => {
@@ -286,17 +345,68 @@ const DaftarMutasiPage = () => {
     handleCloseAddModal();
   };
 
-  // Edit mutasi
-  const handleEditClick = (id) => {
-    const itemToEdit = mutasiData.find((item) => item.id === id);
-    if (itemToEdit) {
-      setEditingItem(itemToEdit);
-      setIsAddModalOpen(true);
+  // Handler for "Lihat" (View) button
+  const handleLihatClick = (id) => {
+    const itemToView = mutasiData.find((item) => item.id === id);
+    if (itemToView) {
+      console.log("Viewing mutasi:", itemToView);
+
+      Swal.fire({
+        title: "Detail Mutasi",
+        html: `
+          <div class="text-left">
+            <p><strong>Kualifikasi Perolehan:</strong> ${
+              itemToView.kualifikasiPerolehan
+            }</p>
+            <p><strong>Asal:</strong> ${itemToView.asal}</p>
+            <p><strong>Tujuan:</strong> ${itemToView.tujuan}</p>
+            <p><strong>Tanggal Berita Acara:</strong> ${
+              itemToView.tanggalBeritaAcara
+            }</p>
+            <p><strong>Nomor Berita Acara:</strong> ${
+              itemToView.nomorBeritaAcara
+            }</p>
+            <p><strong>Total Barang:</strong> ${itemToView.totalBarang}</p>
+            <p><strong>Total Harga:</strong> ${new Intl.NumberFormat("id-ID", {
+              style: "currency",
+              currency: "IDR",
+            }).format(itemToView.totalHarga)}</p>
+            <p><strong>Status Verifikasi:</strong> ${
+              itemToView.statusVerifikasi
+            }</p>
+          </div>
+        `,
+        icon: "info",
+        confirmButtonText: "Tutup",
+        width: 600,
+        customClass: {
+          confirmButton:
+            "bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700",
+        },
+      });
     }
   };
 
-  // Delete mutasi with SweetAlert2
-  const handleDeleteClick = async (id) => {
+  // Handler for "Cetak" (Print) button
+  const handleCetakClick = (id) => {
+    const itemToPrint = mutasiData.find((item) => item.id === id);
+    if (itemToPrint) {
+      console.log("Printing mutasi:", itemToPrint);
+
+      Swal.fire({
+        icon: "info",
+        title: "Cetak Mutasi",
+        text: `Fitur cetak untuk mutasi ID ${id} sedang dalam pengembangan.`,
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+      });
+    }
+  };
+
+  // Handler for "Hapus" (Delete) button
+  const handleHapusClick = async (id) => {
     const result = await Swal.fire({
       title: "Apakah Anda yakin?",
       text: "Data yang dihapus tidak dapat dikembalikan!",
@@ -337,28 +447,61 @@ const DaftarMutasiPage = () => {
       headerName: "Action",
       width: 150,
       sortable: false,
-      renderCell: (params) => (
-        <div className="flex items-center gap-2 h-full">
-          <button
-            onClick={() => handleEditClick(params.row.id)}
-            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => handleDeleteClick(params.row.id)}
-            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
-          >
-            Delete
-          </button>
-        </div>
-      ),
+      renderCell: (params) => {
+        // Hide action buttons for the total row
+        if (params.row.id === "total") return null;
+        return (
+          <div className="flex items-center gap-3 h-full">
+            <button
+              onClick={() => handleLihatClick(params.row.id)}
+              className="text-blue-600 hover:text-blue-800 cursor-pointer p-1 hover:bg-blue-50 rounded"
+              title="Lihat"
+            >
+              <Navigation size={16} />
+            </button>
+            <button
+              onClick={() => handleCetakClick(params.row.id)}
+              className="text-green-600 hover:text-green-800 cursor-pointer p-1 hover:bg-green-50 rounded"
+              title="Cetak"
+            >
+              <Printer size={16} />
+            </button>
+            <button
+              onClick={() => handleHapusClick(params.row.id)}
+              className="text-red-600 hover:text-red-800 cursor-pointer p-1 hover:bg-red-50 rounded"
+              title="Hapus"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        );
+      },
     },
-    { field: "id", headerName: "ID", width: 70 },
+    {
+      field: "no",
+      headerName: "No",
+      width: 70,
+      sortable: false,
+      renderCell: (params) => {
+        // Hide number for the total row
+        if (params.row.id === "total") return null;
+        return (
+          params.api.getRowIndexRelativeToVisibleRows(params.id) +
+          1 +
+          dataTablePaginationModel.page * dataTablePaginationModel.pageSize
+        );
+      },
+    },
     {
       field: "kualifikasiPerolehan",
       headerName: "Kualifikasi Perolehan",
       width: 200,
+      renderCell: (params) => {
+        // Display 'Total' with bold font for the total row
+        if (params.row.id === "total")
+          return <span className="font-bold">{params.value}</span>;
+        return params.value;
+      },
     },
     { field: "asal", headerName: "Asal", width: 120 },
     { field: "tujuan", headerName: "Tujuan", width: 120 },
@@ -373,17 +516,33 @@ const DaftarMutasiPage = () => {
       headerName: "Total Barang",
       type: "number",
       width: 120,
+      renderCell: (params) => (
+        // Bold the value for the total row
+        <span className={params.row.id === "total" ? "font-bold" : ""}>
+          {params.value}
+        </span>
+      ),
     },
     {
       field: "totalHarga",
       headerName: "Total Harga",
       type: "number",
       width: 150,
-      valueFormatter: (params) =>
-        new Intl.NumberFormat("id-ID", {
+      renderCell: (params) => {
+        const formattedValue = new Intl.NumberFormat("id-ID", {
           style: "currency",
           currency: "IDR",
-        }).format(params.value),
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(params.value);
+
+        return (
+          // Bold the value for the total row
+          <span className={params.row.id === "total" ? "font-bold" : ""}>
+            {formattedValue}
+          </span>
+        );
+      },
     },
     { field: "lampiran", headerName: "Lampiran", width: 100 },
     {
@@ -391,6 +550,9 @@ const DaftarMutasiPage = () => {
       headerName: "Status Verifikasi",
       width: 150,
       renderCell: (params) => {
+        // Don't render status badge for the total row
+        if (params.row.id === "total") return null;
+
         const status = params.value;
         let bgColor = "bg-gray-100 text-gray-800";
 
@@ -411,7 +573,6 @@ const DaftarMutasiPage = () => {
         );
       },
     },
-    { field: "catatanVerifikasi", headerName: "Catatan Verifikasi", flex: 1 },
   ];
 
   // Render filter dropdown
@@ -541,7 +702,7 @@ const DaftarMutasiPage = () => {
             {/* Data Table */}
             {loading ? (
               <DataTable
-                rows={filteredData}
+                rows={dataWithTotal}
                 columns={columns}
                 initialPageSize={entriesPerPage}
                 pageSizeOptions={[5, 10, 25, 50, 100]}
@@ -549,7 +710,10 @@ const DaftarMutasiPage = () => {
                 emptyRowsMessage="Tidak ada data tersedia"
                 paginationModel={dataTablePaginationModel}
                 onPaginationModelChange={setDataTablePaginationModel}
-                loading={true} // <-- ini yang penting
+                loading={true}
+                getRowClassName={(params) =>
+                  params.id === "total" ? "bg-gray-100 font-bold" : ""
+                }
               />
             ) : error ? (
               <div className="text-center py-12">
@@ -559,7 +723,7 @@ const DaftarMutasiPage = () => {
             ) : (
               <div className="border border-gray-200 rounded-lg overflow-hidden">
                 <DataTable
-                  rows={filteredData}
+                  rows={dataWithTotal}
                   columns={columns}
                   initialPageSize={entriesPerPage}
                   pageSizeOptions={[5, 10, 25, 50, 100]}
@@ -567,7 +731,10 @@ const DaftarMutasiPage = () => {
                   emptyRowsMessage="Tidak ada data tersedia"
                   paginationModel={dataTablePaginationModel}
                   onPaginationModelChange={setDataTablePaginationModel}
-                  loading={false} // <-- ini yang penting
+                  loading={false}
+                  getRowClassName={(params) =>
+                    params.id === "total" ? "bg-gray-100 font-bold" : ""
+                  }
                 />
               </div>
             )}
