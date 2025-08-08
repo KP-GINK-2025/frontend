@@ -1,5 +1,8 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
+
 import DashboardPage from "./pages/DashboardPage";
 import LoginPage from "./pages/LoginPage";
 import ProfilePage from "./pages/ProfilePage";
@@ -90,6 +93,7 @@ import RincianRealisasiAnggaranPage from "./pages/laporan/laporan-hibah/rincian-
 import RincianSudahDiadministrasiPage from "./pages/laporan/laporan-hibah/rincian-hibah/sudah-administrasi/RincianSudahDiadministrasiPage";
 import RincianBelumDiadministrasiPage from "./pages/laporan/laporan-hibah/rincian-hibah/belum-administrasi/RincianBelumDiadministrasiPage";
 
+// LraVsBm
 import LraVsBmPage from "./pages/laporan/lra-vs-bm/LraVsBmPage";
 import LraVsBmSkpdPage from "./pages/laporan/lra-vs-bm/skpd/LraVsBmSkpdPage";
 import LraVsBmUpbPage from "./pages/laporan/lra-vs-bm/upb/LraVsBmUpbPage";
@@ -106,243 +110,266 @@ import SistemPage from "./pages/pengaturan/sistem/SistemPage";
 function App() {
   return (
     <Router>
-      <Routes>
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/" element={<LoginPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<LoginPage />} />
 
-        {/* Klasifikasi Start */}
-        <Route path="/klasifikasi" element={<KlasifikasiPage />} />
-        {/* Klasifikasi Instansi */}
-        <Route
-          path="/klasifikasi/instansi"
-          element={<KlasifikasiInstansiPage />}
-        />
-        <Route path="/klasifikasi/instansi/bidang" element={<BidangPage />} />
-        <Route path="/klasifikasi/instansi/unit" element={<UnitPage />} />
-        <Route
-          path="/klasifikasi/instansi/sub-unit"
-          element={<SubUnitPage />}
-        />
-        <Route path="/klasifikasi/instansi/upb" element={<UpbPage />} />
-        {/* Klasifikasi Aset */}
-        <Route path="/klasifikasi/aset" element={<KlasifikasiAsetPage />} />
-        <Route path="/klasifikasi/aset/akun" element={<AkunPage />} />
-        <Route path="/klasifikasi/aset/kelompok" element={<KelompokPage />} />
-        <Route path="/klasifikasi/aset/jenis" element={<JenisPage />} />
-        <Route path="/klasifikasi/aset/objek" element={<ObjekPage />} />
-        <Route
-          path="/klasifikasi/aset/rincian-objek"
-          element={<RincianObjekPage />}
-        />
-        <Route
-          path="/klasifikasi/aset/sub-rincian"
-          element={<SubRincianPage />}
-        />
-        <Route
-          path="/klasifikasi/aset/sub-sub-rincian"
-          element={<SubSubRincianPage />}
-        />
-        {/* Klasifikasi End */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
 
-        {/* Data Ruangan */}
-        <Route path="/data-ruangan" element={<DataRuanganPage />} />
-        {/* Saldo Awal */}
-        <Route path="/saldo-awal" element={<SaldoAwalPage />} />
-        {/* LRA */}
-        <Route path="/lra" element={<LraPage />} />
+            {/* Klasifikasi Start */}
+            <Route path="/klasifikasi" element={<KlasifikasiPage />} />
+            {/* Klasifikasi Instansi */}
+            <Route
+              path="/klasifikasi/instansi"
+              element={<KlasifikasiInstansiPage />}
+            />
+            <Route
+              path="/klasifikasi/instansi/bidang"
+              element={<BidangPage />}
+            />
+            <Route path="/klasifikasi/instansi/unit" element={<UnitPage />} />
+            <Route
+              path="/klasifikasi/instansi/sub-unit"
+              element={<SubUnitPage />}
+            />
+            <Route path="/klasifikasi/instansi/upb" element={<UpbPage />} />
+            {/* Klasifikasi Aset */}
+            <Route path="/klasifikasi/aset" element={<KlasifikasiAsetPage />} />
+            <Route path="/klasifikasi/aset/akun" element={<AkunPage />} />
+            <Route
+              path="/klasifikasi/aset/kelompok"
+              element={<KelompokPage />}
+            />
+            <Route path="/klasifikasi/aset/jenis" element={<JenisPage />} />
+            <Route path="/klasifikasi/aset/objek" element={<ObjekPage />} />
+            <Route
+              path="/klasifikasi/aset/rincian-objek"
+              element={<RincianObjekPage />}
+            />
+            <Route
+              path="/klasifikasi/aset/sub-rincian"
+              element={<SubRincianPage />}
+            />
+            <Route
+              path="/klasifikasi/aset/sub-sub-rincian"
+              element={<SubSubRincianPage />}
+            />
+            {/* Klasifikasi End */}
 
-        {/* Keuangan Start */}
-        <Route path="/keuangan" element={<KeuanganPage />} />
-        {/* Belanja APBD */}
-        <Route path="/keuangan/belanja-apbd" element={<BelanjaApbdPage />} />
-        <Route
-          path="/keuangan/belanja-apbd/daftar-belanja"
-          element={<DaftarBelanjaPage />}
-        />
-        <Route
-          path="/keuangan/belanja-apbd/item-belanja"
-          element={<ItemBelanjaPage />}
-        />
-        <Route
-          path="/keuangan/belanja-apbd/posting-belanja"
-          element={<PostingBelanjaPage />}
-        />
-        {/* Mutasi */}
-        <Route path="/keuangan/mutasi" element={<MutasiPage />} />
-        <Route
-          path="/keuangan/mutasi/daftar-mutasi"
-          element={<DaftarMutasiPage />}
-        />
-        <Route
-          path="/keuangan/mutasi/item-mutasi"
-          element={<ItemMutasiPage />}
-        />
-        <Route
-          path="/keuangan/mutasi/posting-mutasi"
-          element={<PostingMutasiPage />}
-        />
-        {/* Hibah */}
-        <Route path="/keuangan/hibah" element={<HibahPage />} />
-        <Route
-          path="/keuangan/hibah/daftar-hibah"
-          element={<DaftarHibahPage />}
-        />
-        <Route path="/keuangan/hibah/item-hibah" element={<ItemHibahPage />} />
-        <Route
-          path="/keuangan/hibah/posting-hibah"
-          element={<PostingHibahPage />}
-        />
-        {/* Keuangan End */}
+            {/* Data Ruangan */}
+            <Route path="/data-ruangan" element={<DataRuanganPage />} />
+            {/* Saldo Awal */}
+            <Route path="/saldo-awal" element={<SaldoAwalPage />} />
+            {/* LRA */}
+            <Route path="/lra" element={<LraPage />} />
 
-        {/* Laporan Start */}
-        <Route path="/laporan" element={<LaporanPage />} />
-        {/* Laporan Rekonsiliasi */}
+            {/* Keuangan Start */}
+            <Route path="/keuangan" element={<KeuanganPage />} />
+            {/* Belanja APBD */}
+            <Route
+              path="/keuangan/belanja-apbd"
+              element={<BelanjaApbdPage />}
+            />
+            <Route
+              path="/keuangan/belanja-apbd/daftar-belanja"
+              element={<DaftarBelanjaPage />}
+            />
+            <Route
+              path="/keuangan/belanja-apbd/item-belanja"
+              element={<ItemBelanjaPage />}
+            />
+            <Route
+              path="/keuangan/belanja-apbd/posting-belanja"
+              element={<PostingBelanjaPage />}
+            />
+            {/* Mutasi */}
+            <Route path="/keuangan/mutasi" element={<MutasiPage />} />
+            <Route
+              path="/keuangan/mutasi/daftar-mutasi"
+              element={<DaftarMutasiPage />}
+            />
+            <Route
+              path="/keuangan/mutasi/item-mutasi"
+              element={<ItemMutasiPage />}
+            />
+            <Route
+              path="/keuangan/mutasi/posting-mutasi"
+              element={<PostingMutasiPage />}
+            />
+            {/* Hibah */}
+            <Route path="/keuangan/hibah" element={<HibahPage />} />
+            <Route
+              path="/keuangan/hibah/daftar-hibah"
+              element={<DaftarHibahPage />}
+            />
+            <Route
+              path="/keuangan/hibah/item-hibah"
+              element={<ItemHibahPage />}
+            />
+            <Route
+              path="/keuangan/hibah/posting-hibah"
+              element={<PostingHibahPage />}
+            />
+            {/* Keuangan End */}
 
-        <Route
-          path="/laporan/laporan-rekonsiliasi"
-          element={<LaporanRekonsiliasiPage />}
-        />
-        <Route
-          path="/laporan/laporan-rekonsiliasi/laporan-per-upb"
-          element={<LaporanPerUpbPage />}
-        />
-        <Route
-          path="/laporan/laporan-rekonsiliasi/laporan-per-upb/belanja-apbd-per-upb"
-          element={<BelanjaApbdPerUpbPage />}
-        />
-        <Route
-          path="/laporan/laporan-rekonsiliasi/laporan-per-upb/rekap-belanja-apbd-per-upb"
-          element={<RekapBelanjaApbdPerUpbPage />}
-        />
-        <Route
-          path="/laporan/laporan-rekonsiliasi/laporan-per-upb/mutasi-per-upb"
-          element={<MutasiPerUpbPage />}
-        />
-        <Route
-          path="/laporan/laporan-rekonsiliasi/laporan-per-upb/rekap-mutasi-per-upb"
-          element={<RekapMutasiPerUpbPage />}
-        />
-        <Route
-          path="/laporan/laporan-rekonsiliasi/rekap-rekonsiliasi"
-          element={<RekapRekonsiliasiPage />}
-        />
-        <Route
-          path="/laporan/laporan-rekonsiliasi/rekap-rekonsiliasi/rekonsiliasi-upb"
-          element={<RekapRekonsiliasiUpbPage />}
-        />
-        <Route
-          path="/laporan/laporan-rekonsiliasi/rekap-rekonsiliasi/seluruh-rekonsiliasi"
-          element={<RekapSeluruhRekonsiliasiPage />}
-        />
-        <Route
-          path="/laporan/laporan-rekonsiliasi/rekap-kib"
-          element={<RekapKibPage />}
-        />
-        <Route
-          path="/laporan/laporan-rekonsiliasi/rekap-kib/rekap-kib-a-47"
-          element={<RekapKibA47Page />}
-        />
-        <Route
-          path="/laporan/laporan-rekonsiliasi/rekap-kib/rekap-kib-b-47"
-          element={<RekapKibB47Page />}
-        />
-        <Route
-          path="/laporan/laporan-rekonsiliasi/rekap-kib/rekap-kib-c-47"
-          element={<RekapKibC47Page />}
-        />
-        <Route
-          path="/laporan/laporan-rekonsiliasi/rekap-kib/rekap-kib-d-47"
-          element={<RekapKibD47Page />}
-        />
-        <Route
-          path="/laporan/laporan-rekonsiliasi/rekap-kib/rekap-kib-e-47"
-          element={<RekapKibE47Page />}
-        />
-        <Route
-          path="/laporan/laporan-rekonsiliasi/rekap-kib/rekap-kib-f-47"
-          element={<RekapKibF47Page />}
-        />
-        <Route
-          path="/laporan/laporan-rekonsiliasi/rekap-saldo"
-          element={<RekapSaldoPage />}
-        />
-        <Route
-          path="/laporan/laporan-rekonsiliasi/rekap-saldo/saldo-awal"
-          element={<RekapSaldoAwalPage />}
-        />
-        <Route
-          path="/laporan/laporan-rekonsiliasi/rekap-saldo/saldo-akhir"
-          element={<RekapSaldoAkhirPage />}
-        />
+            {/* Laporan Start */}
+            <Route path="/laporan" element={<LaporanPage />} />
+            {/* Laporan Rekonsiliasi */}
 
-        {/* Laporan Hibah */}
-        <Route path="/laporan/laporan-hibah" element={<LaporanHibahPage />} />
-        <Route
-          path="/laporan/laporan-hibah/hibah-per-upb"
-          element={<HibahPerUpbPage />}
-        />
-        <Route
-          path="/laporan/laporan-hibah/rekapitulasi-hibah"
-          element={<RekapitulasiHibahPage />}
-        />
-        <Route
-          path="/laporan/laporan-hibah/rekapitulasi-hibah/rekapitulasi-hibah-per-upb"
-          element={<RekapitulasiHibahPerUpbPage />}
-        />
-        <Route
-          path="/laporan/laporan-hibah/rekapitulasi-hibah/rekapitulasi-seluruh-hibah"
-          element={<RekapitulasiSeluruhHibahPage />}
-        />
-        <Route
-          path="/laporan/laporan-hibah/rincian-hibah"
-          element={<RincianHibahPage />}
-        />
-        <Route
-          path="/laporan/laporan-hibah/rincian-hibah/rincian-realisasi-anggaran"
-          element={<RincianRealisasiAnggaranPage />}
-        />
-        <Route
-          path="/laporan/laporan-hibah/rincian-hibah/rincian-sudah-diadministrasi"
-          element={<RincianSudahDiadministrasiPage />}
-        />
-        <Route
-          path="/laporan/laporan-hibah/rincian-hibah/rincian-belum-diadministrasi"
-          element={<RincianBelumDiadministrasiPage />}
-        />
-        <Route
-          path="/laporan/laporan-hibah/rekap-hibah"
-          element={<RekapHibahPage />}
-        />
-        <Route
-          path="/laporan/laporan-hibah/rekap-hibah/rekap-administrasi-hibah"
-          element={<RekapAdministrasiHibahPage />}
-        />
-        <Route
-          path="/laporan/laporan-hibah/rekap-hibah/rekap-hibah-upb"
-          element={<RekapHibahUpbPage />}
-        />
-        <Route
-          path="/laporan/laporan-hibah/rekap-hibah/rekap-hibah-skpd"
-          element={<RekapHibahSkpdPage />}
-        />
-        {/* Laporan LRA vs BM */}
-        <Route path="/laporan/lra-vs-bm" element={<LraVsBmPage />} />
-        <Route path="/laporan/lra-vs-bm/upb" element={<LraVsBmUpbPage />} />
-        <Route path="/laporan/lra-vs-bm/skpd" element={<LraVsBmSkpdPage />} />
-        {/* Laporan End */}
+            <Route
+              path="/laporan/laporan-rekonsiliasi"
+              element={<LaporanRekonsiliasiPage />}
+            />
+            <Route
+              path="/laporan/laporan-rekonsiliasi/laporan-per-upb"
+              element={<LaporanPerUpbPage />}
+            />
+            <Route
+              path="/laporan/laporan-rekonsiliasi/laporan-per-upb/belanja-apbd-per-upb"
+              element={<BelanjaApbdPerUpbPage />}
+            />
+            <Route
+              path="/laporan/laporan-rekonsiliasi/laporan-per-upb/rekap-belanja-apbd-per-upb"
+              element={<RekapBelanjaApbdPerUpbPage />}
+            />
+            <Route
+              path="/laporan/laporan-rekonsiliasi/laporan-per-upb/mutasi-per-upb"
+              element={<MutasiPerUpbPage />}
+            />
+            <Route
+              path="/laporan/laporan-rekonsiliasi/laporan-per-upb/rekap-mutasi-per-upb"
+              element={<RekapMutasiPerUpbPage />}
+            />
+            <Route
+              path="/laporan/laporan-rekonsiliasi/rekap-rekonsiliasi"
+              element={<RekapRekonsiliasiPage />}
+            />
+            <Route
+              path="/laporan/laporan-rekonsiliasi/rekap-rekonsiliasi/rekonsiliasi-upb"
+              element={<RekapRekonsiliasiUpbPage />}
+            />
+            <Route
+              path="/laporan/laporan-rekonsiliasi/rekap-rekonsiliasi/seluruh-rekonsiliasi"
+              element={<RekapSeluruhRekonsiliasiPage />}
+            />
+            <Route
+              path="/laporan/laporan-rekonsiliasi/rekap-kib"
+              element={<RekapKibPage />}
+            />
+            <Route
+              path="/laporan/laporan-rekonsiliasi/rekap-kib/rekap-kib-a-47"
+              element={<RekapKibA47Page />}
+            />
+            <Route
+              path="/laporan/laporan-rekonsiliasi/rekap-kib/rekap-kib-b-47"
+              element={<RekapKibB47Page />}
+            />
+            <Route
+              path="/laporan/laporan-rekonsiliasi/rekap-kib/rekap-kib-c-47"
+              element={<RekapKibC47Page />}
+            />
+            <Route
+              path="/laporan/laporan-rekonsiliasi/rekap-kib/rekap-kib-d-47"
+              element={<RekapKibD47Page />}
+            />
+            <Route
+              path="/laporan/laporan-rekonsiliasi/rekap-kib/rekap-kib-e-47"
+              element={<RekapKibE47Page />}
+            />
+            <Route
+              path="/laporan/laporan-rekonsiliasi/rekap-kib/rekap-kib-f-47"
+              element={<RekapKibF47Page />}
+            />
+            <Route
+              path="/laporan/laporan-rekonsiliasi/rekap-saldo"
+              element={<RekapSaldoPage />}
+            />
+            <Route
+              path="/laporan/laporan-rekonsiliasi/rekap-saldo/saldo-awal"
+              element={<RekapSaldoAwalPage />}
+            />
+            <Route
+              path="/laporan/laporan-rekonsiliasi/rekap-saldo/saldo-akhir"
+              element={<RekapSaldoAkhirPage />}
+            />
 
-        {/* Pengaturan Start */}
-        <Route path="/pengaturan" element={<PengaturanPage />} />
-        <Route path="/pengaturan/group" element={<GroupPage />} />
-        <Route path="/pengaturan/pengguna" element={<PenggunaPage />} />
-        <Route
-          path="/pengaturan/updating-data"
-          element={<UpdatingDataPage />}
-        />
-        <Route path="/pengaturan/sistem" element={<SistemPage />} />
-        {/* Pengaturan End */}
-      </Routes>
+            {/* Laporan Hibah */}
+            <Route
+              path="/laporan/laporan-hibah"
+              element={<LaporanHibahPage />}
+            />
+            <Route
+              path="/laporan/laporan-hibah/hibah-per-upb"
+              element={<HibahPerUpbPage />}
+            />
+            <Route
+              path="/laporan/laporan-hibah/rekapitulasi-hibah"
+              element={<RekapitulasiHibahPage />}
+            />
+            <Route
+              path="/laporan/laporan-hibah/rekapitulasi-hibah/rekapitulasi-hibah-per-upb"
+              element={<RekapitulasiHibahPerUpbPage />}
+            />
+            <Route
+              path="/laporan/laporan-hibah/rekapitulasi-hibah/rekapitulasi-seluruh-hibah"
+              element={<RekapitulasiSeluruhHibahPage />}
+            />
+            <Route
+              path="/laporan/laporan-hibah/rincian-hibah"
+              element={<RincianHibahPage />}
+            />
+            <Route
+              path="/laporan/laporan-hibah/rincian-hibah/rincian-realisasi-anggaran"
+              element={<RincianRealisasiAnggaranPage />}
+            />
+            <Route
+              path="/laporan/laporan-hibah/rincian-hibah/rincian-sudah-diadministrasi"
+              element={<RincianSudahDiadministrasiPage />}
+            />
+            <Route
+              path="/laporan/laporan-hibah/rincian-hibah/rincian-belum-diadministrasi"
+              element={<RincianBelumDiadministrasiPage />}
+            />
+            <Route
+              path="/laporan/laporan-hibah/rekap-hibah"
+              element={<RekapHibahPage />}
+            />
+            <Route
+              path="/laporan/laporan-hibah/rekap-hibah/rekap-administrasi-hibah"
+              element={<RekapAdministrasiHibahPage />}
+            />
+            <Route
+              path="/laporan/laporan-hibah/rekap-hibah/rekap-hibah-upb"
+              element={<RekapHibahUpbPage />}
+            />
+            <Route
+              path="/laporan/laporan-hibah/rekap-hibah/rekap-hibah-skpd"
+              element={<RekapHibahSkpdPage />}
+            />
+            {/* Laporan LRA vs BM */}
+            <Route path="/laporan/lra-vs-bm" element={<LraVsBmPage />} />
+            <Route path="/laporan/lra-vs-bm/upb" element={<LraVsBmUpbPage />} />
+            <Route
+              path="/laporan/lra-vs-bm/skpd"
+              element={<LraVsBmSkpdPage />}
+            />
+            {/* Laporan End */}
+
+            {/* Pengaturan Start */}
+            <Route path="/pengaturan" element={<PengaturanPage />} />
+            <Route path="/pengaturan/group" element={<GroupPage />} />
+            <Route path="/pengaturan/pengguna" element={<PenggunaPage />} />
+            <Route
+              path="/pengaturan/updating-data"
+              element={<UpdatingDataPage />}
+            />
+            <Route path="/pengaturan/sistem" element={<SistemPage />} />
+            {/* Pengaturan End */}
+          </Route>
+        </Routes>
+      </AuthProvider>
     </Router>
   );
 }

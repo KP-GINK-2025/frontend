@@ -1,87 +1,82 @@
+// src/pages/LoginPage.jsx (Versi Clean & Aman)
 import React, { useState, useRef, useEffect } from "react";
-import { User, Lock, Eye, EyeOff } from "lucide-react"; // Import Eye and EyeOff icons
-import { useNavigate } from "react-router-dom";
+import { User, Lock, Eye, EyeOff } from "lucide-react";
 import api from "../api/axios";
 import Swal from "sweetalert2";
+import { useAuth } from "../context/AuthContext";
 
 const LoginPage = () => {
-  const navigate = useNavigate();
+  const { login } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [usernameError, setUsernameError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
-  const [showPassword, setShowPassword] = useState(false); // New state for password visibility
-
+  const [showPassword, setShowPassword] = useState(false);
   const passwordInputRef = useRef(null);
   const usernameInputRef = useRef(null);
 
-  // Load saved credentials on component mount
   useEffect(() => {
     const savedUsername = localStorage.getItem("savedUsername");
-    const savedPassword = localStorage.getItem("savedPassword");
-    const savedRemember = localStorage.getItem("rememberMe") === "true";
-
-    if (savedRemember) {
-      setUsername(savedUsername || "");
-      setPassword(savedPassword || "");
+    if (savedUsername) {
+      setUsername(savedUsername);
       setRememberMe(true);
     }
   }, []);
 
-  // Handle "Remember Me" logic whenever rememberMe state changes
   useEffect(() => {
     if (rememberMe) {
       localStorage.setItem("savedUsername", username);
-      localStorage.setItem("savedPassword", password);
-      localStorage.setItem("rememberMe", "true");
     } else {
       localStorage.removeItem("savedUsername");
-      localStorage.removeItem("savedPassword");
-      localStorage.removeItem("rememberMe");
     }
-  }, [rememberMe, username, password]);
+  }, [rememberMe, username]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setUsernameError("");
     setPasswordError("");
 
-    let valid = true;
+    let isValid = true;
     if (!username.trim()) {
       setUsernameError("Username tidak boleh kosong.");
-      valid = false;
+      isValid = false;
     }
     if (!password) {
       setPasswordError("Password tidak boleh kosong.");
-      valid = false;
+      isValid = false;
     }
-    if (!valid) return;
+    if (!isValid) return;
 
     try {
       const response = await api.post("/login", { username, password });
       const { access_token, user } = response.data;
 
-      localStorage.setItem("token", access_token);
-      localStorage.setItem("user", JSON.stringify(user));
+      login(access_token, user);
 
       Swal.fire({
         icon: "success",
-        title: "Login berhasil!",
+        title: response.data.message || "Login berhasil!", // Ambil pesan dari API
         showConfirmButton: false,
         timer: 1200,
       });
-
-      navigate("/dashboard");
     } catch (error) {
       const errorData = error.response?.data;
-      const errorMessages = errorData?.errors
-        ? Object.values(errorData.errors).flat().join("\n")
-        : "Terjadi kesalahan";
+      let errorMessage = "Terjadi kesalahan pada server.";
+
+      if (error.response?.status === 401) {
+        errorMessage = errorData?.message || "Username atau password salah.";
+      } else if (errorData?.errors) {
+        errorMessage = Object.values(errorData.errors).flat().join("\n");
+      } else if (errorData?.message) {
+        errorMessage = errorData.message;
+      }
+
       Swal.fire({
         icon: "error",
-        title: "Login gagal",
-        text: errorMessages,
+        title: "Login Gagal",
+        text: errorMessage,
+        confirmButtonColor: "#B53C3C",
       });
     }
   };

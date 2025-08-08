@@ -1,15 +1,16 @@
 import React, { useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import { useAuth } from "../../context/AuthContext";
 
 const UserDropdown = ({
-  storedUser,
   avatarSrc,
   avatarPreview,
   setAvatarPreview,
   setIsDropdownOpen,
   isDropdownOpen,
 }) => {
+  const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -26,11 +27,7 @@ const UserDropdown = ({
       cancelButtonText: "Batal",
     }).then((result) => {
       if (result.isConfirmed) {
-        localStorage.setItem(
-          "user",
-          JSON.stringify({ ...storedUser, isLoggedIn: false })
-        );
-        navigate("/");
+        logout();
 
         Swal.fire({
           position: "center",
@@ -60,20 +57,13 @@ const UserDropdown = ({
       cancelButtonText: "Batal",
     }).then((result) => {
       if (result.isConfirmed) {
-        setAvatarPreview("");
-        localStorage.setItem(
-          "user",
-          JSON.stringify({ ...storedUser, avatar: null })
-        );
-        if (fileInputRef.current) fileInputRef.current.value = "";
+        // Buat objek user baru tanpa avatar
+        const updatedUser = { ...user, avatar: null };
+        // Panggil fungsi updateUser dari context
+        updateUser(updatedUser);
 
-        Swal.fire({
-          position: "center",
-          icon: "success",
-          title: "Foto profil berhasil dihapus",
-          showConfirmButton: false,
-          timer: 1500,
-        });
+        setAvatarPreview(""); // Update UI lokal jika perlu
+        Swal.fire("Dihapus!", "Foto profil berhasil dihapus.", "success");
       }
     });
   };
@@ -105,20 +95,14 @@ const UserDropdown = ({
     const reader = new FileReader();
     reader.onload = (e) => {
       const newAvatarUrl = e.target.result;
-      setAvatarPreview(newAvatarUrl);
-      localStorage.setItem(
-        "user",
-        JSON.stringify({ ...storedUser, avatar: newAvatarUrl })
-      );
-      if (fileInputRef.current) fileInputRef.current.value = "";
 
-      Swal.fire({
-        position: "center",
-        icon: "success",
-        title: "Foto profil berhasil diubah",
-        showConfirmButton: false,
-        timer: 1500,
-      });
+      // Buat objek user baru dengan avatar baru
+      const updatedUser = { ...user, avatar: newAvatarUrl };
+      // Panggil fungsi updateUser dari context
+      updateUser(updatedUser);
+
+      setAvatarPreview(newAvatarUrl); // Update UI lokal
+      Swal.fire("Berhasil!", "Foto profil berhasil diubah.", "success");
     };
     reader.readAsDataURL(file);
   };
@@ -133,6 +117,10 @@ const UserDropdown = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  if (!user) {
+    return null;
+  }
+
   return (
     <div className="relative" ref={dropdownRef}>
       <button
@@ -144,7 +132,7 @@ const UserDropdown = ({
           alt="User Avatar"
           className="w-9 h-9 rounded-full object-cover border-3 border-white"
         />
-        <span className="text-sm font-medium">{storedUser.name}</span>
+        <span className="text-sm font-medium">{user.name}</span>
       </button>
 
       {isDropdownOpen && (
@@ -162,15 +150,13 @@ const UserDropdown = ({
               <button
                 onClick={handleChangePhoto}
                 className="bg-red bg-opacity-20 border border-white border-opacity-30 text-white px-2 py-1 rounded text-xs cursor-pointer transition-all duration-200 hover:bg-white hover:text-[#B53C3C] hover:border-[#B53C3C]"
-
               >
                 Change Photo
               </button>
-              {(avatarPreview || storedUser.avatar) && (
+              {(avatarPreview || user.avatar) && (
                 <button
                   onClick={handleDeletePhoto}
                   className="bg-red bg-opacity-20 border border-white border-opacity-30 text-white px-2 py-1 rounded text-xs cursor-pointer transition-all duration-200 hover:bg-white hover:text-[#B53C3C] hover:border-[#B53C3C]"
-
                 >
                   Delete Photo
                 </button>
