@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import api from "../../../../api/axios";
 import { Navbar, Breadcrumbs } from "@/components/layout";
 import { DataTable } from "@/components/table";
-import { Search, Download, RefreshCw, Plus } from "lucide-react";
+import { ColumnManager } from "@/components/table";
+import { Search, Download, RefreshCw } from "lucide-react";
 import Swal from "sweetalert2";
 import {
   handleExport,
@@ -11,38 +12,51 @@ import {
 } from "../../../../handlers/exportHandler";
 
 const PostingHibahPage = () => {
-  // --- State untuk Data dan Filter ---
   const [searchTerm, setSearchTerm] = useState("");
   const [postingHibahData, setPostingHibahData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(true);
-  const [rowCount, setRowCount] = useState(0); // Total jumlah baris dari API
+  const [rowCount, setRowCount] = useState(0);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [exporting, setExporting] = useState(false); // State untuk loading export
+  const [exporting, setExporting] = useState(false);
 
-  // --- State untuk Filter Tambahan ---
+  // State untuk Column Manager
+  const [columnVisibility, setColumnVisibility] = useState({
+    action: true,
+    no: true,
+    asal: true,
+    tujuan: true,
+    noBeritaAcara: true,
+    tglBeritaAcara: true,
+    totalBarang: true,
+    totalHarga: true,
+    lampiran: true,
+    statusVerifikasi: true,
+  });
+
+  // State untuk Filter
   const [filters, setFilters] = useState({
     asal: "",
     semester: "",
     statusVerifikasi: "",
   });
 
-  // --- State untuk Paginasi DataTable ---
+  // State untuk Paginasi DataTable
   const [dataTablePaginationModel, setDataTablePaginationModel] = useState({
-    page: 0, // Halaman saat ini (0-indexed)
-    pageSize: 10, // Jumlah baris per halaman
+    page: 0,
+    pageSize: 10,
   });
 
-  // --- OPTIMISASI: Debounce search term ---
+  // Debounce search term
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
-    }, 300); // Tunggu 300ms setelah user berhenti mengetik
+    }, 300);
 
     return () => {
-      clearTimeout(timer); // Bersihkan timer jika searchTerm berubah sebelum 300ms
+      clearTimeout(timer);
     };
   }, [searchTerm]);
 
@@ -57,7 +71,7 @@ const PostingHibahPage = () => {
     setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
   }, [filters]);
 
-  // --- EFEK UTAMA UNTUK FETCH DATA ---
+  // Fetch data utama
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -71,7 +85,6 @@ const PostingHibahPage = () => {
           params.append("search", debouncedSearchTerm);
         }
 
-        // Tambahkan filter tambahan
         Object.entries(filters).forEach(([key, value]) => {
           if (value) {
             params.append(key, value);
@@ -82,7 +95,7 @@ const PostingHibahPage = () => {
         // const response = await api.get(`/posting-hibah?${params.toString()}`);
 
         // SIMULASI DATA - Ganti dengan API call yang sebenarnya
-        await new Promise((resolve) => setTimeout(resolve, 500)); // Simulasi delay
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         const dummyData = [
           {
@@ -92,7 +105,7 @@ const PostingHibahPage = () => {
             noBeritaAcara: "BA/Hibah/001/2024",
             tglBeritaAcara: "2024-01-15",
             totalBarang: 10,
-            totalHarga: "Rp 50.000.000",
+            totalHarga: 50000000,
             lampiran: "Doc_Hibah_001.pdf",
             statusVerifikasi: "Diverifikasi",
             semester: "1",
@@ -104,7 +117,7 @@ const PostingHibahPage = () => {
             noBeritaAcara: "BA/Hibah/002/2024",
             tglBeritaAcara: "2024-02-20",
             totalBarang: 3,
-            totalHarga: "Rp 15.000.000",
+            totalHarga: 15000000,
             lampiran: "Doc_Hibah_002.pdf",
             statusVerifikasi: "Menunggu",
             semester: "1",
@@ -116,7 +129,7 @@ const PostingHibahPage = () => {
             noBeritaAcara: "BA/Hibah/003/2024",
             tglBeritaAcara: "2024-03-10",
             totalBarang: 7,
-            totalHarga: "Rp 25.000.000",
+            totalHarga: 25000000,
             lampiran: "Doc_Hibah_003.pdf",
             statusVerifikasi: "Ditolak",
             semester: "2",
@@ -128,7 +141,7 @@ const PostingHibahPage = () => {
             noBeritaAcara: "BA/Hibah/004/2024",
             tglBeritaAcara: "2024-04-05",
             totalBarang: 15,
-            totalHarga: "Rp 75.000.000",
+            totalHarga: 75000000,
             lampiran: "Doc_Hibah_004.pdf",
             statusVerifikasi: "Diverifikasi",
             semester: "2",
@@ -140,7 +153,7 @@ const PostingHibahPage = () => {
             noBeritaAcara: "BA/Hibah/005/2024",
             tglBeritaAcara: "2024-05-12",
             totalBarang: 5,
-            totalHarga: "Rp 30.000.000",
+            totalHarga: 30000000,
             lampiran: "Doc_Hibah_005.pdf",
             statusVerifikasi: "Menunggu",
             semester: "1",
@@ -191,30 +204,24 @@ const PostingHibahPage = () => {
     fetchData();
   }, [dataTablePaginationModel, debouncedSearchTerm, refreshTrigger, filters]);
 
-  // --- Handler Fungsi ---
+  // Format currency untuk display
+  const formatCurrency = (value) => {
+    if (!value || value === 0) return "0";
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
 
-  // Define export columns configuration
-  const exportColumns = [
-    { field: "no", headerName: "No" },
-    { field: "asal", headerName: "Asal" },
-    { field: "tujuan", headerName: "Tujuan" },
-    { field: "noBeritaAcara", headerName: "No. Berita Acara" },
-    { field: "tglBeritaAcara", headerName: "Tgl. Berita Acara" },
-    { field: "totalBarang", headerName: "Total Barang" },
-    { field: "totalHarga", headerName: "Total Harga" },
-    { field: "lampiran", headerName: "Lampiran" },
-    { field: "statusVerifikasi", headerName: "Status Verifikasi" },
-    { field: "semester", headerName: "Semester" },
-  ];
-
-  // Export handler using the reusable function
+  // Handler untuk export
   const handleExportClick = async () => {
-    // Function to fetch all data for export
     const fetchAllDataForExport = async () => {
       try {
         const params = new URLSearchParams();
         params.append("page", 1);
-        params.append("per_page", 10000); // Get all data
+        params.append("per_page", 10000);
 
         if (debouncedSearchTerm) {
           params.append("search", debouncedSearchTerm);
@@ -239,12 +246,11 @@ const PostingHibahPage = () => {
             noBeritaAcara: "BA/Hibah/001/2024",
             tglBeritaAcara: "2024-01-15",
             totalBarang: 10,
-            totalHarga: "Rp 50.000.000",
+            totalHarga: 50000000,
             lampiran: "Doc_Hibah_001.pdf",
             statusVerifikasi: "Diverifikasi",
             semester: "1",
           },
-          // ... data lainnya
         ];
       } catch (error) {
         console.error("Failed to fetch export data:", error);
@@ -252,7 +258,19 @@ const PostingHibahPage = () => {
       }
     };
 
-    // Create export configuration
+    const exportColumns = [
+      { field: "no", headerName: "No" },
+      { field: "asal", headerName: "Asal" },
+      { field: "tujuan", headerName: "Tujuan" },
+      { field: "noBeritaAcara", headerName: "No. Berita Acara" },
+      { field: "tglBeritaAcara", headerName: "Tgl. Berita Acara" },
+      { field: "totalBarang", headerName: "Total Barang" },
+      { field: "totalHarga", headerName: "Total Harga" },
+      { field: "lampiran", headerName: "Lampiran" },
+      { field: "statusVerifikasi", headerName: "Status Verifikasi" },
+      { field: "semester", headerName: "Semester" },
+    ];
+
     const exportConfig = {
       fetchDataFunction: fetchAllDataForExport,
       columns: exportColumns,
@@ -261,23 +279,21 @@ const PostingHibahPage = () => {
       setExporting: setExporting,
     };
 
-    // Call the reusable export handler
     await handleExport(exportConfig);
   };
 
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      setSearchTerm(""); // Reset pencarian
+      setSearchTerm("");
       setFilters({
         asal: "",
         semester: "",
         statusVerifikasi: "",
-      }); // Reset filters
-      setDataTablePaginationModel((prev) => ({ ...prev, page: 0 })); // Reset halaman
+      });
+      setDataTablePaginationModel((prev) => ({ ...prev, page: 0 }));
       setRefreshTrigger((c) => c + 1);
 
-      // Simulasi delay agar animasi terlihat
       await new Promise((resolve) => setTimeout(resolve, 800));
 
       Swal.fire({
@@ -310,7 +326,6 @@ const PostingHibahPage = () => {
     const itemToEdit = postingHibahData.find((item) => item.id === id);
     if (itemToEdit) {
       console.log("Edit item:", itemToEdit);
-      // TODO: Implement edit functionality
       Swal.fire({
         title: "Info",
         text: "Fitur edit akan diimplementasikan!",
@@ -351,7 +366,7 @@ const PostingHibahPage = () => {
         timer: 1500,
         showConfirmButton: false,
       });
-      handleRefresh(); // Refresh data
+      handleRefresh();
     } catch (error) {
       console.error("Gagal menghapus posting hibah:", error);
       Swal.fire({
@@ -362,7 +377,6 @@ const PostingHibahPage = () => {
     }
   };
 
-  // Fungsi untuk menangani perubahan filter
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters((prevFilters) => ({
@@ -371,29 +385,65 @@ const PostingHibahPage = () => {
     }));
   };
 
-  // --- Konfigurasi Kolom DataTable ---
-  const columns = [
+  // Handler untuk column visibility - hapus fungsi manual karena akan menggunakan ColumnManager component
+  // const handleColumnVisibilityChange, handleToggleAllColumns, handleResetColumns sudah tidak diperlukan
+
+  // Hitung total dari data yang sudah difilter
+  const totalBarang = postingHibahData.reduce(
+    (sum, item) => sum + item.totalBarang,
+    0
+  );
+  const totalHarga = postingHibahData.reduce(
+    (sum, item) => sum + item.totalHarga,
+    0
+  );
+
+  // Buat objek baris total
+  const totalRow = {
+    id: "total",
+    no: "Total", // Pindahkan label Total ke kolom no
+    asal: "",
+    totalBarang: totalBarang,
+    totalHarga: totalHarga,
+    // Kosongkan field lain yang tidak relevan di baris total
+    action: "",
+    tujuan: "",
+    noBeritaAcara: "",
+    tglBeritaAcara: "",
+    lampiran: "",
+    statusVerifikasi: "",
+    semester: "",
+  };
+
+  // Gabungkan baris total ke data yang akan ditampilkan
+  const dataWithTotal = [...postingHibahData, totalRow];
+
+  // Definisi semua kolom
+  const allColumns = [
     {
       field: "action",
       headerName: "Action",
       width: 150,
       sortable: false,
-      renderCell: (params) => (
-        <div className="flex items-center gap-2 h-full">
-          <button
-            onClick={() => handleEditClick(params.row.id)}
-            className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => handleDeleteClick(params.row.id)}
-            className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
-          >
-            Delete
-          </button>
-        </div>
-      ),
+      renderCell: (params) => {
+        if (params.row.id === "total") return null;
+        return (
+          <div className="flex items-center gap-2 h-full">
+            <button
+              onClick={() => handleEditClick(params.row.id)}
+              className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => handleDeleteClick(params.row.id)}
+              className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
+            >
+              Delete
+            </button>
+          </div>
+        );
+      },
     },
     {
       field: "no",
@@ -401,6 +451,9 @@ const PostingHibahPage = () => {
       width: 70,
       sortable: false,
       renderCell: (params) => {
+        if (params.row.id === "total") {
+          return <span className="font-bold">{params.value}</span>; // Tampilkan "Total" dengan bold
+        }
         const index = postingHibahData.findIndex(
           (row) => row.id === params.row.id
         );
@@ -439,35 +492,45 @@ const PostingHibahPage = () => {
       headerName: "Total Barang",
       width: 130,
       type: "number",
+      renderCell: (params) => (
+        <span className="font-semibold">{params.value}</span>
+      ),
     },
     {
       field: "totalHarga",
       headerName: "Total Harga",
       width: 150,
+      renderCell: (params) => (
+        <span className="font-semibold">{formatCurrency(params.value)}</span>
+      ),
     },
     {
       field: "lampiran",
       headerName: "Lampiran",
       width: 180,
-      renderCell: (params) => (
-        <a
-          href="#"
-          className="text-blue-600 hover:underline cursor-pointer"
-          onClick={(e) => {
-            e.preventDefault();
-            console.log("Download file:", params.value);
-            alert(`Download ${params.value}`);
-          }}
-        >
-          {params.value}
-        </a>
-      ),
+      renderCell: (params) => {
+        if (params.row.id === "total") return null;
+        return (
+          <a
+            href="#"
+            className="text-blue-600 hover:underline cursor-pointer"
+            onClick={(e) => {
+              e.preventDefault();
+              console.log("Download file:", params.value);
+              alert(`Download ${params.value}`);
+            }}
+          >
+            {params.value}
+          </a>
+        );
+      },
     },
     {
       field: "statusVerifikasi",
       headerName: "Status Verifikasi",
       width: 150,
       renderCell: (params) => {
+        if (params.row.id === "total") return null;
         const getStatusColor = (status) => {
           switch (status.toLowerCase()) {
             case "diverifikasi":
@@ -493,7 +556,11 @@ const PostingHibahPage = () => {
     },
   ];
 
-  // --- Render UI ---
+  // Filter kolom berdasarkan visibility
+  const visibleColumns = allColumns.filter(
+    (col) => columnVisibility[col.field] !== false
+  );
+
   return (
     <div className="min-h-screen bg-[#f7f7f7]">
       <Navbar />
@@ -530,9 +597,8 @@ const PostingHibahPage = () => {
             </div>
           </div>
 
-          {/* Form Filter */}
+          {/* Filter Section */}
           <div className="mb-6">
-            {/* Baris Filter (3 Kolom) */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Asal */}
               <div>
@@ -603,19 +669,20 @@ const PostingHibahPage = () => {
             </div>
           </div>
 
+          {/* Table Controls */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-gray-600 text-sm">Show</span>
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span>Show</span>
               <select
                 value={dataTablePaginationModel.pageSize}
                 onChange={(e) => {
                   setDataTablePaginationModel((prev) => ({
                     ...prev,
                     pageSize: Number(e.target.value),
-                    page: 0, // Reset ke halaman pertama saat jumlah entri berubah
+                    page: 0,
                   }));
                 }}
-                className="border border-gray-300 rounded px-3 py-1 text-sm cursor-pointer"
+                className="border border-gray-300 rounded px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {[5, 10, 25, 50, 75, 100].map((n) => (
                   <option key={n} value={n}>
@@ -623,7 +690,12 @@ const PostingHibahPage = () => {
                   </option>
                 ))}
               </select>
-              <span className="text-gray-600 text-sm">entries</span>
+              <span>entries</span>
+              <ColumnManager
+                columns={allColumns}
+                columnVisibility={columnVisibility}
+                onColumnVisibilityChange={setColumnVisibility}
+              />
             </div>
 
             <div className="relative w-full md:w-64">
@@ -642,8 +714,8 @@ const PostingHibahPage = () => {
           </div>
 
           <DataTable
-            rows={postingHibahData}
-            columns={columns}
+            rows={dataWithTotal}
+            columns={visibleColumns}
             rowCount={rowCount}
             loading={loading}
             paginationMode="server"
@@ -655,6 +727,9 @@ const PostingHibahPage = () => {
             emptyRowsMessage="Tidak ada data tersedia"
             disableRowSelectionOnClick
             hideFooterSelectedRowCount
+            getRowClassName={(params) =>
+              params.id === "total" ? "bg-gray-100 font-bold" : ""
+            }
           />
         </div>
       </div>

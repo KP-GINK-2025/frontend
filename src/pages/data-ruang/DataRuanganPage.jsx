@@ -835,9 +835,7 @@ const DataRuanganPage = () => {
               </select>
               <span>entries</span>
               <ColumnManager
-                columns={allTableColumns.filter(
-                  (col) => col.field !== "action" && col.field !== "no"
-                )}
+                columns={allTableColumns}
                 columnVisibility={columnVisibility}
                 onColumnVisibilityChange={setColumnVisibility}
               />
