@@ -11,6 +11,7 @@ import {
   Navigation,
 } from "lucide-react";
 import AddMutasiModal from "./AddMutasiModal";
+import { ColumnManager } from "@/components/table";
 import Swal from "sweetalert2";
 
 const DaftarMutasiPage = () => {
@@ -20,14 +21,12 @@ const DaftarMutasiPage = () => {
   const [mutasiData, setMutasiData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // State untuk data dropdown filter
   const [filterData, setFilterData] = useState({
     kualifikasiPerolehan: [],
     asal: [],
     tujuan: [],
-    semester: [],
     statusVerifikasi: [],
   });
 
@@ -36,13 +35,30 @@ const DaftarMutasiPage = () => {
     kualifikasiPerolehan: "",
     asal: "",
     tujuan: "",
-    semester: "",
     statusVerifikasi: "",
   });
 
   // State untuk modal
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
+
+  // State untuk column visibility
+  const [columnVisibility, setColumnVisibility] = useState({
+    action: true,
+    no: true,
+    id: false,
+    kualifikasiPerolehan: true,
+    asal: true,
+    tujuan: true,
+    tahun: false,
+    semester: false,
+    nomorBeritaAcara: true,
+    tanggalBeritaAcara: true,
+    totalBarang: true,
+    totalHarga: true,
+    lampiran: true,
+    statusVerifikasi: true,
+    catatanVerifikasi: false,
+  });
 
   // State untuk pagination
   const [dataTablePaginationModel, setDataTablePaginationModel] = useState({
@@ -88,16 +104,12 @@ const DaftarMutasiPage = () => {
           { id: 6, nama: "Dinas Pendidikan" },
           { id: 7, nama: "Dinas Sosial" },
         ],
-        semester: [
-          { id: 1, nama: "Ganjil" },
-          { id: 2, nama: "Genap" },
-        ],
         statusVerifikasi: [
           { id: 1, nama: "Diverifikasi" },
           { id: 2, nama: "Menunggu" },
           { id: 3, nama: "Ditolak" },
           { id: 4, nama: "Draft" },
-          { id: 5, nama: "Valid" }, // Added 'Valid' from the other component's data
+          { id: 5, nama: "Valid" },
         ],
       };
 
@@ -171,17 +183,7 @@ const DaftarMutasiPage = () => {
     } catch (err) {
       console.error("Error fetching data:", err);
       setError("Gagal memuat data: " + err.message);
-
-      // Show error toast
-      Swal.fire({
-        icon: "error",
-        title: "Error!",
-        text: "Gagal memuat data. Silakan coba lagi.",
-        toast: true,
-        position: "top-end",
-        showConfirmButton: false,
-        timer: 3000,
-      });
+      showToast("error", "Error!", "Gagal memuat data. Silakan coba lagi.");
     } finally {
       setLoading(false);
     }
@@ -200,6 +202,19 @@ const DaftarMutasiPage = () => {
       page: 0,
     }));
   }, [entriesPerPage]);
+
+  // Utility function untuk menampilkan toast
+  const showToast = (icon, title, text, timer = 2000) => {
+    Swal.fire({
+      icon,
+      title,
+      text,
+      toast: true,
+      position: "top-end",
+      showConfirmButton: false,
+      timer,
+    });
+  };
 
   // Filter data based on search and selected filters
   const filteredData = mutasiData.filter((item) => {
@@ -229,17 +244,17 @@ const DaftarMutasiPage = () => {
 
   // Create a total row object and add it to the filtered data array
   const totalRow = {
-    id: "total", // Unique ID for the total row
-    kualifikasiPerolehan: "Total",
+    id: "total",
+    no: "Total", // Pindahkan label "Total" ke kolom no
+    kualifikasiPerolehan: "", // Kosongkan kolom kualifikasi
     totalBarang: totalBarang,
     totalHarga: totalHarga,
-    // Set other fields to null or empty so they are not rendered
-    asal: null,
-    tujuan: null,
-    tanggalBeritaAcara: null,
-    nomorBeritaAcara: null,
-    lampiran: null,
-    statusVerifikasi: null,
+    asal: "",
+    tujuan: "",
+    tanggalBeritaAcara: "",
+    nomorBeritaAcara: "",
+    lampiran: "",
+    statusVerifikasi: "",
   };
   const dataWithTotal = [...filteredData, totalRow];
 
@@ -254,155 +269,87 @@ const DaftarMutasiPage = () => {
 
   // Reset all filters and refresh data
   const handleRefresh = async () => {
-    setIsRefreshing(true);
     setSearchTerm("");
     setSelectedFilters({
       kualifikasiPerolehan: "",
       asal: "",
       tujuan: "",
-      semester: "",
       statusVerifikasi: "",
     });
     setDataTablePaginationModel({ page: 0, pageSize: entriesPerPage });
 
     await fetchData();
-    setIsRefreshing(false);
-
-    // Show success toast
-    Swal.fire({
-      icon: "success",
-      title: "Berhasil!",
-      text: "Data berhasil dimuat ulang.",
-      toast: true,
-      position: "top-end",
-      showConfirmButton: false,
-      timer: 2000,
-    });
+    showToast("success", "Berhasil!", "Data berhasil dimuat ulang.");
   };
 
   // Export functionality
   const handleExport = () => {
     console.log("Exporting Daftar Mutasi...");
-    Swal.fire({
-      icon: "info",
-      title: "Export",
-      text: "Fitur export sedang dalam pengembangan.",
-      toast: true,
-      position: "top-end",
-      showConfirmButton: false,
-      timer: 2000,
-    });
+    showToast("info", "Export", "Fitur export sedang dalam pengembangan.");
   };
 
   // Modal handlers
-  const handleOpenAddModal = () => {
-    setEditingItem(null);
-    setIsAddModalOpen(true);
-  };
+  const handleOpenAddModal = () => setIsAddModalOpen(true);
+  const handleCloseAddModal = () => setIsAddModalOpen(false);
 
-  const handleCloseAddModal = () => {
-    setIsAddModalOpen(false);
-    setEditingItem(null);
-  };
-
-  // Save new or edited mutasi
+  // Save new mutasi
   const handleSaveNewMutasi = (mutasiToSave) => {
-    if (mutasiToSave.id) {
-      // Edit mode
-      setMutasiData((prevData) =>
-        prevData.map((item) =>
-          item.id === mutasiToSave.id ? mutasiToSave : item
-        )
-      );
+    setMutasiData((prevData) => [
+      ...prevData,
+      { ...mutasiToSave, id: Date.now() },
+    ]);
 
-      Swal.fire({
-        icon: "success",
-        title: "Berhasil!",
-        text: "Data mutasi berhasil diperbarui.",
-        toast: true,
-        position: "top-end",
-        showConfirmButton: false,
-        timer: 2000,
-      });
-    } else {
-      // Add new mode
-      setMutasiData((prevData) => [
-        ...prevData,
-        { ...mutasiToSave, id: Date.now() },
-      ]);
-
-      Swal.fire({
-        icon: "success",
-        title: "Berhasil!",
-        text: "Data mutasi baru berhasil ditambahkan.",
-        toast: true,
-        position: "top-end",
-        showConfirmButton: false,
-        timer: 2000,
-      });
-    }
-
+    showToast("success", "Berhasil!", "Data mutasi baru berhasil ditambahkan.");
     handleCloseAddModal();
   };
 
   // Handler for "Lihat" (View) button
   const handleLihatClick = (id) => {
     const itemToView = mutasiData.find((item) => item.id === id);
-    if (itemToView) {
-      console.log("Viewing mutasi:", itemToView);
+    if (!itemToView) return;
 
-      Swal.fire({
-        title: "Detail Mutasi",
-        html: `
-          <div class="text-left">
-            <p><strong>Kualifikasi Perolehan:</strong> ${
-              itemToView.kualifikasiPerolehan
-            }</p>
-            <p><strong>Asal:</strong> ${itemToView.asal}</p>
-            <p><strong>Tujuan:</strong> ${itemToView.tujuan}</p>
-            <p><strong>Tanggal Berita Acara:</strong> ${
-              itemToView.tanggalBeritaAcara
-            }</p>
-            <p><strong>Nomor Berita Acara:</strong> ${
-              itemToView.nomorBeritaAcara
-            }</p>
-            <p><strong>Total Barang:</strong> ${itemToView.totalBarang}</p>
-            <p><strong>Total Harga:</strong> ${new Intl.NumberFormat("id-ID", {
-              style: "currency",
-              currency: "IDR",
-            }).format(itemToView.totalHarga)}</p>
-            <p><strong>Status Verifikasi:</strong> ${
-              itemToView.statusVerifikasi
-            }</p>
-          </div>
-        `,
-        icon: "info",
-        confirmButtonText: "Tutup",
-        width: 600,
-        customClass: {
-          confirmButton:
-            "bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700",
-        },
-      });
-    }
+    Swal.fire({
+      title: "Detail Mutasi",
+      html: `
+        <div class="text-left">
+          <p><strong>Kualifikasi Perolehan:</strong> ${
+            itemToView.kualifikasiPerolehan
+          }</p>
+          <p><strong>Asal:</strong> ${itemToView.asal}</p>
+          <p><strong>Tujuan:</strong> ${itemToView.tujuan}</p>
+          <p><strong>Tanggal Berita Acara:</strong> ${
+            itemToView.tanggalBeritaAcara
+          }</p>
+          <p><strong>Nomor Berita Acara:</strong> ${
+            itemToView.nomorBeritaAcara
+          }</p>
+          <p><strong>Total Barang:</strong> ${itemToView.totalBarang}</p>
+          <p><strong>Total Harga:</strong> ${new Intl.NumberFormat("id-ID", {
+            style: "currency",
+            currency: "IDR",
+          }).format(itemToView.totalHarga)}</p>
+          <p><strong>Status Verifikasi:</strong> ${
+            itemToView.statusVerifikasi
+          }</p>
+        </div>
+      `,
+      icon: "info",
+      confirmButtonText: "Tutup",
+      width: 600,
+      customClass: {
+        confirmButton:
+          "bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700",
+      },
+    });
   };
 
   // Handler for "Cetak" (Print) button
   const handleCetakClick = (id) => {
-    const itemToPrint = mutasiData.find((item) => item.id === id);
-    if (itemToPrint) {
-      console.log("Printing mutasi:", itemToPrint);
-
-      Swal.fire({
-        icon: "info",
-        title: "Cetak Mutasi",
-        text: `Fitur cetak untuk mutasi ID ${id} sedang dalam pengembangan.`,
-        toast: true,
-        position: "top-end",
-        showConfirmButton: false,
-        timer: 2000,
-      });
-    }
+    showToast(
+      "info",
+      "Cetak Mutasi",
+      `Fitur cetak untuk mutasi ID ${id} sedang dalam pengembangan.`
+    );
   };
 
   // Handler for "Hapus" (Delete) button
@@ -427,16 +374,7 @@ const DaftarMutasiPage = () => {
 
     if (result.isConfirmed) {
       setMutasiData((prevData) => prevData.filter((item) => item.id !== id));
-
-      Swal.fire({
-        icon: "success",
-        title: "Terhapus!",
-        text: "Data mutasi berhasil dihapus.",
-        toast: true,
-        position: "top-end",
-        showConfirmButton: false,
-        timer: 2000,
-      });
+      showToast("success", "Terhapus!", "Data mutasi berhasil dihapus.");
     }
   };
 
@@ -448,7 +386,6 @@ const DaftarMutasiPage = () => {
       width: 150,
       sortable: false,
       renderCell: (params) => {
-        // Hide action buttons for the total row
         if (params.row.id === "total") return null;
         return (
           <div className="flex items-center gap-3 h-full">
@@ -483,8 +420,9 @@ const DaftarMutasiPage = () => {
       width: 70,
       sortable: false,
       renderCell: (params) => {
-        // Hide number for the total row
-        if (params.row.id === "total") return null;
+        if (params.row.id === "total") {
+          return <span className="font-bold">Total</span>;
+        }
         return (
           params.api.getRowIndexRelativeToVisibleRows(params.id) +
           1 +
@@ -493,31 +431,36 @@ const DaftarMutasiPage = () => {
       },
     },
     {
-      field: "kualifikasiPerolehan",
-      headerName: "Kualifikasi Perolehan",
-      width: 200,
+      field: "id",
+      headerName: "ID",
+      width: 120,
       renderCell: (params) => {
-        // Display 'Total' with bold font for the total row
-        if (params.row.id === "total")
-          return <span className="font-bold">{params.value}</span>;
+        // Return null untuk total row agar tidak ada konten yang ditampilkan
+        if (params.row.id === "total") return null;
         return params.value;
       },
     },
+    {
+      field: "kualifikasiPerolehan",
+      headerName: "Kualifikasi Perolehan",
+      width: 200,
+    },
     { field: "asal", headerName: "Asal", width: 120 },
     { field: "tujuan", headerName: "Tujuan", width: 120 },
+    { field: "tahun", headerName: "Tahun", width: 120 },
+    { field: "semester", headerName: "Semester", width: 120 },
+    { field: "nomorBeritaAcara", headerName: "No. Berita Acara", width: 150 },
     {
       field: "tanggalBeritaAcara",
       headerName: "Tgl. Berita Acara",
       width: 150,
     },
-    { field: "nomorBeritaAcara", headerName: "No. Berita Acara", width: 150 },
     {
       field: "totalBarang",
       headerName: "Total Barang",
       type: "number",
       width: 120,
       renderCell: (params) => (
-        // Bold the value for the total row
         <span className={params.row.id === "total" ? "font-bold" : ""}>
           {params.value}
         </span>
@@ -537,7 +480,6 @@ const DaftarMutasiPage = () => {
         }).format(params.value);
 
         return (
-          // Bold the value for the total row
           <span className={params.row.id === "total" ? "font-bold" : ""}>
             {formattedValue}
           </span>
@@ -545,35 +487,18 @@ const DaftarMutasiPage = () => {
       },
     },
     { field: "lampiran", headerName: "Lampiran", width: 100 },
+    { field: "statusVerifikasi", headerName: "Status Verifikasi", width: 150 },
     {
-      field: "statusVerifikasi",
-      headerName: "Status Verifikasi",
+      field: "catatanVerifikasi",
+      headerName: "Catatan Verifikasi",
       width: 150,
-      renderCell: (params) => {
-        // Don't render status badge for the total row
-        if (params.row.id === "total") return null;
-
-        const status = params.value;
-        let bgColor = "bg-gray-100 text-gray-800";
-
-        if (status === "Diverifikasi") {
-          bgColor = "bg-green-100 text-green-800";
-        } else if (status === "Menunggu") {
-          bgColor = "bg-yellow-100 text-yellow-800";
-        } else if (status === "Ditolak") {
-          bgColor = "bg-red-100 text-red-800";
-        }
-
-        return (
-          <span
-            className={`px-2 py-1 rounded-full text-xs font-medium ${bgColor}`}
-          >
-            {status}
-          </span>
-        );
-      },
     },
   ];
+
+  // Filter visible columns based on columnVisibility state
+  const visibleColumns = columns.filter(
+    (column) => columnVisibility[column.field] !== false
+  );
 
   // Render filter dropdown
   const renderFilterSelect = (filterKey, placeholder, options) => (
@@ -618,7 +543,7 @@ const DaftarMutasiPage = () => {
             {/* Filters and Action Buttons */}
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 mb-6">
               {/* Filter Dropdowns */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 flex-1">
                 {renderFilterSelect(
                   "kualifikasiPerolehan",
                   "-- Kualifikasi Perolehan --",
@@ -629,11 +554,6 @@ const DaftarMutasiPage = () => {
                   "tujuan",
                   "-- Tujuan --",
                   filterData.tujuan
-                )}
-                {renderFilterSelect(
-                  "semester",
-                  "-- Semester --",
-                  filterData.semester
                 )}
                 {renderFilterSelect(
                   "statusVerifikasi",
@@ -681,6 +601,11 @@ const DaftarMutasiPage = () => {
                   <option value="100">100</option>
                 </select>
                 <span>entries</span>
+                <ColumnManager
+                  columns={columns}
+                  columnVisibility={columnVisibility}
+                  onColumnVisibilityChange={setColumnVisibility}
+                />
               </div>
 
               <div className="relative w-full md:w-64">
@@ -700,22 +625,7 @@ const DaftarMutasiPage = () => {
             </div>
 
             {/* Data Table */}
-            {loading ? (
-              <DataTable
-                rows={dataWithTotal}
-                columns={columns}
-                initialPageSize={entriesPerPage}
-                pageSizeOptions={[5, 10, 25, 50, 100]}
-                height={500}
-                emptyRowsMessage="Tidak ada data tersedia"
-                paginationModel={dataTablePaginationModel}
-                onPaginationModelChange={setDataTablePaginationModel}
-                loading={true}
-                getRowClassName={(params) =>
-                  params.id === "total" ? "bg-gray-100 font-bold" : ""
-                }
-              />
-            ) : error ? (
+            {error ? (
               <div className="text-center py-12">
                 <div className="text-red-600 mb-2">⚠️ Error</div>
                 <div className="text-gray-600">{error}</div>
@@ -724,14 +634,14 @@ const DaftarMutasiPage = () => {
               <div className="border border-gray-200 rounded-lg overflow-hidden">
                 <DataTable
                   rows={dataWithTotal}
-                  columns={columns}
+                  columns={visibleColumns}
                   initialPageSize={entriesPerPage}
                   pageSizeOptions={[5, 10, 25, 50, 100]}
                   height={500}
                   emptyRowsMessage="Tidak ada data tersedia"
                   paginationModel={dataTablePaginationModel}
                   onPaginationModelChange={setDataTablePaginationModel}
-                  loading={false}
+                  loading={loading}
                   getRowClassName={(params) =>
                     params.id === "total" ? "bg-gray-100 font-bold" : ""
                   }
@@ -742,12 +652,11 @@ const DaftarMutasiPage = () => {
         </div>
       </div>
 
-      {/* Add/Edit Modal */}
+      {/* Add Modal */}
       <AddMutasiModal
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
         onSave={handleSaveNewMutasi}
-        initialData={editingItem}
       />
     </div>
   );

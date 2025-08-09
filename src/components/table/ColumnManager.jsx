@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Settings, ChevronUp, ChevronDown, Columns3Cog } from "lucide-react";
+import { Settings, Columns3Cog } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const ColumnManager = ({

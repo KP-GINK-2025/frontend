@@ -7,7 +7,6 @@ import { ColumnManager } from "@/components/table";
 import { Search, Download, RefreshCw, Plus, Upload } from "lucide-react";
 import AddLraModal from "./AddLraModal";
 import Swal from "sweetalert2";
-import api from "../../api/axios"; // Changed to relative path and 'api' variable name
 
 // Constants
 const ENTRIES_PER_PAGE_OPTIONS = [5, 10, 25, 50, 100];
@@ -20,6 +19,130 @@ const INITIAL_FILTERS = {
   upb: "",
   semester: "",
 };
+
+// Dummy Data
+const DUMMY_DROPDOWN_DATA = {
+  bidang: [
+    { id: 1, nama: "Pendidikan" },
+    { id: 2, nama: "Kesehatan" },
+    { id: 3, nama: "Infrastruktur" },
+    { id: 4, nama: "Sosial" },
+    { id: 5, nama: "Ekonomi" },
+  ],
+  unit: [
+    { id: 1, nama: "Dinas Pendidikan" },
+    { id: 2, nama: "Dinas Kesehatan" },
+    { id: 3, nama: "Dinas Pekerjaan Umum" },
+    { id: 4, nama: "Dinas Sosial" },
+    { id: 5, nama: "Badan Perencanaan Daerah" },
+  ],
+  subUnit: [
+    { id: 1, nama: "Sub Unit Pendidikan Dasar" },
+    { id: 2, nama: "Sub Unit Pendidikan Menengah" },
+    { id: 3, nama: "Sub Unit Pelayanan Kesehatan" },
+    { id: 4, nama: "Sub Unit Infrastruktur" },
+    { id: 5, nama: "Sub Unit Pembangunan" },
+  ],
+  upb: [
+    { id: 1, nama: "UPB 001 - Sekretariat Daerah" },
+    { id: 2, nama: "UPB 002 - Dinas Pendidikan" },
+    { id: 3, nama: "UPB 003 - Dinas Kesehatan" },
+    { id: 4, nama: "UPB 004 - Dinas PU" },
+    { id: 5, nama: "UPB 005 - Dinas Sosial" },
+  ],
+  semester: [
+    { id: 1, nama: "Semester 1" },
+    { id: 2, nama: "Semester 2" },
+  ],
+};
+
+const DUMMY_LRA_DATA = [
+  {
+    id: 1,
+    tahun: "2024",
+    semester: "Semester 1",
+    bidang: "Pendidikan",
+    unit: "Dinas Pendidikan",
+    subUnit: "Sub Unit Pendidikan Dasar",
+    upb: "UPB 002 - Dinas Pendidikan",
+    nilaiLraKibA: 15000000000,
+    nilaiLraKibB: 8500000000,
+    nilaiLraKibC: 25000000000,
+    nilaiLraKibD: 12000000000,
+    nilaiLraKibE: 3500000000,
+    nilaiLraKibF: 5000000000,
+    nilaiTotalLra: 69000000000,
+    keterangan: "Realisasi anggaran untuk infrastruktur pendidikan dasar",
+  },
+  {
+    id: 2,
+    tahun: "2024",
+    semester: "Semester 1",
+    bidang: "Kesehatan",
+    unit: "Dinas Kesehatan",
+    subUnit: "Sub Unit Pelayanan Kesehatan",
+    upb: "UPB 003 - Dinas Kesehatan",
+    nilaiLraKibA: 8000000000,
+    nilaiLraKibB: 12000000000,
+    nilaiLraKibC: 18000000000,
+    nilaiLraKibD: 6000000000,
+    nilaiLraKibE: 2500000000,
+    nilaiLraKibF: 3500000000,
+    nilaiTotalLra: 50000000000,
+    keterangan: "Pembangunan fasilitas kesehatan dan peralatan medis",
+  },
+  {
+    id: 3,
+    tahun: "2024",
+    semester: "Semester 2",
+    bidang: "Infrastruktur",
+    unit: "Dinas Pekerjaan Umum",
+    subUnit: "Sub Unit Infrastruktur",
+    upb: "UPB 004 - Dinas PU",
+    nilaiLraKibA: 20000000000,
+    nilaiLraKibB: 15000000000,
+    nilaiLraKibC: 30000000000,
+    nilaiLraKibD: 45000000000,
+    nilaiLraKibE: 5000000000,
+    nilaiLraKibF: 10000000000,
+    nilaiTotalLra: 125000000000,
+    keterangan: "Pembangunan jalan dan jembatan daerah",
+  },
+  {
+    id: 4,
+    tahun: "2024",
+    semester: "Semester 2",
+    bidang: "Sosial",
+    unit: "Dinas Sosial",
+    subUnit: "Sub Unit Pembangunan",
+    upb: "UPB 005 - Dinas Sosial",
+    nilaiLraKibA: 5000000000,
+    nilaiLraKibB: 3000000000,
+    nilaiLraKibC: 8000000000,
+    nilaiLraKibD: 2000000000,
+    nilaiLraKibE: 1500000000,
+    nilaiLraKibF: 2500000000,
+    nilaiTotalLra: 22000000000,
+    keterangan: "Program bantuan sosial dan pemberdayaan masyarakat",
+  },
+  {
+    id: 5,
+    tahun: "2025",
+    semester: "Semester 1",
+    bidang: "Ekonomi",
+    unit: "Badan Perencanaan Daerah",
+    subUnit: "Sub Unit Pembangunan",
+    upb: "UPB 001 - Sekretariat Daerah",
+    nilaiLraKibA: 12000000000,
+    nilaiLraKibB: 7000000000,
+    nilaiLraKibC: 15000000000,
+    nilaiLraKibD: 8000000000,
+    nilaiLraKibE: 4000000000,
+    nilaiLraKibF: 6000000000,
+    nilaiTotalLra: 52000000000,
+    keterangan: "Pengembangan ekonomi daerah dan UMKM",
+  },
+];
 
 // Utility Components
 const FilterSelect = ({
@@ -77,6 +200,97 @@ const LraPage = () => {
     pageSize: DEFAULT_ENTRIES_PER_PAGE,
   });
 
+  // Table columns configuration
+  const columns = useMemo(
+    () => [
+      {
+        field: "action",
+        headerName: "Action",
+        width: 150,
+        sortable: false,
+        renderCell: (params) => (
+          <div className="flex items-center gap-2 h-full">
+            <button
+              onClick={() => handleEditClick(params.row.id)}
+              className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => handleDeleteClick(params.row.id)}
+              className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
+            >
+              Delete
+            </button>
+          </div>
+        ),
+      },
+      {
+        field: "no",
+        headerName: "No",
+        width: 70,
+        sortable: false,
+        renderCell: (params) => {
+          return (
+            params.api.getRowIndexRelativeToVisibleRows(params.id) +
+            1 +
+            dataTablePaginationModel.page * dataTablePaginationModel.pageSize
+          );
+        },
+      },
+      { field: "tahun", headerName: "Tahun", width: 100 },
+      { field: "semester", headerName: "Semester", width: 120 },
+      { field: "bidang", headerName: "Bidang", width: 180 },
+      { field: "unit", headerName: "Unit", width: 150 },
+      { field: "subUnit", headerName: "Sub Unit", width: 150 },
+      { field: "upb", headerName: "UPB", width: 120 },
+      {
+        field: "nilaiLraKibA",
+        headerName: "Nilai LRA KIB A/Tanah",
+        width: 200,
+        valueFormatter: (params) => currencyFormatter(params.value),
+      },
+      {
+        field: "nilaiLraKibB",
+        headerName: "Nilai LRA KIB B/Peralatan dan Mesin",
+        width: 250,
+        valueFormatter: (params) => currencyFormatter(params.value),
+      },
+      {
+        field: "nilaiLraKibC",
+        headerName: "Nilai LRA KIB C/Gedung dan Bangunan",
+        width: 250,
+        valueFormatter: (params) => currencyFormatter(params.value),
+      },
+      {
+        field: "nilaiLraKibD",
+        headerName: "Nilai LRA KIB D/Jalan, Irigasi dan Jaringan",
+        width: 280,
+        valueFormatter: (params) => currencyFormatter(params.value),
+      },
+      {
+        field: "nilaiLraKibE",
+        headerName: "Nilai LRA KIB E/Aset Tetap Lainnya",
+        width: 250,
+        valueFormatter: (params) => currencyFormatter(params.value),
+      },
+      {
+        field: "nilaiLraKibF",
+        headerName: "Nilai LRA KIB F/Konstruksi Dalam Pengerjaan",
+        width: 300,
+        valueFormatter: (params) => currencyFormatter(params.value),
+      },
+      {
+        field: "nilaiTotalLra",
+        headerName: "Nilai Total",
+        width: 180,
+        valueFormatter: (params) => currencyFormatter(params.value),
+      },
+      { field: "keterangan", headerName: "Keterangan", flex: 1 },
+    ],
+    [dataTablePaginationModel]
+  );
+
   // Initialize column visibility
   useEffect(() => {
     const initialVisibility = {};
@@ -89,25 +303,19 @@ const LraPage = () => {
       }
     });
     setColumnVisibility(initialVisibility);
-  }, []);
+  }, [columns]);
 
-  // API Functions
+  // Simulate API Functions with dummy data
   const fetchDropdownData = async () => {
     try {
-      const [bidangRes, unitRes, subUnitRes, upbRes, semesterRes] =
-        await Promise.all([
-          api.get("/klasifikasi-instansi/bidang"),
-          api.get("/klasifikasi-instansi/unit"),
-          api.get("/klasifikasi-instansi/subunit"),
-          api.get("/klasifikasi-instansi/upb"),
-          api.get("/lra/semester"),
-        ]);
+      // Simulate API delay
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
-      setBidangData(bidangRes.data?.data || bidangRes.data || []);
-      setUnitData(unitRes.data?.data || unitRes.data || []);
-      setSubUnitData(subUnitRes.data?.data || subUnitRes.data || []);
-      setUpbData(upbRes.data?.data || upbRes.data || []);
-      setSemesterData(semesterRes.data?.data || semesterRes.data || []);
+      setBidangData(DUMMY_DROPDOWN_DATA.bidang);
+      setUnitData(DUMMY_DROPDOWN_DATA.unit);
+      setSubUnitData(DUMMY_DROPDOWN_DATA.subUnit);
+      setUpbData(DUMMY_DROPDOWN_DATA.upb);
+      setSemesterData(DUMMY_DROPDOWN_DATA.semester);
     } catch (error) {
       console.error("Error fetching dropdown data:", error);
       throw error;
@@ -116,8 +324,9 @@ const LraPage = () => {
 
   const fetchLraData = async () => {
     try {
-      const response = await api.get("/lra");
-      setLraData(response.data?.data || response.data || []);
+      // Simulate API delay
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      setLraData(DUMMY_LRA_DATA);
     } catch (error) {
       console.error("Error fetching LRA data:", error);
       throw error;
@@ -168,7 +377,7 @@ const LraPage = () => {
       item.unit?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.upb?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.keterangan?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.nilaiTotalLra // Use nilaiTotalLra for consistency with AddLraModal
+      item.nilaiTotalLra
         ?.toString()
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
@@ -191,97 +400,6 @@ const LraPage = () => {
     }
     return `Rp ${new Intl.NumberFormat("id-ID").format(value)}`;
   };
-
-  // Table columns configuration
-  const columns = useMemo(
-    () => [
-      {
-        field: "action",
-        headerName: "Action",
-        width: 150,
-        sortable: false,
-        renderCell: (params) => (
-          <div className="flex items-center gap-2 h-full">
-            <button
-              onClick={() => handleEditClick(params.row.id)}
-              className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
-            >
-              Edit
-            </button>
-            <button
-              onClick={() => handleDeleteClick(params.row.id)}
-              className="text-red-600 hover:text-red-800 text-sm cursor-pointer"
-            >
-              Delete
-            </button>
-          </div>
-        ),
-      },
-      {
-        field: "no",
-        headerName: "No",
-        width: 70,
-        sortable: false,
-        renderCell: (params) => {
-          return (
-            params.api.getRowIndexRelativeToVisibleRows(params.id) +
-            1 +
-            dataTablePaginationModel.page * dataTablePaginationModel.pageSize
-          );
-        },
-      },
-      { field: "tahun", headerName: "Tahun", width: 100 }, // Added Tahun column
-      { field: "semester", headerName: "Semester", width: 120 },
-      { field: "bidang", headerName: "Bidang", width: 180 },
-      { field: "unit", headerName: "Unit", width: 150 },
-      { field: "subUnit", headerName: "Sub Unit", width: 150 },
-      { field: "upb", headerName: "UPB", width: 120 },
-      {
-        field: "nilaiLraKibA",
-        headerName: "Nilai LRA KIB A/Tanah",
-        width: 200,
-        valueFormatter: (params) => currencyFormatter(params.value),
-      },
-      {
-        field: "nilaiLraKibB",
-        headerName: "Nilai LRA KIB B/Peralatan dan Mesin",
-        width: 250,
-        valueFormatter: (params) => currencyFormatter(params.value),
-      },
-      {
-        field: "nilaiLraKibC",
-        headerName: "Nilai LRA KIB C/Gedung dan Bangunan",
-        width: 250,
-        valueFormatter: (params) => currencyFormatter(params.value),
-      },
-      {
-        field: "nilaiLraKibD",
-        headerName: "Nilai LRA KIB D/Jalan, Irigasi dan Jaringan",
-        width: 280,
-        valueFormatter: (params) => currencyFormatter(params.value),
-      },
-      {
-        field: "nilaiLraKibE",
-        headerName: "Nilai LRA KIB E/Aset Tetap Lainnya",
-        width: 250,
-        valueFormatter: (params) => currencyFormatter(params.value),
-      },
-      {
-        field: "nilaiLraKibF",
-        headerName: "Nilai LRA KIB F/Konstruksi Dalam Pengerjaan",
-        width: 300,
-        valueFormatter: (params) => currencyFormatter(params.value),
-      },
-      {
-        field: "nilaiTotalLra", // Changed field name to match AddLraModal's state
-        headerName: "Nilai Total",
-        width: 180,
-        valueFormatter: (params) => currencyFormatter(params.value),
-      },
-      { field: "keterangan", headerName: "Keterangan", flex: 1 },
-    ],
-    [dataTablePaginationModel]
-  );
 
   // Event handlers
   const handleFilterChange = (filterType, value) => {
@@ -448,7 +566,7 @@ const LraPage = () => {
         {/* Export Button */}
         <div className="flex justify-end mt-4 mb-4">
           <Buttons variant="danger" onClick={handleExport} disabled={exporting}>
-            <Upload size={16} className={exporting ? "animate-pulse" : ""} />
+            <Download size={16} className={exporting ? "animate-pulse" : ""} />
             {exporting ? "Mengekspor..." : "Ekspor"}
           </Buttons>
         </div>
